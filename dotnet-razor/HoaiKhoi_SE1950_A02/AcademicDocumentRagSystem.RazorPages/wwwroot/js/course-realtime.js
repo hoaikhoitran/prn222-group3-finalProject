@@ -1,7 +1,5 @@
-// Real-time Course list for lecturers.
-// Subscribes to the CourseHub at /hubs/courses and, whenever the admin creates,
-// updates, or deletes a course, re-fetches just the course table fragment so the
-// page never needs a manual reload.
+// Real-time course cards for teachers (MVC).
+// Subscribes to CourseHub at /hubs/courses; refreshes the card grid when admin CRUD succeeds.
 (function () {
     "use strict";
 
@@ -27,14 +25,17 @@
         if (!indicator) {
             return;
         }
-        indicator.classList.add("status-badge--active");
+        indicator.classList.add("live-indicator--active");
         setTimeout(function () {
-            indicator.classList.remove("status-badge--active");
+            indicator.classList.remove("live-indicator--active");
         }, 1500);
     }
 
     function refreshCourseList() {
-        fetch(refreshUrl, { headers: { "X-Requested-With": "XMLHttpRequest" } })
+        fetch(refreshUrl, {
+            headers: { "X-Requested-With": "XMLHttpRequest" },
+            credentials: "same-origin"
+        })
             .then(function (response) {
                 if (!response.ok) {
                     throw new Error("Refresh failed with status " + response.status);
@@ -50,8 +51,6 @@
             });
     }
 
-    // The hub broadcasts a coarse "CoursesChanged" event after every successful
-    // create/update/delete; we simply re-pull the current list.
     connection.on("CoursesChanged", refreshCourseList);
 
     connection.start().catch(function (err) {

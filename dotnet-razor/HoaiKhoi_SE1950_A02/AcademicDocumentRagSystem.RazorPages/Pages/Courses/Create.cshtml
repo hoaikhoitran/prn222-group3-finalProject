@@ -1,0 +1,42 @@
+﻿@page
+@{
+    ViewData["Title"] = "Thêm môn học";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="p-4 p-md-5">
+    <div class="mb-4">
+        <a asp-page="/Courses/Index" class="btn btn-sm btn-edurag-ghost mb-3">← Quay lại</a>
+        <h1 class="font-display fs-2 fw-bold mb-1">Thêm môn học</h1>
+        <p class="text-muted-edurag mb-0">Thêm môn học mới để upload và index tài liệu.</p>
+    </div>
+
+    <div class="edurag-card p-4 p-md-5" style="max-width:680px;">
+        <form asp-page="/Courses/Index" asp-page-handler="Create" method="post" class="vstack gap-3">
+            <div>
+                <label class="form-label fw-semibold" for="CreateInput_Code">Mã môn</label>
+                <input name="CreateInput.Code" id="CreateInput_Code" class="form-control" placeholder="VD: PRN222" />
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="CreateInput_Name">Tên môn</label>
+                <input name="CreateInput.Name" id="CreateInput_Name" class="form-control" placeholder="VD: Programming with .NET" />
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="CreateInput_Description">Mô tả</label>
+                <textarea name="CreateInput.Description" id="CreateInput_Description" class="form-control" rows="3" placeholder="Mô tả ngắn về môn học"></textarea>
+            </div>
+
+            <div class="form-check">
+                <input name="CreateInput.Status" id="CreateInput_Status" type="checkbox" class="form-check-input" value="true" checked />
+                <label class="form-check-label" for="CreateInput_Status">Môn học đang hoạt động</label>
+            </div>
+
+            <div class="d-flex gap-2 pt-2">
+                <button type="submit" class="btn btn-edurag-warm">Lưu</button>
+                <a asp-page="/Courses/Index" class="btn btn-edurag-outline">Huỷ</a>
+            </div>
+        </form>
+    </div>
+</div>

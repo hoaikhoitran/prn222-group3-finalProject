@@ -1,0 +1,67 @@
+﻿@page
+@{
+    ViewData["Title"] = "Sửa tài khoản";
+    Layout = "_LayoutDashboard";
+    var accountId = int.TryParse(HttpContext.Request.Query["id"], out var id) ? id : 0;
+}
+
+<div class="p-4 p-md-5">
+    <div class="mb-4">
+        <a asp-page="/Accounts/Index" class="btn btn-sm btn-edurag-ghost mb-3 d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "arrow-left"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Quay lại
+        </a>
+        <h1 class="font-display fs-2 fw-bold mb-1">Sửa tài khoản</h1>
+        <p class="text-muted-edurag mb-0">Cập nhật vai trò, trạng thái, môn học hoặc mật khẩu mới.</p>
+    </div>
+
+    <div class="edurag-card p-4 p-md-5" style="max-width:720px;">
+        <form asp-page="/Accounts/Index" asp-page-handler="Edit" method="post" class="vstack gap-3">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="EditInput.AccountId" value="@accountId" />
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_Email">Email</label>
+                <input id="EditInput_Email" name="EditInput.Email" class="form-control" />
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_Password">Mật khẩu mới</label>
+                <input id="EditInput_Password" name="EditInput.Password" type="password" class="form-control" />
+                <div class="form-text text-muted-edurag">Để trống nếu giữ mật khẩu hiện tại.</div>
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_FullName">Họ và tên</label>
+                <input id="EditInput_FullName" name="EditInput.FullName" class="form-control" />
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_Role">Vai trò</label>
+                <select id="EditInput_Role" name="EditInput.Role" class="form-select">
+                    <option value="1">Student</option>
+                    <option value="2">Teacher</option>
+                </select>
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_CourseId">Môn học gán</label>
+                <select id="EditInput_CourseId" name="EditInput.CourseId" class="form-select">
+                    <option value="">Không gán</option>
+                </select>
+                <div class="form-text text-muted-edurag">Bắt buộc với Teacher. Student không được gán môn.</div>
+            </div>
+
+            <div class="form-check">
+                <input id="EditInput_Status" name="EditInput.Status" type="checkbox" class="form-check-input" value="true" checked />
+                <label class="form-check-label" for="EditInput_Status">Tài khoản hoạt động</label>
+            </div>
+
+            <div class="d-flex gap-2 pt-2">
+                <button type="submit" class="btn btn-edurag-warm">Lưu</button>
+                <a asp-page="/Accounts/Index" class="btn btn-edurag-outline">Huỷ</a>
+            </div>
+        </form>
+    </div>
+</div>

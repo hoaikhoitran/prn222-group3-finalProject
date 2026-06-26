@@ -70,13 +70,10 @@ public class ChatService : IChatService
             Title = session.Title ?? $"Session #{session.ChatSessionId}",
             DocumentTitle = session.Document.Title,
             CourseCode = session.Course.Code,
-            Messages = session.ChatMessages.Select(m => new ChatMessageDto
-            {
-                ChatMessageId = m.ChatMessageId,
-                Question = m.Question,
-                Answer = m.Answer,
-                CreatedAt = m.CreatedAt
-            }).ToList()
+            Messages = session.ChatMessages
+                .OrderBy(m => m.CreatedAt)
+                .Select(MapMessage)
+                .ToList()
         };
     }
 
@@ -232,6 +229,79 @@ public class ChatService : IChatService
         await _chatRepository.SaveChangesAsync();
 
         return session;
+    }
+
+    public async Task<ChatWorkspaceDto> GetWorkspaceAsync(int accountId, int? documentId, int? sessionId)
+    {
+        var documents = await GetIndexedDocumentsAsync();
+        var sessions = await GetSessionsAsync(accountId);
+
+        var workspace = new ChatWorkspaceDto
+        {
+            Documents = documents,
+            Sessions = sessions,
+            SelectedDocumentId = documentId,
+            SelectedSessionId = sessionId
+        };
+
+        if (documentId == null && sessions.Count > 0 && sessionId == null)
+        {
+            var latest = sessions.OrderByDescending(s => s.UpdatedAt ?? s.CreatedAt).First();
+            sessionId = latest.ChatSessionId;
+            documentId = latest.DocumentId;
+            workspace.SelectedSessionId = sessionId;
+            workspace.SelectedDocumentId = documentId;
+        }
+
+        if (documentId.HasValue)
+        {
+            workspace.ActiveDocument = documents.FirstOrDefault(d => d.DocumentId == documentId.Value);
+            workspace.AskForm.DocumentId = documentId.Value;
+            workspace.AskForm.ChatSessionId = sessionId;
+        }
+
+        if (sessionId.HasValue)
+        {
+            workspace.ActiveSession = await GetSessionAsync(sessionId.Value, accountId);
+            if (workspace.ActiveSession != null)
+            {
+                workspace.AskForm.DocumentId = workspace.ActiveSession.DocumentId;
+                workspace.AskForm.ChatSessionId = workspace.ActiveSession.ChatSessionId;
+                workspace.ActiveDocument = documents.FirstOrDefault(d =>
+                    d.DocumentId == workspace.ActiveSession.DocumentId);
+            }
+        }
+        else if (documentId.HasValue && sessionId == null)
+        {
+            workspace.ShowDocumentPicker = workspace.ActiveSession == null;
+        }
+
+        return workspace;
+    }
+
+    private static ChatMessageDto MapMessage(ChatMessage m)
+    {
+        var sources = new List<RagSourceDto>();
+        if (!string.IsNullOrWhiteSpace(m.SourcesJson))
+        {
+            try
+            {
+                sources = JsonSerializer.Deserialize<List<RagSourceDto>>(m.SourcesJson) ?? new();
+            }
+            catch
+            {
+                sources = new List<RagSourceDto>();
+            }
+        }
+
+        return new ChatMessageDto
+        {
+            ChatMessageId = m.ChatMessageId,
+            Question = m.Question,
+            Answer = m.Answer,
+            CreatedAt = m.CreatedAt,
+            Sources = sources
+        };
     }
 
     private static List<RagConversationTurnDto> BuildConversationHistory(ChatSession session)

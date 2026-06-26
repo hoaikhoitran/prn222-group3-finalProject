@@ -1,0 +1,147 @@
+﻿@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Teacher.ChatModel
+@using AcademicDocumentRagSystem.RazorPages.ViewModels.Mock
+@{
+    ViewData["Title"] = "Chatbot";
+    Layout = "_LayoutDashboard";
+    var workspace = Model.Workspace;
+    var sidebarDocs = workspace.ActiveDocument != null
+        ? workspace.Documents.Where(d => d.CourseCode == workspace.ActiveDocument.CourseCode).Take(6).ToList()
+        : workspace.Documents.Take(6).ToList();
+}
+<div class="chat-grid chat-grid--wide">
+    <div class="chat-main">
+        <div class="chat-main__header">
+            <div class="flex-grow-1 min-width-0">
+                <div class="d-flex align-items-center gap-2">
+                    <span class="font-display fw-bold text-truncate">Thử nghiệm chatbot</span>
+                    <span class="badge-edurag-accent">Chế độ thử nghiệm</span>
+                </div>
+                <div class="small text-muted-edurag">
+                    @(workspace.ActiveDocument != null ? $"{workspace.ActiveDocument.CourseCode} · {workspace.ActiveDocument.OriginalFileName}" : "Chọn tài liệu để kiểm thử câu trả lời RAG")
+                </div>
+            </div>
+            @if (workspace.ActiveDocument != null)
+            {
+                <a asp-page="/Teacher/Chat" asp-page-handler="NewChat" asp-route-documentId="@workspace.ActiveDocument.DocumentId" class="btn btn-sm btn-edurag-outline d-inline-flex align-items-center gap-1">
+                    @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
+                    @await Html.PartialAsync("_Icons")
+                    Hội thoại mới
+                </a>
+            }
+        </div>
+        @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
+        {
+            <div class="alert alert-success m-3 mb-0 py-2 small">@workspace.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(workspace.ErrorMessage))
+        {
+            <div class="alert alert-danger m-3 mb-0 py-2 small">@workspace.ErrorMessage</div>
+        }
+        @if (workspace.ActiveDocument == null && workspace.Documents.Any())
+        {
+            <div class="chat-main__messages">
+                <div class="chat-main__thread">
+                    <h2 class="font-display fw-bold fs-5 mb-3">Chọn tài liệu để thử nghiệm</h2>
+                    <div class="row g-2">
+                        @foreach (var d in workspace.Documents)
+                        {
+                            <div class="col-md-6">
+                                <a asp-page="/Teacher/Chat" asp-route-documentId="@d.DocumentId" class="edurag-card p-3 d-block text-decoration-none text-dark file-card">
+                                    <div class="fw-semibold small">@d.Title</div>
+                                    <div class="small text-muted-edurag">@d.CourseCode · @d.Chapter</div>
+                                </a>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+        else if (workspace.ActiveDocument != null)
+        {
+            <div class="chat-main__messages">
+                <div class="chat-main__thread">
+                    @if (workspace.ActiveSession?.Messages.Any() == true)
+                    {
+                        @foreach (var m in workspace.ActiveSession.Messages)
+                        {
+                            <div class="d-flex justify-content-end mb-3">
+                                <div class="chat-bubble-user">@m.Question</div>
+                            </div>
+                            <div class="d-flex gap-3 mb-4">
+                                <div class="chat-avatar">
+                                    @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "16"; }
+                                    @await Html.PartialAsync("_Icons")
+                                </div>
+                                <div class="min-width-0">
+                                    <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
+                                    @if (m.Sources.Any())
+                                    {
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            @foreach (var cit in m.Sources)
+                                            {
+                                                <span class="citation-chip">
+                                                    @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
+                                                    @await Html.PartialAsync("_Icons")
+                                                    @cit.FileName @(cit.PageNumber.HasValue ? $"· tr.{cit.PageNumber}" : "")
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted-edurag text-center py-5">Đặt câu hỏi để kiểm tra chất lượng câu trả lời từ tài liệu này.</p>
+                    }
+                </div>
+            </div>
+            <div class="chat-main__inputbar">
+                <form asp-page-handler="Ask" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="AskForm.DocumentId" />
+                    <input type="hidden" asp-for="AskForm.ChatSessionId" />
+                    <div class="chat-input-card">
+                        <input type="text" asp-for="AskForm.Question" placeholder="Đặt câu hỏi thử nghiệm..." required autocomplete="off" />
+                        <button type="submit" class="btn btn-edurag-warm rounded-3 d-inline-flex align-items-center justify-content-center" style="width:42px;height:42px;padding:0;">
+                            @{ ViewData["Icon"] = "send"; ViewData["IconSize"] = "16"; }
+                            @await Html.PartialAsync("_Icons")
+                        </button>
+                    </div>
+                </form>
+                <p class="text-center mb-0 mt-2" style="font-size:11px;color:var(--edurag-muted);">Câu trả lời sinh từ pipeline RAG trên tài liệu đã index.</p>
+            </div>
+        }
+        else
+        {
+            <div class="p-5 text-center text-muted-edurag my-auto">
+                <p>Chưa có tài liệu đã index để thử nghiệm.</p>
+                <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm">Upload tài liệu</a>
+            </div>
+        }
+    </div>
+    <aside class="chat-sources">
+        <div class="small fw-semibold text-muted-edurag text-uppercase mb-2" style="letter-spacing:.06em;">Tài liệu nguồn</div>
+        @foreach (var d in sidebarDocs)
+        {
+            <a asp-page="/Teacher/Chat" asp-route-documentId="@d.DocumentId"
+               class="source-doc-card @(workspace.SelectedDocumentId == d.DocumentId ? "active" : "")">
+                <div class="fw-semibold text-truncate">@d.Title</div>
+                <div class="text-muted-edurag">@d.CourseCode · @d.Chapter</div>
+            </a>
+        }
+        @if (workspace.Sessions.Any())
+        {
+            <div class="small fw-semibold text-muted-edurag text-uppercase mt-4 mb-2" style="letter-spacing:.06em;">Phiên gần đây</div>
+            @foreach (var s in workspace.Sessions.Take(5))
+            {
+                <a asp-page="/Teacher/Chat" asp-route-documentId="@s.DocumentId" asp-route-sessionId="@s.ChatSessionId"
+                   class="session-item @(workspace.SelectedSessionId == s.ChatSessionId ? "active" : "")">
+                    <span class="d-block text-truncate">@s.Title</span>
+                </a>
+            }
+        }
+    </aside>
+</div>

@@ -1,0 +1,100 @@
+﻿@page
+@using AcademicDocumentRagSystem.Services.DTOs.Accounts
+@model AcademicDocumentRagSystem.RazorPages.Pages.Accounts.CreateModel
+@{
+    ViewData["Title"] = "Thêm tài khoản";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="p-4 p-md-5">
+    <div class="mb-4">
+        <a asp-page="/Accounts/Index" class="btn btn-sm btn-edurag-ghost mb-3 d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "arrow-left"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Quay lại
+        </a>
+        <h1 class="font-display fs-2 fw-bold mb-1">Thêm tài khoản</h1>
+        <p class="text-muted-edurag mb-0">Tạo tài khoản sinh viên hoặc giảng viên. Giảng viên phải được gán một môn học.</p>
+    </div>
+
+    <div class="edurag-card p-4 p-md-5" style="max-width:720px;">
+        <form method="post" class="vstack gap-3" id="createAccountForm" novalidate>
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+            <div>
+                <label asp-for="Input.Email" class="form-label fw-semibold"></label>
+                <input asp-for="Input.Email" class="form-control" autocomplete="off" placeholder="name@example.com" />
+                <span asp-validation-for="Input.Email" class="text-danger small"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.Password" class="form-label fw-semibold"></label>
+                <input asp-for="Input.Password" class="form-control" autocomplete="new-password" />
+                <span asp-validation-for="Input.Password" class="text-danger small"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.FullName" class="form-label fw-semibold"></label>
+                <input asp-for="Input.FullName" class="form-control" placeholder="Nguyễn Văn A" />
+                <span asp-validation-for="Input.FullName" class="text-danger small"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.Role" class="form-label fw-semibold"></label>
+                <select asp-for="Input.Role" class="form-select" id="accountRole">
+                    <option value="@CreateAccountDto.StudentRole">Student</option>
+                    <option value="@CreateAccountDto.TeacherRole">Teacher</option>
+                </select>
+                <span asp-validation-for="Input.Role" class="text-danger small"></span>
+            </div>
+
+            <div id="courseField">
+                <label asp-for="Input.CourseId" class="form-label fw-semibold">Môn học gán</label>
+                <select asp-for="Input.CourseId" asp-items="Model.Courses" class="form-select" id="accountCourse">
+                    <option value="">-- Chọn môn học --</option>
+                </select>
+                <div class="form-text text-muted-edurag" id="courseHelpTeacher">Bắt buộc với Teacher.</div>
+                <div class="form-text text-muted-edurag d-none" id="courseHelpStudent">Student không được gán môn học.</div>
+                <span asp-validation-for="Input.CourseId" class="text-danger small"></span>
+            </div>
+
+            <div class="form-check">
+                <input asp-for="Input.Status" class="form-check-input" />
+                <label asp-for="Input.Status" class="form-check-label">Tài khoản hoạt động</label>
+            </div>
+
+            <div class="d-flex gap-2 pt-2">
+                <button type="submit" class="btn btn-edurag-warm">Lưu</button>
+                <a asp-page="/Accounts/Index" class="btn btn-edurag-outline">Huỷ</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            const roleSelect = document.getElementById('accountRole');
+            const courseSelect = document.getElementById('accountCourse');
+            const courseHelpTeacher = document.getElementById('courseHelpTeacher');
+            const courseHelpStudent = document.getElementById('courseHelpStudent');
+            const teacherRole = '@CreateAccountDto.TeacherRole';
+
+            function syncCourseField() {
+                const isTeacher = roleSelect.value === teacherRole;
+                courseSelect.disabled = !isTeacher;
+                courseSelect.required = isTeacher;
+                courseHelpTeacher.classList.toggle('d-none', !isTeacher);
+                courseHelpStudent.classList.toggle('d-none', isTeacher);
+                if (!isTeacher) {
+                    courseSelect.value = '';
+                }
+            }
+
+            roleSelect.addEventListener('change', syncCourseField);
+            syncCourseField();
+        })();
+    </script>
+}

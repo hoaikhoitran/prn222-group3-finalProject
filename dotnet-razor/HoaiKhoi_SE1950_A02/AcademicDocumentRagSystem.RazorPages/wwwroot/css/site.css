@@ -203,28 +203,10 @@ a:hover {
   border-radius: 999px;
 }
 
-/* Teacher variant: shows the assigned course ("CODE - NAME"). Course names can
-   be long, so read it naturally (not all-caps) and truncate with an ellipsis on
-   desktop instead of pushing the navbar around. Full text shows on hover/title. */
-.nav-user__role--course {
-  text-transform: none;
-  letter-spacing: 0;
-  max-width: 16rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 @media (max-width: 767.98px) {
   .nav-user {
     align-items: flex-start;
     padding: .4rem .75rem;
-  }
-
-  /* On mobile the menu is stacked, so let the full course label wrap. */
-  .nav-user__role--course {
-    max-width: 100%;
-    white-space: normal;
   }
 }
 

@@ -1,0 +1,79 @@
+﻿@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Teacher.IndexStatusModel
+@{
+    ViewData["Title"] = "Trạng thái index";
+    Layout = "_LayoutDashboard";
+    var items = Model.Documents;
+    var highlightId = Model.HighlightId;
+    var indexed = items.Count(d => d.IndexStatus == "Indexed");
+    var processing = items.Count(d => d.IndexStatus != "Indexed" && d.IndexStatus != "Failed");
+}
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Trạng thái index</h1>
+            <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
+        </div>
+        <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm btn-sm">+ Upload</a>
+    </div>
+    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+    @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
+    <div class="row g-3 mb-4">
+        @foreach (var s in new[] {
+            (items.Count.ToString(), "Tổng tài liệu", "database"),
+            (indexed.ToString(), "Đã index", "check-circle"),
+            (processing.ToString(), "Đang xử lý", "clock"),
+            (items.Sum(d => d.TotalChunks).ToString("N0"), "Tổng chunks", "layers") })
+        {
+            <div class="col-md-3 col-6">
+                <div class="edurag-card p-4 d-flex align-items-center gap-3">
+                    <span class="stat-icon-box bg-gradient-warm text-white shadow-glow">
+                        @{ ViewData["Icon"] = s.Item3; ViewData["IconSize"] = "18"; }
+                        @await Html.PartialAsync("_Icons")
+                    </span>
+                    <div>
+                        <div class="font-display fs-4 fw-bold lh-1">@s.Item1</div>
+                        <div class="small text-muted-edurag">@s.Item2</div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+    <div class="edurag-card overflow-hidden">
+        <div class="table-responsive">
+            <table class="table-edurag">
+                <thead><tr><th>Tài liệu</th><th>Môn</th><th>Chunks</th><th>Trạng thái</th><th></th></tr></thead>
+                <tbody>
+                    @foreach (var d in items)
+                    {
+                        var statusClass = d.IndexStatus == "Indexed" ? "status-badge-indexed" : d.IndexStatus == "Failed" ? "status-badge-failed" : "status-badge-processing";
+                        var statusLabel = d.IndexStatus == "Indexed" ? "Đã index" : d.IndexStatus == "Failed" ? "Lỗi" : "Đang xử lý";
+                        <tr class="@(highlightId == d.DocumentId ? "highlight" : "")">
+                            <td>
+                                <div class="fw-semibold">@d.Title</div>
+                                <div class="small text-muted-edurag">@d.OriginalFileName</div>
+                            </td>
+                            <td>@d.CourseCode</td>
+                            <td>@d.TotalChunks</td>
+                            <td>
+                                <span class="@statusClass">@statusLabel</span>
+                                @if (!string.IsNullOrEmpty(d.IndexError)) { <div class="small text-danger">@d.IndexError</div> }
+                            </td>
+                            <td class="text-end text-nowrap">
+                                <a asp-page="/Documents/Details" asp-route-id="@d.DocumentId" class="btn btn-sm btn-edurag-ghost">Chi tiết</a>
+                                <form asp-page-handler="ReIndex" asp-route-id="@d.DocumentId" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-edurag-outline">Re-index</button>
+                                </form>
+                            </td>
+                        </tr>
+                    }
+                    @if (!items.Any())
+                    {
+                        <tr><td colspan="5" class="text-center text-muted-edurag py-4">Chưa có tài liệu nào.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

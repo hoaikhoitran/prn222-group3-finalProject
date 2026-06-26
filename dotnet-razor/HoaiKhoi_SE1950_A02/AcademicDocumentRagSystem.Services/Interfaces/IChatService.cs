@@ -11,4 +11,6 @@ public interface IChatService
     Task<ChatSessionDetailsDto?> GetSessionAsync(int chatSessionId, int accountId);
 
     Task<ChatAnswerDto> AskAsync(AskQuestionDto dto, int accountId);
+
+    Task<ChatWorkspaceDto> GetWorkspaceAsync(int accountId, int? documentId, int? sessionId);
 }

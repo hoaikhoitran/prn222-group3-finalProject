@@ -1,24 +1,32 @@
-@page
+﻿@page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Teacher.CoursesModel
+@using AcademicDocumentRagSystem.RazorPages.ViewModels
 @{
-    ViewData["Title"] = "Live courses";
+    ViewData["Title"] = "Môn học";
+    Layout = "_LayoutDashboard";
+    var cards = Model.Cards;
 }
-
-<div class="page-header">
-    <div class="page-header__text">
-        <h1 class="page-title">Course catalogue</h1>
-        <p class="page-subtitle">
-            This list updates automatically when an administrator changes a course
-            <span id="live-indicator" class="meta-badge">live</span>
-        </p>
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Môn học</h1>
+            <p class="text-muted-edurag mb-0">
+                Các môn được phân công cho bạn
+                <span id="live-indicator" class="live-indicator ms-1">live</span>
+            </p>
+        </div>
+        <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm btn-sm d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Upload tài liệu
+        </a>
+    </div>
+    <div id="course-list" data-refresh-url="@Url.Page("/Teacher/Courses", "Table")">
+        @await Html.PartialAsync("_CourseCards", cards)
     </div>
 </div>
 
-<div id="course-list" data-refresh-url="@Url.Page("/Teacher/Courses", "Table")">
-    <partial name="_CourseTable" model="Model.Courses" />
-</div>
-
 @section Scripts {
-    <script src="~/lib/signalr/dist/browser/signalr.min.js"></script>
+    <script src="~/lib/signalr/dist/browser/signalr.min.js" crossorigin="anonymous"></script>
     <script src="~/js/course-realtime.js" asp-append-version="true"></script>
 }

@@ -1,44 +1,62 @@
-@page
+﻿@page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Auth.LoginModel
 @{
-    ViewData["Title"] = "Login";
+    ViewData["Title"] = "Đăng nhập";
+    Layout = "_LayoutPublic";
 }
 
-<div class="auth-wrap">
-    <div class="auth-card form-card">
-        <span class="brand-mark" aria-hidden="true">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 4a2 2 0 0 1 2-2h7l5 5v11a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2z" />
-                <path d="M14 2v6h6" />
-                <path d="M9 13h6M9 17h4" />
-            </svg>
-        </span>
+<div class="login-split row g-0">
+    <div class="col-lg-6 d-none d-lg-flex login-hero-panel flex-column justify-content-between p-5">
+        <div class="grid-bg"></div>
+        <a asp-page="/Home/Index" class="position-relative d-flex align-items-center gap-2 text-white text-decoration-none">
+            <span class="rounded-3 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(255,255,255,.15);">
+                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
+                @await Html.PartialAsync("_Icons")
+            </span>
+            <span class="font-display fw-bold fs-4">EduRAG</span>
+        </a>
+        <div class="position-relative">
+            <h2 class="font-display display-6 fw-bold mb-3">Chào mừng trở lại.</h2>
+            <p class="text-white opacity-85 fs-5" style="max-width:28rem;">
+                Đăng nhập để tiếp tục hành trình học tập cùng trợ lý AI cá nhân hóa theo môn học của bạn.
+            </p>
+            <ul class="list-unstyled mt-4 text-white opacity-90">
+                <li class="mb-2">• Hỏi đáp tự nhiên với tài liệu</li>
+                <li class="mb-2">• Trích dẫn nguồn rõ ràng</li>
+                <li>• Lưu lịch sử hội thoại theo phiên</li>
+            </ul>
+        </div>
+        <div class="position-relative small text-white opacity-70">© 2026 EduRAG · RBL Project</div>
+    </div>
+    <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-lg-5">
+        <div class="w-100" style="max-width:28rem;">
+            <a asp-page="/Home/Index" class="d-lg-none d-flex align-items-center gap-2 mb-4 text-decoration-none text-dark">
+                <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center">
+                    @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <span class="font-display fw-bold fs-5">EduRAG</span>
+            </a>
+            <h1 class="font-display fs-2 fw-bold mb-2">Đăng nhập</h1>
+            <p class="text-muted-edurag mb-4">Nhập email và mật khẩu tài khoản của bạn</p>
 
-        <h1 class="page-title" style="font-size:1.4rem;">Sign in</h1>
-        <p class="page-subtitle" style="margin-bottom:1.5rem;">
-            Access your courses, accounts, and lecturer tools.
-        </p>
-
-        <form method="post">
-            <div asp-validation-summary="All" class="text-danger"></div>
-
-            <div class="form-field">
-                <label asp-for="Input.Email" class="form-label">Email</label>
-                <input asp-for="Input.Email" class="form-control" placeholder="you@example.com" />
-                <span asp-validation-for="Input.Email" class="text-danger"></span>
-            </div>
-
-            <div class="form-field">
-                <label asp-for="Input.Password" class="form-label">Password</label>
-                <input asp-for="Input.Password" type="password" class="form-control" placeholder="Enter your password" />
-                <span asp-validation-for="Input.Password" class="text-danger"></span>
-            </div>
-
-            <button type="submit" class="btn btn-primary w-100">Sign in</button>
-        </form>
+            <form asp-page="/Auth/Login" method="post" class="vstack gap-3">
+                <div asp-validation-summary="All" class="text-danger"></div>
+                <div>
+                    <label asp-for="Input.Email" class="form-label">Email</label>
+                    <input asp-for="Input.Email" class="form-control form-control-lg" placeholder="ten@university.edu.vn" />
+                    <span asp-validation-for="Input.Email" class="text-danger small"></span>
+                </div>
+                <div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
+                        <span class="small text-muted-edurag">Quên mật khẩu?</span>
+                    </div>
+                    <input asp-for="Input.Password" type="password" class="form-control form-control-lg" placeholder="••••••••" />
+                    <span asp-validation-for="Input.Password" class="text-danger small"></span>
+                </div>
+                <button type="submit" class="btn btn-lg btn-edurag-warm w-100">Đăng nhập</button>
+            </form>
+        </div>
     </div>
 </div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-}

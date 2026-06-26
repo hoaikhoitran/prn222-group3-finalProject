@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 
@@ -41,7 +41,7 @@ namespace AcademicDocumentRagSystem.RazorPages.Infrastructure
 
                 if (roleName is null || !_roles.Contains(roleName))
                 {
-                    context.Result = new RedirectToPageResult("/AccessDenied");
+                    context.Result = new RedirectToPageResult("/Auth/AccessDenied");
                     return;
                 }
             }

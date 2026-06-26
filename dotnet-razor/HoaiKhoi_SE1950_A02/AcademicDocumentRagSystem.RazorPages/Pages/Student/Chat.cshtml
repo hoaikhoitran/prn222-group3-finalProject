@@ -1,0 +1,187 @@
+﻿@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Student.ChatModel
+@using AcademicDocumentRagSystem.RazorPages.ViewModels.Mock
+@{
+    ViewData["Title"] = "Hỏi đáp";
+    Layout = "_LayoutStudent";
+    var workspace = Model.Workspace;
+}
+@if (workspace.ActiveDocument == null && workspace.Documents.Any())
+{
+    <div class="p-4 p-md-5">
+        @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
+        {
+            <div class="alert alert-success mb-3 py-2 small">@workspace.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(workspace.ErrorMessage))
+        {
+            <div class="alert alert-danger mb-3 py-2 small">@workspace.ErrorMessage</div>
+        }
+        <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
+            <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
+                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </div>
+            <div>
+                <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu</h1>
+                <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index để trợ lý trả lời dựa trên nội dung.</p>
+            </div>
+        </div>
+        <div class="edurag-card overflow-hidden">
+            <div class="table-responsive">
+                <table class="table-edurag">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Tiêu đề</th>
+                            <th>Môn</th>
+                            <th>Chương</th>
+                            <th>File</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var document in workspace.Documents)
+                        {
+                            var ext = (System.IO.Path.GetExtension(document.OriginalFileName ?? "") ?? "").TrimStart('.').ToLowerInvariant();
+                            var typeClass = ext switch { "pdf" => "file-type-pdf", "pptx" or "ppt" => "file-type-pptx", _ => "file-type-docx" };
+                            <tr>
+                                <td class="text-muted-edurag" style="font-size:0.8rem;">#@document.DocumentId</td>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2 min-width-0">
+                                        <span class="file-type-icon @typeClass flex-shrink-0" style="width:2rem;height:2rem;font-size:0.55rem;">@(string.IsNullOrEmpty(ext) ? "doc" : ext)</span>
+                                        <span class="fw-semibold text-truncate" title="@document.Title">@document.Title</span>
+                                    </div>
+                                </td>
+                                <td><span class="role-badge-teacher">@document.CourseCode</span></td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(document.Chapter))
+                                    {
+                                        <span class="small fw-semibold">@document.Chapter</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted-edurag">&mdash;</span>
+                                    }
+                                </td>
+                                <td class="text-muted-edurag text-truncate" style="max-width:12rem;" title="@document.OriginalFileName">@document.OriginalFileName</td>
+                                <td class="text-end">
+                                    <a asp-page="/Student/Chat" asp-route-documentId="@document.DocumentId" class="btn btn-sm btn-edurag-warm d-inline-flex align-items-center gap-1">
+                                        @{ ViewData["Icon"] = "message"; ViewData["IconSize"] = "14"; }
+                                        @await Html.PartialAsync("_Icons")
+                                        Hỏi đáp
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <p class="small text-muted-edurag text-center mt-3 mb-0">@workspace.Documents.Count tài liệu sẵn sàng cho hỏi đáp RAG</p>
+    </div>
+}
+else if (workspace.ActiveDocument != null)
+{
+    <div class="chat-grid chat-grid--single">
+        <div class="chat-main">
+            @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
+            {
+                <div class="alert alert-success m-3 mb-0 py-2 small">@workspace.SuccessMessage</div>
+            }
+            @if (!string.IsNullOrEmpty(workspace.ErrorMessage))
+            {
+                <div class="alert alert-danger m-3 mb-0 py-2 small">@workspace.ErrorMessage</div>
+            }
+            <div class="chat-main__header">
+                <div class="flex-grow-1 min-width-0">
+                    <div class="font-display fw-bold text-truncate">@(workspace.ActiveSession?.Title ?? workspace.ActiveDocument.Title)</div>
+                    <div class="small text-muted-edurag">Môn @workspace.ActiveDocument.CourseCode · @workspace.ActiveDocument.OriginalFileName</div>
+                </div>
+                <a asp-page="/Student/Chat" asp-page-handler="NewChat" asp-route-documentId="@workspace.ActiveDocument.DocumentId" class="btn btn-sm btn-edurag-outline">+ Mới</a>
+            </div>
+            <div class="chat-main__messages">
+                <div class="chat-main__thread">
+                    @if (workspace.ActiveSession?.Messages.Any() == true)
+                    {
+                        @foreach (var m in workspace.ActiveSession.Messages)
+                        {
+                            <div class="d-flex justify-content-end mb-3">
+                                <div class="chat-bubble-user">@m.Question</div>
+                            </div>
+                            <div class="d-flex gap-3 mb-4">
+                                <div class="chat-avatar">
+                                    @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "16"; }
+                                    @await Html.PartialAsync("_Icons")
+                                </div>
+                                <div class="min-width-0">
+                                    <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
+                                    @if (m.Sources.Any())
+                                    {
+                                        <div class="d-flex flex-wrap gap-1 mt-2">
+                                            @foreach (var cit in m.Sources)
+                                            {
+                                                <span class="citation-chip">
+                                                    @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
+                                                    @await Html.PartialAsync("_Icons")
+                                                    @cit.FileName @(cit.PageNumber.HasValue ? $"· tr.{cit.PageNumber}" : "")
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <p class="text-muted-edurag text-center py-5">Đặt câu hỏi đầu tiên về tài liệu này.</p>
+                    }
+                </div>
+            </div>
+            <div class="chat-main__inputbar">
+                <form asp-page-handler="Ask" method="post">
+                    @Html.AntiForgeryToken()
+                    <input type="hidden" asp-for="AskForm.DocumentId" />
+                    <input type="hidden" asp-for="AskForm.ChatSessionId" />
+                    <div class="chat-input-card">
+                        <input type="text" asp-for="AskForm.Question" placeholder="Hỏi về tài liệu môn @workspace.ActiveDocument.CourseCode..." required autocomplete="off" />
+                        <button type="submit" class="btn btn-edurag-warm rounded-3 d-inline-flex align-items-center justify-content-center" style="width:42px;height:42px;padding:0;">
+                            @{ ViewData["Icon"] = "send"; ViewData["IconSize"] = "16"; }
+                            @await Html.PartialAsync("_Icons")
+                        </button>
+                    </div>
+                </form>
+                <p class="text-center mb-0 mt-2" style="font-size:11px;color:var(--edurag-muted);">Trả lời được giới hạn trong phạm vi tài liệu giảng viên đã upload.</p>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="p-4 p-md-5">
+        <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
+            <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
+                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </div>
+            <div>
+                <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu</h1>
+                <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index để trợ lý trả lời dựa trên nội dung.</p>
+            </div>
+        </div>
+        <div class="edurag-card p-5 text-center">
+            <div class="chat-avatar mx-auto mb-3" style="width:3rem;height:3rem;opacity:.6;">
+                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </div>
+            <h2 class="font-display fs-5 fw-bold mb-2">Chưa có tài liệu đã index</h2>
+            <p class="text-muted-edurag mb-4">Hiện chưa có tài liệu nào sẵn sàng để hỏi đáp. Vui lòng liên hệ giảng viên hoặc xem thư viện.</p>
+            <a asp-page="/Student/Library" class="btn btn-edurag-warm d-inline-flex align-items-center gap-2">
+                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
+                @await Html.PartialAsync("_Icons")
+                Thư viện tài liệu
+            </a>
+        </div>
+    </div>
+}

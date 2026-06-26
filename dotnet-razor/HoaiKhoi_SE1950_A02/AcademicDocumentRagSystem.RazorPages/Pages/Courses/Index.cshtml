@@ -1,212 +1,75 @@
-@page
+﻿@page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Courses.IndexModel
 @{
-    ViewData["Title"] = "Courses";
+    ViewData["Title"] = "Môn học";
+    Layout = "_LayoutDashboard";
 }
 
-<div class="page-header">
-    <div class="page-header__text">
-        <h1 class="page-title">Course Management</h1>
-        <p class="page-subtitle">Create and manage courses. Changes broadcast live to lecturers.</p>
-    </div>
-    <div class="action-bar">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createCourseModal">
-            Create Course
-        </button>
-    </div>
-</div>
-
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-
-<div class="form-card mb-4">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-9">
-            <label class="form-label" for="SearchTerm">Search</label>
-            <input id="SearchTerm" name="SearchTerm" value="@Model.SearchTerm" class="form-control"
-                   placeholder="Course code or name" />
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Quản lý môn học</h1>
+            <p class="text-muted-edurag mb-0">Tạo và quản lý các môn học trong hệ thống</p>
         </div>
-        <div class="col-md-3 d-flex gap-2">
-            <button type="submit" class="btn btn-secondary">Search</button>
-            <a asp-page="/Courses/Index" class="btn btn-outline-secondary">Reset</a>
-        </div>
-    </form>
-</div>
-
-@if (Model.Courses.Count == 0)
-{
-    <div class="empty-state">
-        <h3>No courses found</h3>
-        <p>Create a course or adjust your search.</p>
+        <a asp-page="/Courses/Create" class="btn btn-edurag-warm btn-sm d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Thêm môn học
+        </a>
     </div>
-}
-else
-{
-    <div class="table-wrap">
-        <div class="table-responsive-wrap">
-            <table class="table-modern">
-                <thead>
-                    <tr>
-                        <th>Code</th>
-                        <th>Name</th>
-                        <th>Description</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var course in Model.Courses)
-                    {
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+    }
+
+    <div class="edurag-card overflow-hidden">
+        @if (Model.Courses == null || !Model.Courses.Any())
+        {
+            <div class="text-center text-muted-edurag py-5">
+                <p class="mb-3">Chưa có môn học nào.</p>
+                <a asp-page="/Courses/Create" class="btn btn-sm btn-edurag-warm">Thêm môn học</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table-edurag">
+                    <thead>
                         <tr>
-                            <td class="cell-strong">@course.Code</td>
-                            <td>@course.Name</td>
-                            <td class="cell-muted">@course.Description</td>
-                            <td>
-                                @if (course.Status)
-                                {
-                                    <span class="status-badge status-badge--active">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge status-badge--inactive">Inactive</span>
-                                }
-                            </td>
-                            <td>
-                                <span class="table-actions">
-                                    <button type="button" class="btn btn-secondary btn-sm js-edit-course"
-                                            data-id="@course.CourseId"
-                                            data-code="@course.Code"
-                                            data-name="@course.Name"
-                                            data-description="@course.Description"
-                                            data-status="@course.Status.ToString().ToLower()"
-                                            data-bs-toggle="modal" data-bs-target="#editCourseModal">
-                                        Edit
-                                    </button>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@course.CourseId" class="d-inline"
-                                          onsubmit="return confirm('Are you sure you want to delete course @course.Code? This cannot be undone.');">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                                    </form>
-                                </span>
-                            </td>
+                            <th>Mã</th>
+                            <th>Tên môn</th>
+                            <th>Mô tả</th>
+                            <th>Trạng thái</th>
+                            <th></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-}
-
-<!-- Create modal -->
-<div class="modal fade" id="createCourseModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-page-handler="Create">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Course</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                    <div class="form-field">
-                        <label asp-for="CreateInput.Code" class="form-label">Code</label>
-                        <input asp-for="CreateInput.Code" class="form-control" />
-                        <span asp-validation-for="CreateInput.Code" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="CreateInput.Name" class="form-label">Name</label>
-                        <input asp-for="CreateInput.Name" class="form-control" />
-                        <span asp-validation-for="CreateInput.Name" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="CreateInput.Description" class="form-label">Description</label>
-                        <textarea asp-for="CreateInput.Description" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="CreateInput.Description" class="text-danger"></span>
-                    </div>
-                    <div class="form-check">
-                        <input asp-for="CreateInput.Status" class="form-check-input" />
-                        <label asp-for="CreateInput.Status" class="form-check-label">Active</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
-                </div>
-            </form>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var course in Model.Courses)
+                        {
+                            <tr>
+                                <td class="fw-semibold">@course.Code</td>
+                                <td>@course.Name</td>
+                                <td class="small text-muted-edurag">@(string.IsNullOrWhiteSpace(course.Description) ? "—" : course.Description)</td>
+                                <td>
+                                    <span class="@(course.Status ? "status-badge-indexed" : "status-badge-failed")">
+                                        @(course.Status ? "Hoạt động" : "Ngừng")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="d-inline-flex gap-1">
+                                        <a asp-page="/Courses/Edit" asp-route-id="@course.CourseId" class="btn btn-sm btn-edurag-ghost">Sửa</a>
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@course.CourseId" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                        </form>
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
-
-<!-- Edit modal -->
-<div class="modal fade" id="editCourseModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-page-handler="Edit">
-                <input type="hidden" asp-for="EditInput.CourseId" id="edit-course-id" />
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Course</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                    <div class="form-field">
-                        <label asp-for="EditInput.Code" class="form-label">Code</label>
-                        <input asp-for="EditInput.Code" id="edit-course-code" class="form-control" />
-                        <span asp-validation-for="EditInput.Code" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="EditInput.Name" class="form-label">Name</label>
-                        <input asp-for="EditInput.Name" id="edit-course-name" class="form-control" />
-                        <span asp-validation-for="EditInput.Name" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="EditInput.Description" class="form-label">Description</label>
-                        <textarea asp-for="EditInput.Description" id="edit-course-description" class="form-control" rows="3"></textarea>
-                        <span asp-validation-for="EditInput.Description" class="text-danger"></span>
-                    </div>
-                    <div class="form-check">
-                        <input asp-for="EditInput.Status" id="edit-course-status" class="form-check-input" />
-                        <label asp-for="EditInput.Status" class="form-check-label">Active</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script>
-        // Populate the shared Edit modal from the clicked row's data-* attributes.
-        document.querySelectorAll('.js-edit-course').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.getElementById('edit-course-id').value = btn.dataset.id;
-                document.getElementById('edit-course-code').value = btn.dataset.code;
-                document.getElementById('edit-course-name').value = btn.dataset.name;
-                document.getElementById('edit-course-description').value = btn.dataset.description || '';
-                document.getElementById('edit-course-status').checked = btn.dataset.status === 'true';
-            });
-        });
-
-        // Re-open the correct modal when server-side validation failed.
-        @if (Model.ShowCreateModal)
-        {
-            <text>new bootstrap.Modal(document.getElementById('createCourseModal')).show();</text>
-        }
-        @if (Model.ShowEditModal)
-        {
-            <text>new bootstrap.Modal(document.getElementById('editCourseModal')).show();</text>
-        }
-    </script>
-}

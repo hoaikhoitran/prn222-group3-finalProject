@@ -25,6 +25,8 @@ python-docx==1.1.0       # DOCX reading
 python-pptx==0.6.23      # PPTX reading
 
 # --- Vector database ---
+# chromadb 0.4.x is incompatible with NumPy 2.x (uses removed np.float_).
+numpy>=1.22.5,<2.0
 chromadb==0.4.24
 
 # --- Embedding model (BAAI/bge-m3) ---

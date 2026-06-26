@@ -1,4 +1,4 @@
-using AcademicDocumentRagSystem.RazorPages.Infrastructure;
+﻿using AcademicDocumentRagSystem.RazorPages.Infrastructure;
 using AcademicDocumentRagSystem.Services.DTOs.Auth;
 using AcademicDocumentRagSystem.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
@@ -74,9 +74,9 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Auth
 
         private IActionResult RedirectToDashboard(string roleName) => roleName switch
         {
-            "Admin" => RedirectToPage("/Admin/Index"),
-            "Teacher" => RedirectToPage("/Teacher/Index"),
-            "Student" => RedirectToPage("/Student/Index"),
+            "Admin" => RedirectToPage("/Accounts/Index"),
+            "Teacher" => RedirectToPage("/Teacher/Courses"),
+            "Student" => RedirectToPage("/Student/Chat"),
             _ => RedirectToPage("/Auth/Login")
         };
     }

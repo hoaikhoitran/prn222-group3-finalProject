@@ -1,0 +1,72 @@
+﻿@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Student.LibraryModel
+@{
+    ViewData["Title"] = "Thư viện tài liệu";
+    Layout = "_LayoutStudent";
+    var items = Model.Documents;
+    var filterCourse = Model.FilterCourse;
+    var searchQuery = Model.SearchQuery;
+    var allCodes = Model.AllCourseCodes;
+}
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Thư viện tài liệu</h1>
+            <p class="text-muted-edurag mb-0">Tài liệu đã index — @(filterCourse ?? "tất cả môn")</p>
+        </div>
+        <form asp-page="/Student/Library" method="get" class="d-flex gap-2">
+            @if (!string.IsNullOrEmpty(filterCourse))
+            {
+                <input type="hidden" name="course" value="@filterCourse" />
+            }
+            <input type="search" name="q" value="@searchQuery" class="form-control form-control-sm" style="width:220px;" placeholder="Tìm tài liệu, chương..." />
+            <button type="submit" class="btn btn-sm btn-edurag-outline d-inline-flex align-items-center gap-1">
+                @{ ViewData["Icon"] = "search"; ViewData["IconSize"] = "14"; }
+                @await Html.PartialAsync("_Icons")
+                Tìm
+            </button>
+        </form>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a asp-page="/Student/Library" asp-route-q="@searchQuery" class="pill-filter @(string.IsNullOrEmpty(filterCourse) ? "active" : "")">Tất cả</a>
+        @foreach (var code in allCodes)
+        {
+            <a asp-page="/Student/Library" asp-route-course="@code" asp-route-q="@searchQuery" class="pill-filter @(filterCourse == code ? "active" : "")">@code</a>
+        }
+    </div>
+    @if (!items.Any())
+    {
+        <div class="edurag-card p-5 text-center text-muted-edurag">Không tìm thấy tài liệu phù hợp.</div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var d in items)
+            {
+                var ext = (System.IO.Path.GetExtension(d.OriginalFileName ?? "") ?? "").TrimStart('.').ToLowerInvariant();
+                var typeClass = ext switch { "pdf" => "file-type-pdf", "pptx" or "ppt" => "file-type-pptx", _ => "file-type-docx" };
+                <div class="col-md-6 col-lg-4 col-xxl-3">
+                    <div class="edurag-card p-4 h-100 file-card d-flex flex-column">
+                        <div class="d-flex align-items-start gap-3 mb-2">
+                            <span class="file-type-icon @typeClass">@(string.IsNullOrEmpty(ext) ? "doc" : ext)</span>
+                            <div class="min-width-0">
+                                <h3 class="fs-6 fw-semibold mb-1 text-truncate" title="@d.Title">@d.Title</h3>
+                                <p class="small text-muted-edurag mb-0">@d.CourseCode · @d.Chapter</p>
+                            </div>
+                        </div>
+                        <div class="small text-muted-edurag text-truncate mb-3">@d.OriginalFileName</div>
+                        <div class="d-flex gap-2 mt-auto align-items-center">
+                            <span class="status-badge-indexed me-auto">Đã index</span>
+                            <a asp-page="/Student/Document" asp-route-id="@d.DocumentId" class="btn btn-sm btn-edurag-ghost d-inline-flex align-items-center gap-1">
+                                @{ ViewData["Icon"] = "eye"; ViewData["IconSize"] = "14"; }
+                                @await Html.PartialAsync("_Icons")
+                                Xem
+                            </a>
+                            <a asp-page="/Student/Chat" asp-route-documentId="@d.DocumentId" class="btn btn-sm btn-edurag-warm">Hỏi đáp</a>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

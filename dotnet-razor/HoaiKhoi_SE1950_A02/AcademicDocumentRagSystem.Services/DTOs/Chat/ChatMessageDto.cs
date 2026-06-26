@@ -1,3 +1,5 @@
+using AcademicDocumentRagSystem.Services.DTOs.Rag;
+
 namespace AcademicDocumentRagSystem.Services.DTOs.Chat;
 
 public class ChatMessageDto
@@ -9,4 +11,6 @@ public class ChatMessageDto
     public string Answer { get; set; } = string.Empty;
 
     public DateTime CreatedAt { get; set; }
+
+    public List<RagSourceDto> Sources { get; set; } = new();
 }

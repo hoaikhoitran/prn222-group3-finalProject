@@ -1,4 +1,4 @@
-using AcademicDocumentRagSystem.RazorPages.Hubs;
+﻿using AcademicDocumentRagSystem.RazorPages.Hubs;
 using AcademicDocumentRagSystem.Services;
 using AcademicDocumentRagSystem.Services.Maintenance;
 
@@ -10,12 +10,11 @@ namespace AcademicDocumentRagSystem.RazorPages
         {
             var builder = WebApplication.CreateBuilder(args);
 
-            // Presentation: Razor Pages (not MVC controllers/views). Login is the
-            // default start page by mapping the empty route ("/") to it.
             builder.Services
                 .AddRazorPages(options =>
                 {
-                    options.Conventions.AddPageRoute("/Auth/Login", "");
+                    options.Conventions.AddPageRoute("/Home/Index", "");
+                    options.Conventions.AddPageRoute("/Auth/Login", "/login");
                 });
 
             builder.Services.AddSession(options =>
@@ -25,18 +24,11 @@ namespace AcademicDocumentRagSystem.RazorPages
                 options.Cookie.IsEssential = true;
             });
 
-            // SignalR powers the real-time Course list broadcast to lecturers.
             builder.Services.AddSignalR();
-
-            // Reuse the exact same service/repository/DbContext registrations as the
-            // MVC app so business logic and data access are shared, not duplicated.
             builder.Services.AddApplicationServices(builder.Configuration);
 
             var app = builder.Build();
 
-            // Same idempotent startup migration the MVC app runs: backfill SHA-256
-            // content hashes and create the duplicate-blocking unique index. Safe to
-            // run again because both apps share the same database.
             using (var scope = app.Services.CreateScope())
             {
                 var services = scope.ServiceProvider;

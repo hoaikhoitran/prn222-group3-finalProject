@@ -1,0 +1,79 @@
+﻿@using AcademicDocumentRagSystem.RazorPages.ViewModels
+@{
+    var sessionRole = Context.Session.GetString("RoleName");
+    var accent = ViewBag.SidebarAccent as string ?? sessionRole switch
+    {
+        "Admin" => "Admin",
+        "Teacher" => "Giảng viên",
+        "Student" => "Sinh viên",
+        _ => ""
+    };
+    var navItems = ViewBag.NavItems as List<SidebarNavItem>;
+    if (navItems == null || navItems.Count == 0)
+    {
+        navItems = sessionRole switch
+        {
+            "Admin" => SidebarNav.Admin,
+            "Teacher" => SidebarNav.Teacher,
+            _ => new List<SidebarNavItem>()
+        };
+    }
+    var currentPage = ViewContext.RouteData.Values["page"]?.ToString() ?? "";
+    var fullName = Context.Session.GetString("FullName") ?? "Người dùng";
+    var roleName = sessionRole ?? ViewBag.SidebarRole as string ?? "";
+    var initial = !string.IsNullOrEmpty(fullName) ? fullName[0].ToString().ToUpper() : "U";
+}
+<aside class="role-sidebar">
+    <div class="role-sidebar__brand">
+        <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
+            <span class="edurag-logo-mark bg-gradient-warm shadow-glow text-white d-inline-flex align-items-center justify-content-center">
+                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
+                @await Html.PartialAsync("_Icons")
+            </span>
+            <div>
+                <div class="font-display fw-bold lh-1">EduRAG</div>
+                <div class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">@accent</div>
+            </div>
+        </a>
+    </div>
+    <nav class="role-sidebar__nav">
+        @foreach (var item in navItems)
+        {
+            var pageBase = item.Page.TrimEnd('/');
+            var itemSection = pageBase.Contains('/')
+                ? pageBase[..pageBase.LastIndexOf('/')]
+                : pageBase;
+            var inSameSection = currentPage.StartsWith(itemSection + "/", StringComparison.OrdinalIgnoreCase);
+            var isIndexFamily = item.Page.Contains("/Index", StringComparison.OrdinalIgnoreCase)
+                && inSameSection
+                && (currentPage.Contains("/Create", StringComparison.OrdinalIgnoreCase)
+                    || currentPage.Contains("/Edit", StringComparison.OrdinalIgnoreCase));
+            var isAllFamily = item.Page.Contains("/All", StringComparison.OrdinalIgnoreCase)
+                && inSameSection
+                && (currentPage.Contains("/DocumentDetails", StringComparison.OrdinalIgnoreCase)
+                    || currentPage.Contains("/Documents/Details", StringComparison.OrdinalIgnoreCase));
+            var isActive = string.Equals(currentPage, item.Page, StringComparison.OrdinalIgnoreCase)
+                || currentPage.StartsWith(pageBase + "/", StringComparison.OrdinalIgnoreCase)
+                || isIndexFamily || isAllFamily;
+            <a asp-page="@item.Page"
+               class="role-sidebar__link @(isActive ? "active" : "")">
+                @{ ViewData["Icon"] = item.Icon; ViewData["IconSize"] = "16"; }
+                @await Html.PartialAsync("_Icons")
+                @item.Label
+            </a>
+        }
+    </nav>
+    <div class="role-sidebar__footer">
+        <div class="d-flex align-items-center gap-3 px-2 py-2 rounded-3" style="background:rgba(0,0,0,.03);">
+            <div class="rounded-circle bg-gradient-warm text-white d-flex align-items-center justify-content-center fw-semibold" style="width:36px;height:36px;font-size:14px;">@initial</div>
+            <div class="flex-grow-1 min-width-0">
+                <div class="small fw-semibold text-truncate">@fullName</div>
+                <div class="text-muted-edurag" style="font-size:12px;">@roleName</div>
+            </div>
+            <a asp-page="/Auth/Logout" class="text-muted-edurag" title="Đăng xuất">
+                @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "16"; }
+                @await Html.PartialAsync("_Icons")
+            </a>
+        </div>
+    </div>
+</aside>

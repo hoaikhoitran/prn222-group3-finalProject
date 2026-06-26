@@ -1,0 +1,26 @@
+﻿@page
+@{
+    ViewData["Title"] = "Truy cập bị từ chối";
+    Layout = "_LayoutMinimal";
+    var role = HttpContext.Session.GetString("RoleName");
+}
+<div class="text-center py-5">
+    <h1 class="font-display fw-bold mb-3">Truy cập bị từ chối</h1>
+    <p class="text-muted-edurag mb-4">Bạn không có quyền truy cập trang này.</p>
+    @if (role == "Admin")
+    {
+        <a asp-page="/Accounts/Index" class="btn btn-edurag-warm">Về quản lý người dùng</a>
+    }
+    else if (role == "Teacher")
+    {
+        <a asp-page="/Teacher/Courses" class="btn btn-edurag-warm">Về Môn học</a>
+    }
+    else if (role == "Student")
+    {
+        <a asp-page="/Student/Chat" class="btn btn-edurag-warm">Về Hỏi đáp</a>
+    }
+    else
+    {
+        <a asp-page="/Auth/Login" class="btn btn-edurag-warm">Đăng nhập</a>
+    }
+</div>

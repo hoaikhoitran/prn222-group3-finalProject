@@ -1,0 +1,19 @@
+﻿@page
+@{
+    ViewData["Title"] = "Chính sách bảo mật";
+    Layout = "_LayoutPublic";
+}
+@await Html.PartialAsync("_SiteHeader")
+<div class="edurag-container py-5">
+    <h1 class="font-display display-6 fw-bold mb-2">@ViewData["Title"]</h1>
+    <p class="text-muted-edurag mb-5">Cập nhật lần cuối: tháng 6, 2026</p>
+    <div class="edurag-card p-4 p-md-5" style="max-width:48rem;">
+        <h2 class="font-display fs-5 fw-bold mb-3">1. Thu thập thông tin</h2>
+        <p class="text-muted-edurag">EduRAG lưu email, họ tên và lịch sử hội thoại để cung cấp trợ lý học tập theo tài liệu môn học. Tài liệu upload thuộc phạm vi lớp học được phép truy cập.</p>
+        <h2 class="font-display fs-5 fw-bold mb-3 mt-4">2. Sử dụng dữ liệu</h2>
+        <p class="text-muted-edurag">Dữ liệu chỉ dùng cho mục đích học tập, truy vấn RAG và quản trị hệ thống. Chúng tôi không bán hoặc chia sẻ dữ liệu cá nhân cho bên thứ ba.</p>
+        <h2 class="font-display fs-5 fw-bold mb-3 mt-4">3. Bảo mật</h2>
+        <p class="text-muted-edurag mb-0">Phiên đăng nhập được quản lý qua session server-side. Mật khẩu và tài liệu được lưu trữ theo chính sách bảo mật của tổ chức triển khai.</p>
+    </div>
+</div>
+@await Html.PartialAsync("_SiteFooter")

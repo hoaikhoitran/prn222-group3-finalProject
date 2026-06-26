@@ -1,296 +1,121 @@
-@page
+﻿@page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Accounts.IndexModel
 @{
-    ViewData["Title"] = "Accounts";
+    ViewData["Title"] = "Người dùng";
+    Layout = "_LayoutDashboard";
 }
 
-<div class="page-header">
-    <div class="page-header__text">
-        <h1 class="page-title">Account Management</h1>
-        <p class="page-subtitle">Create, update, filter and remove student and lecturer accounts.</p>
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Quản lý tài khoản</h1>
+            <p class="text-muted-edurag mb-0">Tạo, cập nhật, lọc và quản lý tài khoản sinh viên, giảng viên</p>
+        </div>
+        <a asp-page="/Accounts/Create" class="btn btn-edurag-warm btn-sm d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Thêm tài khoản
+        </a>
     </div>
-    <div class="action-bar">
-        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createAccountModal">
-            Create Account
-        </button>
+
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-3">@TempData["Success"]</div>
+    }
+    @if (TempData["Warning"] != null)
+    {
+        <div class="alert alert-warning mb-3">@TempData["Warning"]</div>
+    }
+
+    <div class="edurag-card p-3 mb-4">
+        <form asp-page="/Accounts/Index" method="get" class="row g-3 align-items-end">
+            <div class="col-md-5">
+                <label class="form-label small fw-semibold" for="searchTerm">Tìm kiếm</label>
+                <input id="searchTerm" name="SearchTerm" value="@Model.SearchTerm" class="form-control form-control-sm" placeholder="Email hoặc họ tên" />
+            </div>
+            <div class="col-md-3">
+                <label class="form-label small fw-semibold" for="role">Vai trò</label>
+                <select id="role" name="Role" class="form-select form-select-sm">
+                    <option value="">Tất cả</option>
+                    @if (Model.Role == 1) { <option value="1" selected>Student</option> } else { <option value="1">Student</option> }
+                    @if (Model.Role == 2) { <option value="2" selected>Teacher</option> } else { <option value="2">Teacher</option> }
+                </select>
+            </div>
+            <div class="col-md-2">
+                <label class="form-label small fw-semibold" for="status">Trạng thái</label>
+                <select id="status" name="Status" class="form-select form-select-sm">
+                    <option value="">Tất cả</option>
+                    @if (Model.Status == true) { <option value="true" selected>Hoạt động</option> } else { <option value="true">Hoạt động</option> }
+                    @if (Model.Status == false) { <option value="false" selected>Đã khoá</option> } else { <option value="false">Đã khoá</option> }
+                </select>
+            </div>
+            <div class="col-md-2 d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-edurag-outline">Lọc</button>
+                <a asp-page="/Accounts/Index" class="btn btn-sm btn-edurag-ghost">Đặt lại</a>
+            </div>
+        </form>
     </div>
-</div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-@if (TempData["Warning"] != null)
-{
-    <div class="alert alert-warning">@TempData["Warning"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-
-<div class="form-card mb-4">
-    <form method="get" class="row g-3 align-items-end">
-        <div class="col-md-5">
-            <label class="form-label" for="SearchTerm">Search</label>
-            <input id="SearchTerm" name="SearchTerm" value="@Model.SearchTerm" class="form-control" placeholder="Email or full name" />
-        </div>
-        <div class="col-md-3">
-            <label class="form-label" for="Role">Role</label>
-            <select id="Role" name="Role" class="form-control">
-                <option value="">All roles</option>
-                <option value="1" selected="@(Model.Role == 1)">Student</option>
-                <option value="2" selected="@(Model.Role == 2)">Teacher</option>
-            </select>
-        </div>
-        <div class="col-md-2">
-            <label class="form-label" for="Status">Status</label>
-            <select id="Status" name="Status" class="form-control">
-                <option value="">All</option>
-                <option value="true" selected="@(Model.Status == true)">Active</option>
-                <option value="false" selected="@(Model.Status == false)">Inactive</option>
-            </select>
-        </div>
-        <div class="col-md-2 d-flex gap-2">
-            <button type="submit" class="btn btn-secondary">Filter</button>
-            <a asp-page="/Accounts/Index" class="btn btn-outline-secondary">Reset</a>
-        </div>
-    </form>
-</div>
-
-@if (Model.Accounts.Count == 0)
-{
-    <div class="empty-state">
-        <h3>No accounts found</h3>
-        <p>Create an account or adjust the filters.</p>
-    </div>
-}
-else
-{
-    <div class="table-wrap">
-        <div class="table-responsive-wrap">
-            <table class="table-modern">
-                <thead>
-                    <tr>
-                        <th>Email</th>
-                        <th>Full name</th>
-                        <th>Role</th>
-                        <th>Course</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var account in Model.Accounts)
-                    {
+    <div class="edurag-card overflow-hidden">
+        @if (Model.Accounts == null || !Model.Accounts.Any())
+        {
+            <div class="text-center text-muted-edurag py-5">
+                <p class="mb-3">Không tìm thấy tài khoản.</p>
+                <a asp-page="/Accounts/Create" class="btn btn-sm btn-edurag-warm">Thêm tài khoản</a>
+            </div>
+        }
+        else
+        {
+            <div class="table-responsive">
+                <table class="table-edurag">
+                    <thead>
                         <tr>
-                            <td class="cell-strong">@account.Email</td>
-                            <td>@account.FullName</td>
-                            <td><span class="meta-badge">@account.RoleName</span></td>
-                            <td>
-                                @if (!string.IsNullOrWhiteSpace(account.CourseCode))
-                                {
-                                    <span class="meta-badge meta-badge--accent">@account.CourseCode</span>
-                                }
-                                else
-                                {
-                                    <span class="cell-muted">-</span>
-                                }
-                            </td>
-                            <td>
-                                @if (account.Status)
-                                {
-                                    <span class="status-badge status-badge--active">Active</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge status-badge--inactive">Inactive</span>
-                                }
-                            </td>
-                            <td>
-                                <span class="table-actions">
-                                    <button type="button" class="btn btn-secondary btn-sm js-edit-account"
-                                            data-id="@account.AccountId"
-                                            data-email="@account.Email"
-                                            data-fullname="@account.FullName"
-                                            data-role="@account.Role"
-                                            data-courseid="@account.CourseId"
-                                            data-status="@account.Status.ToString().ToLower()"
-                                            data-bs-toggle="modal" data-bs-target="#editAccountModal">
-                                        Edit
-                                    </button>
-                                    <form method="post" asp-page-handler="Delete" asp-route-id="@account.AccountId" class="d-inline"
-                                          onsubmit="return confirm('Are you sure you want to delete account @account.Email?');">
-                                        <button type="submit" class="btn btn-outline-danger btn-sm">Delete</button>
-                                    </form>
-                                </span>
-                            </td>
+                            <th>Người dùng</th>
+                            <th>Vai trò</th>
+                            <th>Môn học</th>
+                            <th>Trạng thái</th>
+                            <th></th>
                         </tr>
-                    }
-                </tbody>
-            </table>
-        </div>
-    </div>
-}
-
-<!-- Create modal -->
-<div class="modal fade" id="createAccountModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-page-handler="Create">
-                <div class="modal-header">
-                    <h5 class="modal-title">Create Account</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                    <div class="form-field">
-                        <label asp-for="CreateInput.Email" class="form-label">Email</label>
-                        <input asp-for="CreateInput.Email" class="form-control" />
-                        <span asp-validation-for="CreateInput.Email" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="CreateInput.FullName" class="form-label">Full name</label>
-                        <input asp-for="CreateInput.FullName" class="form-control" />
-                        <span asp-validation-for="CreateInput.FullName" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="CreateInput.Password" class="form-label">Temporary password</label>
-                        <input asp-for="CreateInput.Password" class="form-control" />
-                        <span asp-validation-for="CreateInput.Password" class="text-danger"></span>
-                        <small class="cell-muted">Lecturer accounts are emailed this password.</small>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="CreateInput.Role" class="form-label">Role</label>
-                        <select asp-for="CreateInput.Role" class="form-control js-role-select" data-target="create-course-field">
-                            <option value="1">Student</option>
-                            <option value="2">Teacher</option>
-                        </select>
-                        <span asp-validation-for="CreateInput.Role" class="text-danger"></span>
-                    </div>
-                    <div class="form-field" id="create-course-field">
-                        <label asp-for="CreateInput.CourseId" class="form-label">Assigned course</label>
-                        <select asp-for="CreateInput.CourseId" class="form-control js-course-select" asp-items="Model.Courses">
-                            <option value="">-- Select a course --</option>
-                        </select>
-                        <span asp-validation-for="CreateInput.CourseId" class="text-danger"></span>
-                    </div>
-                    <div class="form-check">
-                        <input asp-for="CreateInput.Status" class="form-check-input" />
-                        <label asp-for="CreateInput.Status" class="form-check-label">Active</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Create</button>
-                </div>
-            </form>
-        </div>
+                    </thead>
+                    <tbody>
+                        @foreach (var account in Model.Accounts)
+                        {
+                            var badge = account.RoleName == "Student" ? "role-badge-student" : "role-badge-teacher";
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center gap-2">
+                                        <span class="avatar-initial" style="width:36px;height:36px;font-size:14px;">@(account.FullName.Length > 0 ? account.FullName[0] : '?')</span>
+                                        <div>
+                                            <div class="fw-semibold">@account.FullName</div>
+                                            <div class="small text-muted-edurag">@account.Email</div>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td><span class="@badge">@account.RoleName</span></td>
+                                <td class="small">@(string.IsNullOrWhiteSpace(account.CourseCode) ? "—" : account.CourseCode)</td>
+                                <td>
+                                    <span class="@(account.Status ? "status-badge-indexed" : "status-badge-failed")">
+                                        @(account.Status ? "Hoạt động" : "Đã khoá")
+                                    </span>
+                                </td>
+                                <td class="text-end">
+                                    <span class="d-inline-flex gap-1">
+                                        <a asp-page="/Accounts/Edit" asp-route-id="@account.AccountId" class="btn btn-sm btn-edurag-ghost">Sửa</a>
+                                        <form method="post" asp-page="/Accounts/Index" asp-page-handler="Delete" asp-route-id="@account.AccountId" class="d-inline">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                                        </form>
+                                    </span>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
     </div>
 </div>
-
-<!-- Edit modal -->
-<div class="modal fade" id="editAccountModal" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <form method="post" asp-page-handler="Edit">
-                <input type="hidden" asp-for="EditInput.AccountId" id="edit-account-id" />
-                <div class="modal-header">
-                    <h5 class="modal-title">Edit Account</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                </div>
-                <div class="modal-body">
-                    <div asp-validation-summary="ModelOnly" class="text-danger"></div>
-
-                    <div class="form-field">
-                        <label asp-for="EditInput.Email" class="form-label">Email</label>
-                        <input asp-for="EditInput.Email" id="edit-account-email" class="form-control" />
-                        <span asp-validation-for="EditInput.Email" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="EditInput.FullName" class="form-label">Full name</label>
-                        <input asp-for="EditInput.FullName" id="edit-account-fullname" class="form-control" />
-                        <span asp-validation-for="EditInput.FullName" class="text-danger"></span>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="EditInput.Password" class="form-label">New password</label>
-                        <input asp-for="EditInput.Password" id="edit-account-password" class="form-control" autocomplete="new-password" />
-                        <small class="cell-muted">Leave blank to keep the current password.</small>
-                    </div>
-                    <div class="form-field">
-                        <label asp-for="EditInput.Role" class="form-label">Role</label>
-                        <select asp-for="EditInput.Role" id="edit-account-role" class="form-control js-role-select" data-target="edit-course-field">
-                            <option value="1">Student</option>
-                            <option value="2">Teacher</option>
-                        </select>
-                        <span asp-validation-for="EditInput.Role" class="text-danger"></span>
-                    </div>
-                    <div class="form-field" id="edit-course-field">
-                        <label asp-for="EditInput.CourseId" class="form-label">Assigned course</label>
-                        <select asp-for="EditInput.CourseId" id="edit-account-courseid" class="form-control js-course-select" asp-items="Model.Courses">
-                            <option value="">-- Select a course --</option>
-                        </select>
-                        <span asp-validation-for="EditInput.CourseId" class="text-danger"></span>
-                    </div>
-                    <div class="form-check">
-                        <input asp-for="EditInput.Status" id="edit-account-status" class="form-check-input" />
-                        <label asp-for="EditInput.Status" class="form-check-label">Active</label>
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save changes</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
-    <script>
-        // Show the course selector only for Teacher (role 2); disable it otherwise so
-        // students never submit a CourseId (which the service would reject).
-        function applyRoleToggle(select) {
-            var field = document.getElementById(select.dataset.target);
-            if (!field) { return; }
-            var courseSelect = field.querySelector('.js-course-select');
-            var isTeacher = select.value === '2';
-            field.style.display = isTeacher ? '' : 'none';
-            if (courseSelect) {
-                courseSelect.disabled = !isTeacher;
-                if (!isTeacher) { courseSelect.value = ''; }
-            }
-        }
-
-        document.querySelectorAll('.js-role-select').forEach(function (select) {
-            select.addEventListener('change', function () { applyRoleToggle(select); });
-            applyRoleToggle(select);
-        });
-
-        // Populate the Edit modal from the clicked row.
-        document.querySelectorAll('.js-edit-account').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.getElementById('edit-account-id').value = btn.dataset.id;
-                document.getElementById('edit-account-email').value = btn.dataset.email;
-                document.getElementById('edit-account-fullname').value = btn.dataset.fullname;
-                document.getElementById('edit-account-password').value = '';
-                var roleSelect = document.getElementById('edit-account-role');
-                roleSelect.value = btn.dataset.role;
-                document.getElementById('edit-account-courseid').value = btn.dataset.courseid || '';
-                document.getElementById('edit-account-status').checked = btn.dataset.status === 'true';
-                applyRoleToggle(roleSelect);
-            });
-        });
-
-        @if (Model.ShowCreateModal)
-        {
-            <text>new bootstrap.Modal(document.getElementById('createAccountModal')).show();</text>
-        }
-        @if (Model.ShowEditModal)
-        {
-            <text>new bootstrap.Modal(document.getElementById('editAccountModal')).show();</text>
-        }
-    </script>
-}

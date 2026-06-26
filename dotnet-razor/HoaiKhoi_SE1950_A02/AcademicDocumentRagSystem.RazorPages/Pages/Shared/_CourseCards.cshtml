@@ -1,0 +1,42 @@
+﻿@model IList<AcademicDocumentRagSystem.RazorPages.ViewModels.TeacherCourseCardViewModel>
+<div class="row g-4">
+    @foreach (var card in Model)
+    {
+        <div class="col-md-6 col-lg-4">
+            <div class="edurag-card p-4 h-100 file-card d-flex flex-column">
+                <div class="d-flex align-items-center gap-3 mb-3">
+                    <span class="stat-icon-box bg-gradient-warm text-white shadow-glow">
+                        @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "20"; }
+                        @await Html.PartialAsync("_Icons")
+                    </span>
+                    <div>
+                        <div class="small fw-semibold text-muted-edurag">@card.Course.Code</div>
+                        <h3 class="font-display fw-bold fs-6 mb-0">@card.Course.Name</h3>
+                    </div>
+                </div>
+                <div class="row text-center g-0 border rounded-3 py-2 mb-3" style="border-color:var(--edurag-border)!important;">
+                    <div class="col-4 border-end">
+                        <div class="font-display fw-bold">@card.DocumentCount</div>
+                        <div class="text-muted-edurag" style="font-size:11px;">Tài liệu</div>
+                    </div>
+                    <div class="col-4 border-end">
+                        <div class="font-display fw-bold">@card.IndexedCount</div>
+                        <div class="text-muted-edurag" style="font-size:11px;">Indexed</div>
+                    </div>
+                    <div class="col-4">
+                        <div class="font-display fw-bold">@card.TotalChunks</div>
+                        <div class="text-muted-edurag" style="font-size:11px;">Chunks</div>
+                    </div>
+                </div>
+                <div class="d-flex gap-2 mt-auto">
+                    <a asp-page="/Teacher/Library" asp-route-course="@card.Course.Code" class="btn btn-sm btn-edurag-outline flex-grow-1">Tài liệu</a>
+                    <a asp-page="/Teacher/Upload" class="btn btn-sm btn-edurag-warm flex-grow-1">Upload</a>
+                </div>
+            </div>
+        </div>
+    }
+    @if (!Model.Any())
+    {
+        <div class="col-12"><div class="edurag-card p-5 text-center text-muted-edurag">Chưa được gán môn học. Liên hệ Admin.</div></div>
+    }
+</div>

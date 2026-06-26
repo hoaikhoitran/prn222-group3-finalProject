@@ -1,0 +1,46 @@
+﻿@page
+@model AcademicDocumentRagSystem.Services.DTOs.Courses.UpdateCourseDto
+@{
+    ViewData["Title"] = "Sửa môn học";
+    Layout = "_LayoutDashboard";
+    var course = Model ?? new AcademicDocumentRagSystem.Services.DTOs.Courses.UpdateCourseDto();
+}
+
+<div class="p-4 p-md-5">
+    <div class="mb-4">
+        <a asp-page="/Courses/Index" class="btn btn-sm btn-edurag-ghost mb-3">← Quay lại</a>
+        <h1 class="font-display fs-2 fw-bold mb-1">Sửa môn học</h1>
+        <p class="text-muted-edurag mb-0">Cập nhật thông tin môn học.</p>
+    </div>
+
+    <div class="edurag-card p-4 p-md-5" style="max-width:680px;">
+        <form asp-page="/Courses/Index" asp-page-handler="Edit" method="post" class="vstack gap-3">
+            <input type="hidden" name="EditInput.CourseId" value="@course.CourseId" />
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_Code">Mã môn</label>
+                <input name="EditInput.Code" id="EditInput_Code" class="form-control" value="@course.Code" />
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_Name">Tên môn</label>
+                <input name="EditInput.Name" id="EditInput_Name" class="form-control" value="@course.Name" />
+            </div>
+
+            <div>
+                <label class="form-label fw-semibold" for="EditInput_Description">Mô tả</label>
+                <textarea name="EditInput.Description" id="EditInput_Description" class="form-control" rows="3">@course.Description</textarea>
+            </div>
+
+            <div class="form-check">
+                <input name="EditInput.Status" id="EditInput_Status" type="checkbox" class="form-check-input" value="true" @(course.Status ? "checked" : null) />
+                <label class="form-check-label" for="EditInput_Status">Môn học đang hoạt động</label>
+            </div>
+
+            <div class="d-flex gap-2 pt-2">
+                <button type="submit" class="btn btn-edurag-warm">Cập nhật</button>
+                <a asp-page="/Courses/Index" class="btn btn-edurag-outline">Huỷ</a>
+            </div>
+        </form>
+    </div>
+</div>

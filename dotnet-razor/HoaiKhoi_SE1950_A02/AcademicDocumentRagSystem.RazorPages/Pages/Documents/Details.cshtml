@@ -1,151 +1,137 @@
 @page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Documents.DetailsModel
 @{
-    ViewData["Title"] = "Document details";
-    var d = Model.Details;
+    ViewData["Title"] = Model.Details.Title;
+    Layout = "_LayoutDashboard";
+    var doc = Model.Details;
+    var roleName = Model.RoleName;
 }
-
-<div class="page-header">
-    <div class="page-header__text">
-        <h1 class="page-title">@d.Title</h1>
-        <p class="page-subtitle">
-            <span class="meta-badge">@d.CourseCode</span>
-            @if (!string.IsNullOrWhiteSpace(d.Chapter))
-            {
-                <span class="meta-badge meta-badge--accent">@d.Chapter</span>
-            }
-            <span class="cell-muted">@d.OriginalFileName · @d.FileType.ToUpperInvariant()</span>
-        </p>
-    </div>
-    <div class="action-bar">
-        @if (d.IndexStatus == "Indexed")
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a asp-page="@Model.BackPage" class="btn btn-sm btn-edurag-ghost">@Model.BackLabel</a>
+        @if (doc.CanReIndex)
         {
-            <a asp-page="/Chat/Ask" asp-route-documentId="@d.DocumentId" class="btn btn-primary">Ask about this document</a>
-        }
-        @if (d.CanReIndex)
-        {
-            <form method="post" asp-page-handler="Reindex" asp-route-id="@d.DocumentId" class="d-inline"
-                  onsubmit="return confirm('Re-index this document? The chunk preview will be rebuilt.');">
-                <button type="submit" class="btn btn-secondary">Re-index</button>
+            <form asp-page-handler="ReIndex" asp-route-id="@doc.DocumentId" method="post" class="d-inline">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-sm btn-edurag-outline">Re-index</button>
             </form>
         }
+        @if (roleName == "Teacher" && doc.IndexStatus == "Indexed")
+        {
+            <a asp-page="/Teacher/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-sm btn-edurag-warm">Thử chatbot</a>
+        }
     </div>
-</div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-3">@TempData["Success"]</div>
+    }
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+    }
 
-<div class="index-summary-grid">
-    <div class="index-summary-card">
-        <span class="index-summary-card__label">Index status</span>
-        <strong>@d.IndexStatus</strong>
-        <span>@(d.IndexedAt.HasValue ? d.IndexedAt.Value.ToLocalTime().ToString("yyyy-MM-dd HH:mm") : "Not indexed")</span>
-    </div>
-    <div class="index-summary-card">
-        <span class="index-summary-card__label">Chunks</span>
-        <strong>@d.TotalChunks</strong>
-        <span>Retrieval units</span>
-    </div>
-    <div class="index-summary-card">
-        <span class="index-summary-card__label">Uploaded by</span>
-        <strong style="font-size:1rem;">@d.SubmittedByDisplay</strong>
-        <span>@d.CreatedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</span>
-    </div>
-</div>
+    <h1 class="font-display fs-3 fw-bold mb-2">@doc.Title</h1>
+    <p class="text-muted-edurag mb-0">
+        <span class="role-badge-teacher">@doc.CourseCode</span>
+        @if (!string.IsNullOrWhiteSpace(doc.Chapter))
+        {
+            <span class="ms-1">· @doc.Chapter</span>
+        }
+        · @doc.OriginalFileName · @doc.FileType.ToUpperInvariant()
+        · <span class="@(doc.IndexStatus == "Indexed" ? "status-badge-indexed" : doc.IndexStatus == "Failed" ? "status-badge-failed" : "pill-filter")">@doc.IndexStatus</span>
+    </p>
 
-@if (!string.IsNullOrWhiteSpace(d.Description))
-{
-    <div class="form-card mb-4">
-        <div class="chat-question__label">Description</div>
-        <p>@d.Description</p>
-    </div>
-}
+    @if (!string.IsNullOrWhiteSpace(doc.Description))
+    {
+        <div class="edurag-card p-3 mt-3 small">@doc.Description</div>
+    }
 
-<h2 class="page-title" style="font-size:1.2rem; margin:1.5rem 0 1rem;">Chunk preview</h2>
-
-@if (!string.IsNullOrWhiteSpace(d.PreviewMessage))
-{
-    <div class="alert alert-warning">@d.PreviewMessage</div>
-}
-
-@if (d.Chunks.Count == 0)
-{
-    <div class="empty-state">
-        <h3>No chunk preview available</h3>
-        <p>This document has no stored chunk preview rows.</p>
-    </div>
-}
-else
-{
-    <div class="table-wrap mb-4">
-        <div class="table-responsive-wrap">
-            <table class="table-modern">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Page</th>
-                        <th>Chars</th>
-                        <th>~Tokens</th>
-                        <th>Text</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var chunk in d.Chunks)
-                    {
-                        <tr>
-                            <td class="cell-id">@chunk.ChunkIndex</td>
-                            <td class="cell-id">@(chunk.PageNumber?.ToString() ?? "-")</td>
-                            <td class="cell-id">@chunk.CharCount</td>
-                            <td class="cell-id">@(chunk.TokenEstimate?.ToString() ?? "-")</td>
-                            <td><span class="source-text">@chunk.ChunkText</span></td>
-                        </tr>
-                    }
-                </tbody>
-            </table>
+    <div class="row g-3 mt-3">
+        <div class="col-md-4">
+            <div class="edurag-card p-3">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Chunks</div>
+                <div class="font-display fs-4 fw-bold">@doc.TotalChunks</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="edurag-card p-3">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Người upload</div>
+                <div class="small fw-semibold">@doc.SubmittedByDisplay</div>
+                <div class="small text-muted-edurag">@doc.CreatedAt.ToLocalTime().ToString("g")</div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="edurag-card p-3">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Index</div>
+                <div class="small fw-semibold">@(doc.IndexedAt.HasValue ? doc.IndexedAt.Value.ToLocalTime().ToString("g") : "Chưa index")</div>
+                @if (!string.IsNullOrEmpty(doc.IndexError))
+                {
+                    <div class="small text-danger mt-1">@doc.IndexError</div>
+                }
+            </div>
         </div>
     </div>
-}
 
-@if (d.IndexLogs.Count > 0)
-{
-    <h2 class="page-title" style="font-size:1.2rem; margin:1.5rem 0 1rem;">Index history</h2>
-    <div class="table-wrap">
-        <div class="table-responsive-wrap">
-            <table class="table-modern">
-                <thead>
-                    <tr>
-                        <th>Action</th>
-                        <th>Status</th>
-                        <th>Chunks</th>
-                        <th>By</th>
-                        <th>At</th>
-                        <th>Error</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @foreach (var log in d.IndexLogs)
+    @if (!string.IsNullOrEmpty(doc.PreviewMessage) && !doc.Chunks.Any())
+    {
+        <div class="alert alert-warning mt-4 mb-0">@doc.PreviewMessage</div>
+    }
+
+    <div class="row g-4 mt-2">
+        <div class="col-lg-8">
+            <div class="edurag-card p-4">
+                <h2 class="fs-6 fw-semibold mb-3">Chunk preview (@doc.TotalChunks)</h2>
+                @if (doc.Chunks.Any())
+                {
+                    @foreach (var c in doc.Chunks.Take(10))
                     {
-                        <tr>
-                            <td class="cell-strong">@log.Action</td>
-                            <td>@log.Status</td>
-                            <td class="cell-id">@(log.TotalChunks?.ToString() ?? "-")</td>
-                            <td class="cell-muted">@log.PerformedByEmail</td>
-                            <td class="cell-muted">@log.PerformedAt.ToLocalTime().ToString("yyyy-MM-dd HH:mm")</td>
-                            <td class="cell-muted">@log.ErrorMessage</td>
-                        </tr>
+                        <div class="border rounded p-3 mb-2 small">
+                            <div class="fw-semibold mb-1">Chunk #@c.ChunkIndex @(c.PageNumber.HasValue ? $"· tr.{c.PageNumber}" : "")</div>
+                            <div style="white-space:pre-wrap;max-height:280px;overflow:auto;">@c.ChunkText</div>
+                        </div>
                     }
-                </tbody>
-            </table>
+                }
+                else if (!string.IsNullOrEmpty(doc.PreviewMessage))
+                {
+                    <p class="small text-muted-edurag mb-0">@doc.PreviewMessage</p>
+                }
+                else if (doc.TotalChunks > 0)
+                {
+                    <p class="small text-muted-edurag mb-0">
+                        Không trích xuất được text preview từ file gốc (có thể là bản scan).
+                        RAG vẫn có @doc.TotalChunks chunks.
+                    </p>
+                }
+                else
+                {
+                    <p class="small text-muted-edurag mb-0">Chưa có preview chunk.</p>
+                }
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="edurag-card p-4">
+                <h2 class="fs-6 fw-semibold mb-3">Lịch sử index</h2>
+                @if (doc.IndexLogs.Any())
+                {
+                    @foreach (var log in doc.IndexLogs.Take(8))
+                    {
+                        <div class="small mb-2 pb-2 border-bottom">
+                            <span class="fw-semibold">@log.Action</span>
+                            <span class="text-muted-edurag"> · @log.Status</span>
+                            <div class="text-muted-edurag">@log.PerformedByEmail · @log.PerformedAt.ToLocalTime().ToString("g")</div>
+                            @if (!string.IsNullOrEmpty(log.ErrorMessage))
+                            {
+                                <div class="text-danger">@log.ErrorMessage</div>
+                            }
+                        </div>
+                    }
+                }
+                else
+                {
+                    <p class="small text-muted-edurag mb-0">Chưa có log index.</p>
+                }
+            </div>
         </div>
     </div>
-}
-
-<div class="action-bar mt-4">
-    <a asp-page="/Documents/Index" class="btn btn-secondary">Back to My Documents</a>
 </div>

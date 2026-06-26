@@ -289,11 +289,16 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
             var isAdmin = roleName == "Admin";
             var teacherCanAccess = !isAdmin && await TeacherCanAccessAsync(document, accountId, roleName);
+            var studentCanAccess = roleName == "Student" && accountId != null
+                && document.IndexStatus == "Indexed"
+                && await StudentCanAccessAsync(document, accountId.Value);
 
-            if (!isAdmin && !teacherCanAccess)
+            if (!isAdmin && !teacherCanAccess && !studentCanAccess)
             {
                 return null;
             }
+
+            await TryEnsurePreviewChunksAsync(document, accountId);
 
             var chunks = await _chunkRepository.GetByDocumentAsync(documentId);
             var logs = await _indexLogRepository.GetByDocumentAsync(documentId);
@@ -476,6 +481,35 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             }
         }
 
+        /// <summary>
+        /// Backfill SQL preview chunks when RAG indexing succeeded but preview rows
+        /// were never stored (legacy uploads or failed preview at upload time).
+        /// </summary>
+        private async Task TryEnsurePreviewChunksAsync(Document document, int? accountId)
+        {
+            if (await _chunkRepository.CountByDocumentAsync(document.DocumentId) > 0)
+            {
+                return;
+            }
+
+            if (document.TotalChunks <= 0 && !string.Equals(document.IndexStatus, "Indexed", StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(document.FilePath) || !File.Exists(document.FilePath))
+            {
+                return;
+            }
+
+            await GeneratePreviewChunksAsync(
+                document,
+                document.FilePath,
+                document.FileType,
+                accountId,
+                document.SubmittedByEmail ?? string.Empty);
+        }
+
         private async Task<bool> TeacherCanAccessAsync(Document document, int? accountId, string roleName)
         {
             if (roleName != "Teacher" || accountId == null)
@@ -490,6 +524,23 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
             var account = await _accountRepository.GetByIdAsync(accountId.Value);
             return account?.CourseId != null && account.CourseId.Value == document.CourseId;
+        }
+
+        private async Task<bool> StudentCanAccessAsync(Document document, int accountId)
+        {
+            var account = await _accountRepository.GetByIdAsync(accountId);
+            if (account == null)
+            {
+                return false;
+            }
+
+            if (account.CourseId.HasValue)
+            {
+                return account.CourseId.Value == document.CourseId;
+            }
+
+            // No course on account: same scope as Student Library when session has no course filter.
+            return document.IndexStatus == "Indexed";
         }
 
         private async Task AddLogAsync(

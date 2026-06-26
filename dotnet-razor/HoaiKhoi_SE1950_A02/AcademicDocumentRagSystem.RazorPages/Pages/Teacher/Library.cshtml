@@ -1,0 +1,79 @@
+﻿@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Teacher.LibraryModel
+@{
+    ViewData["Title"] = "Thư viện tài liệu";
+    Layout = "_LayoutDashboard";
+    var items = Model.Documents;
+    var filterCourse = Model.FilterCourse;
+    var searchQuery = Model.SearchQuery;
+    var allCodes = Model.AllCourseCodes;
+}
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Thư viện tài liệu</h1>
+            <p class="text-muted-edurag mb-0">Tất cả tài liệu bạn đã upload</p>
+        </div>
+        <div class="d-flex gap-2">
+            <form asp-page="/Teacher/Library" method="get" class="d-flex gap-2">
+                @if (!string.IsNullOrEmpty(filterCourse))
+                {
+                    <input type="hidden" name="course" value="@filterCourse" />
+                }
+                <input type="search" name="q" value="@searchQuery" class="form-control form-control-sm" style="width:200px;" placeholder="Tìm tài liệu..." />
+                <button type="submit" class="btn btn-sm btn-edurag-outline">Tìm</button>
+            </form>
+            <a asp-page="/Teacher/Upload" class="btn btn-sm btn-edurag-warm d-inline-flex align-items-center gap-1">
+                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+                @await Html.PartialAsync("_Icons")
+                Upload
+            </a>
+        </div>
+    </div>
+    <div class="d-flex flex-wrap gap-2 mb-4">
+        <a asp-page="/Teacher/Library" asp-route-q="@searchQuery" class="pill-filter @(string.IsNullOrEmpty(filterCourse) ? "active" : "")">Tất cả</a>
+        @foreach (var code in allCodes)
+        {
+            <a asp-page="/Teacher/Library" asp-route-course="@code" asp-route-q="@searchQuery" class="pill-filter @(filterCourse == code ? "active" : "")">@code</a>
+        }
+    </div>
+    @if (!items.Any())
+    {
+        <div class="edurag-card p-5 text-center text-muted-edurag">
+            <p class="mb-3">Chưa có tài liệu nào.</p>
+            <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm">Upload tài liệu đầu tiên</a>
+        </div>
+    }
+    else
+    {
+        <div class="row g-3">
+            @foreach (var d in items)
+            {
+                var ext = (System.IO.Path.GetExtension(d.OriginalFileName ?? "") ?? "").TrimStart('.').ToLowerInvariant();
+                var typeClass = ext switch { "pdf" => "file-type-pdf", "pptx" or "ppt" => "file-type-pptx", _ => "file-type-docx" };
+                var statusClass = d.IndexStatus == "Indexed" ? "status-badge-indexed" : d.IndexStatus == "Failed" ? "status-badge-failed" : "status-badge-processing";
+                var statusLabel = d.IndexStatus == "Indexed" ? "Đã index" : d.IndexStatus == "Failed" ? "Lỗi" : "Đang xử lý";
+                <div class="col-md-6 col-lg-4 col-xxl-3">
+                    <div class="edurag-card p-4 h-100 file-card d-flex flex-column">
+                        <div class="d-flex align-items-start gap-3 mb-2">
+                            <span class="file-type-icon @typeClass">@(string.IsNullOrEmpty(ext) ? "doc" : ext)</span>
+                            <div class="min-width-0">
+                                <h3 class="fs-6 fw-semibold mb-1 text-truncate" title="@d.Title">@d.Title</h3>
+                                <p class="small text-muted-edurag mb-0">@d.CourseCode · @d.Chapter</p>
+                            </div>
+                        </div>
+                        <div class="small text-muted-edurag mb-3">@d.TotalChunks chunks · @d.OriginalFileName</div>
+                        <div class="d-flex gap-2 mt-auto align-items-center">
+                            <span class="@statusClass me-auto">@statusLabel</span>
+                            <a asp-page="/Documents/Details" asp-route-id="@d.DocumentId" class="btn btn-sm btn-edurag-ghost">Chi tiết</a>
+                            @if (d.IndexStatus == "Indexed")
+                            {
+                                <a asp-page="/Teacher/Chat" asp-route-documentId="@d.DocumentId" class="btn btn-sm btn-edurag-warm">Hỏi thử</a>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>

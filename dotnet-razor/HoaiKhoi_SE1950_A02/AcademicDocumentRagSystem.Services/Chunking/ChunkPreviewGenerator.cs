@@ -85,7 +85,16 @@ namespace AcademicDocumentRagSystem.Services.Chunking
 
                 while (start < text.Length)
                 {
-                    var end = Math.Min(start + ChunkSize, text.Length);
+                    var hardEnd = Math.Min(start + ChunkSize, text.Length);
+                    var end = hardEnd < text.Length
+                        ? FindWordBreak(text, start, hardEnd)
+                        : hardEnd;
+
+                    if (end <= start)
+                    {
+                        end = hardEnd;
+                    }
+
                     var chunkText = text.Substring(start, end - start).Trim();
 
                     if (chunkText.Length > 0)
@@ -105,12 +114,37 @@ namespace AcademicDocumentRagSystem.Services.Chunking
                         break;
                     }
 
-                    // Slide the window back by the overlap.
                     start = end - Overlap;
+                    if (start < 0)
+                    {
+                        start = 0;
+                    }
+
+                    // Avoid starting the next window in the middle of a word.
+                    while (start < end && start < text.Length && char.IsWhiteSpace(text[start]))
+                    {
+                        start++;
+                    }
                 }
             }
 
             return items;
+        }
+
+        /// <summary>
+        /// Prefer splitting before whitespace so Vietnamese/English words stay intact.
+        /// </summary>
+        private static int FindWordBreak(string text, int start, int hardEnd)
+        {
+            for (var i = hardEnd - 1; i > start; i--)
+            {
+                if (char.IsWhiteSpace(text[i]))
+                {
+                    return i;
+                }
+            }
+
+            return hardEnd;
         }
 
         // Rough token estimate (~4 characters per token).
