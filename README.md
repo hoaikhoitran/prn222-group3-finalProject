@@ -5,7 +5,9 @@ Dự án hỗ trợ quản lý môn học, tài khoản, tài liệu học tập
 
 ## Diagram
 
-Chèn hình diagram tại đây sau.
+
+<img width="837" height="958" alt="image" src="https://github.com/user-attachments/assets/c70f35cc-8cc9-4c2a-9575-5a571a43a464" />
+
 
 
 ## Razor Pages
