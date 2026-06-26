@@ -90,7 +90,7 @@ https://localhost:7150/
 - FastAPI
 - ChromaDB
 - BAAI/bge-m3 embedding model
-- Gemini hoặc mock LLM mode
+- Gemini
 
 ### Database
 
