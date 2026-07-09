@@ -61,6 +61,11 @@ def index_document(
     chapter: str,
     file_path: str,
     file_name: str,
+    chunk_mode: str = "Characters",
+    chunk_size: int | None = None,
+    chunk_overlap: int | None = None,
+    min_chunk_length: int | None = None,
+    max_chunks: int | None = None,
 ) -> dict[str, Any]:
     """
     Read a file, chunk it, embed every chunk, and store everything in
@@ -87,7 +92,14 @@ def index_document(
     if not pages:
         raise RuntimeError("The document is empty or could not be read.")
 
-    chunks = chunk_pages(pages)
+    chunks = chunk_pages(
+        pages,
+        chunk_mode=chunk_mode,
+        chunk_size=chunk_size,
+        chunk_overlap=chunk_overlap,
+        min_chunk_length=min_chunk_length,
+        max_chunks=max_chunks,
+    )
     if not chunks:
         raise RuntimeError("Chunking produced no chunks (the document may be empty).")
 

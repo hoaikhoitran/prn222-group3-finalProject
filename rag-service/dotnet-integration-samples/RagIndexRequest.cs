@@ -31,4 +31,19 @@ public class RagIndexRequest
 
     [JsonPropertyName("fileName")]
     public string FileName { get; set; } = string.Empty;
+
+    [JsonPropertyName("chunkMode")]
+    public string ChunkMode { get; set; } = "Characters";
+
+    [JsonPropertyName("chunkSize")]
+    public int ChunkSize { get; set; } = 1500;
+
+    [JsonPropertyName("chunkOverlap")]
+    public int ChunkOverlap { get; set; } = 250;
+
+    [JsonPropertyName("minChunkLength")]
+    public int MinChunkLength { get; set; } = 80;
+
+    [JsonPropertyName("maxPreviewChunks")]
+    public int MaxPreviewChunks { get; set; } = 200;
 }

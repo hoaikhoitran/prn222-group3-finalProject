@@ -69,6 +69,11 @@ def index_document(payload: IndexDocumentRequest) -> IndexDocumentResponse:
             chapter=payload.chapter,
             file_path=payload.filePath,
             file_name=payload.fileName,
+            chunk_mode=payload.chunkMode,
+            chunk_size=payload.chunkSize,
+            chunk_overlap=payload.chunkOverlap,
+            min_chunk_length=payload.minChunkLength,
+            max_chunks=payload.maxPreviewChunks,
         )
     except FileNotFoundError as exc:
         # Surface "file not found" as a 400 because the .NET API supplied a bad path.

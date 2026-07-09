@@ -33,6 +33,11 @@ public class UploadModel : PageModel
         Input.CourseId = courseId.Value;
         Input.CourseCode = courseCode;
         Input.AvailableCourses = await _documentService.GetUploadCoursesForTeacherAsync(accountId.Value);
+        if (Input.AvailableCourses.Count == 1)
+        {
+            Input.CourseId = Input.AvailableCourses[0].CourseId;
+            Input.CourseCode = Input.AvailableCourses[0].Code;
+        }
         return Page();
     }
 

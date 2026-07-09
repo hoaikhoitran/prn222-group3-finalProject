@@ -5,6 +5,7 @@
     Layout = "_LayoutDashboard";
     var doc = Model.Details;
     var roleName = Model.RoleName;
+    var previewChunkCount = doc.Chunks.Count;
 }
 <div class="p-4 p-md-5">
     <div class="d-flex flex-wrap gap-2 mb-4">
@@ -13,12 +14,12 @@
         {
             <form asp-page-handler="ReIndex" asp-route-id="@doc.DocumentId" method="post" class="d-inline">
                 @Html.AntiForgeryToken()
-                <button type="submit" class="btn btn-sm btn-edurag-outline">Re-index</button>
+                <button type="submit" class="btn btn-sm btn-edurag-outline">Re-index / Re-chunk</button>
             </form>
         }
         @if (roleName == "Teacher" && doc.IndexStatus == "Indexed")
         {
-            <a asp-page="/Teacher/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-sm btn-edurag-warm">Thử chatbot</a>
+            <a asp-page="/Teacher/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-sm btn-edurag-warm">Try chatbot</a>
         }
     </div>
 
@@ -36,10 +37,10 @@
         <span class="role-badge-teacher">@doc.CourseCode</span>
         @if (!string.IsNullOrWhiteSpace(doc.Chapter))
         {
-            <span class="ms-1">· @doc.Chapter</span>
+            <span class="ms-1">- @doc.Chapter</span>
         }
-        · @doc.OriginalFileName · @doc.FileType.ToUpperInvariant()
-        · <span class="@(doc.IndexStatus == "Indexed" ? "status-badge-indexed" : doc.IndexStatus == "Failed" ? "status-badge-failed" : "pill-filter")">@doc.IndexStatus</span>
+        - @doc.OriginalFileName - @doc.FileType.ToUpperInvariant()
+        - <span class="@(doc.IndexStatus == "Indexed" ? "status-badge-indexed" : doc.IndexStatus == "Failed" ? "status-badge-failed" : "pill-filter")">@doc.IndexStatus</span>
     </p>
 
     @if (!string.IsNullOrWhiteSpace(doc.Description))
@@ -50,21 +51,23 @@
     <div class="row g-3 mt-3">
         <div class="col-md-4">
             <div class="edurag-card p-3">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Chunks</div>
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">RAG chunks</div>
                 <div class="font-display fs-4 fw-bold">@doc.TotalChunks</div>
+                <div class="small text-muted-edurag">Returned by the indexing service</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="edurag-card p-3">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Người upload</div>
-                <div class="small fw-semibold">@doc.SubmittedByDisplay</div>
-                <div class="small text-muted-edurag">@doc.CreatedAt.ToLocalTime().ToString("g")</div>
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Preview chunks</div>
+                <div class="font-display fs-4 fw-bold">@previewChunkCount</div>
+                <div class="small text-muted-edurag">Generated from admin config</div>
             </div>
         </div>
         <div class="col-md-4">
             <div class="edurag-card p-3">
                 <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Index</div>
-                <div class="small fw-semibold">@(doc.IndexedAt.HasValue ? doc.IndexedAt.Value.ToLocalTime().ToString("g") : "Chưa index")</div>
+                <div class="small fw-semibold">@(doc.IndexedAt.HasValue ? doc.IndexedAt.Value.ToLocalTime().ToString("g") : "Not indexed")</div>
+                <div class="small text-muted-edurag">@doc.SubmittedByDisplay</div>
                 @if (!string.IsNullOrEmpty(doc.IndexError))
                 {
                     <div class="small text-danger mt-1">@doc.IndexError</div>
@@ -81,15 +84,23 @@
     <div class="row g-4 mt-2">
         <div class="col-lg-8">
             <div class="edurag-card p-4">
-                <h2 class="fs-6 fw-semibold mb-3">Chunk preview (@doc.TotalChunks)</h2>
+                <h2 class="fs-6 fw-semibold mb-1">Chunk preview (@previewChunkCount)</h2>
+                <div class="small text-muted-edurag mb-3">These are the actual preview chunks generated from the active admin chunk config.</div>
                 @if (doc.Chunks.Any())
                 {
                     @foreach (var c in doc.Chunks.Take(10))
                     {
                         <div class="border rounded p-3 mb-2 small">
-                            <div class="fw-semibold mb-1">Chunk #@c.ChunkIndex @(c.PageNumber.HasValue ? $"· tr.{c.PageNumber}" : "")</div>
+                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
+                                <div class="fw-semibold">Chunk #@c.ChunkIndex @(c.PageNumber.HasValue ? $"- page {c.PageNumber}" : "")</div>
+                                <div class="text-muted-edurag">@c.CharCount chars @(c.TokenEstimate.HasValue ? $"- ~{c.TokenEstimate} tokens" : "")</div>
+                            </div>
                             <div style="white-space:pre-wrap;max-height:280px;overflow:auto;">@c.ChunkText</div>
                         </div>
+                    }
+                    @if (doc.Chunks.Count > 10)
+                    {
+                        <p class="small text-muted-edurag mb-0">Showing first 10 of @doc.Chunks.Count preview chunks.</p>
                     }
                 }
                 else if (!string.IsNullOrEmpty(doc.PreviewMessage))
@@ -99,27 +110,26 @@
                 else if (doc.TotalChunks > 0)
                 {
                     <p class="small text-muted-edurag mb-0">
-                        Không trích xuất được text preview từ file gốc (có thể là bản scan).
-                        RAG vẫn có @doc.TotalChunks chunks.
+                        The indexing service returned @doc.TotalChunks chunks, but no readable preview text was extracted from the original file.
                     </p>
                 }
                 else
                 {
-                    <p class="small text-muted-edurag mb-0">Chưa có preview chunk.</p>
+                    <p class="small text-muted-edurag mb-0">No preview chunks yet.</p>
                 }
             </div>
         </div>
         <div class="col-lg-4">
             <div class="edurag-card p-4">
-                <h2 class="fs-6 fw-semibold mb-3">Lịch sử index</h2>
+                <h2 class="fs-6 fw-semibold mb-3">Index history</h2>
                 @if (doc.IndexLogs.Any())
                 {
                     @foreach (var log in doc.IndexLogs.Take(8))
                     {
                         <div class="small mb-2 pb-2 border-bottom">
                             <span class="fw-semibold">@log.Action</span>
-                            <span class="text-muted-edurag"> · @log.Status</span>
-                            <div class="text-muted-edurag">@log.PerformedByEmail · @log.PerformedAt.ToLocalTime().ToString("g")</div>
+                            <span class="text-muted-edurag"> - @log.Status</span>
+                            <div class="text-muted-edurag">@log.PerformedByEmail - @log.PerformedAt.ToLocalTime().ToString("g")</div>
                             @if (!string.IsNullOrEmpty(log.ErrorMessage))
                             {
                                 <div class="text-danger">@log.ErrorMessage</div>
@@ -129,7 +139,7 @@
                 }
                 else
                 {
-                    <p class="small text-muted-edurag mb-0">Chưa có log index.</p>
+                    <p class="small text-muted-edurag mb-0">No index logs yet.</p>
                 }
             </div>
         </div>

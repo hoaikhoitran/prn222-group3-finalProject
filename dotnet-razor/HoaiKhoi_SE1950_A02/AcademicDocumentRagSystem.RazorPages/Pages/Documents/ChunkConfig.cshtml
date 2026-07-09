@@ -1,0 +1,273 @@
+@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Documents.ChunkConfigModel
+@{
+    ViewData["Title"] = "Chunk config";
+    Layout = "_LayoutDashboard";
+    var active = Model.ActiveConfig;
+}
+
+<div class="p-4 p-md-5">
+    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
+        <div>
+            <h1 class="font-display fs-2 fw-bold mb-1">Document chunk config</h1>
+            <p class="text-muted-edurag mb-0">Admin controls global chunk rules. Documents remain managed by upload/re-index flows.</p>
+        </div>
+        <a asp-page="/Documents/All" class="btn btn-sm btn-edurag-outline align-self-start">Back to documents</a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success border-0 shadow-sm">@TempData["Success"]</div>
+    }
+
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            <div class="edurag-card p-4 h-100">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Mode</div>
+                <div class="font-display fs-4 fw-bold">@active.ChunkMode</div>
+                <div class="small text-muted-edurag">@active.DisplaySummary</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="edurag-card p-4 h-100">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Min length</div>
+                <div class="font-display fs-4 fw-bold">@active.MinChunkLength</div>
+                <div class="small text-muted-edurag">Characters required to keep a preview chunk</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="edurag-card p-4 h-100">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Preview cap</div>
+                <div class="font-display fs-4 fw-bold">@active.MaxPreviewChunks</div>
+                <div class="small text-muted-edurag">Max SQL preview chunks per document</div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="edurag-card p-4 h-100">
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Updated</div>
+                <div class="font-display fs-6 fw-bold">@active.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</div>
+                <div class="small text-muted-edurag">@(string.IsNullOrWhiteSpace(active.UpdatedByFullName) ? "System/default" : active.UpdatedByFullName)</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="edurag-card p-4 mb-4">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+            <div>
+                <h2 class="font-display fs-5 fw-bold mb-1">Config scope</h2>
+                <div class="text-muted-edurag small">This page only changes future chunking rules. It does not upload, delete, approve, or edit any document.</div>
+            </div>
+            <div class="d-flex flex-wrap gap-2 align-items-start">
+                <span class="pill-filter">Applies to new uploads</span>
+                <span class="pill-filter">Applies when teacher re-indexes</span>
+                <span class="pill-filter">Keeps history</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-xl-7">
+            <div class="edurag-card p-4 mb-4">
+                <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-3">
+                    <div>
+                        <h2 class="font-display fs-5 fw-bold mb-1">Edit active config</h2>
+                        <div class="text-muted-edurag small">Choose a preset or tune the fields manually before saving.</div>
+                    </div>
+                </div>
+
+                <div class="row g-3 mb-4">
+                    @foreach (var preset in Model.Presets)
+                    {
+                        <div class="col-md-6">
+                            <button type="button"
+                                    class="w-100 text-start border rounded-3 p-3 bg-white preset-button"
+                                    data-mode="@preset.Mode"
+                                    data-size="@preset.Size"
+                                    data-overlap="@preset.Overlap"
+                                    data-min="@preset.MinLength"
+                                    data-max="@preset.MaxPreviewChunks"
+                                    data-notes="@preset.Description">
+                                <span class="d-flex justify-content-between align-items-start gap-2">
+                                    <span class="fw-semibold">@preset.Name</span>
+                                    <span class="pill-filter">@preset.Mode</span>
+                                </span>
+                                <span class="d-block small text-muted-edurag mt-1">@preset.Description</span>
+                                <span class="d-block small text-muted-edurag mt-2">Size @preset.Size, overlap @preset.Overlap</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+
+                <form method="post" id="chunk-config-form" class="row g-3">
+                    <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Input.ChunkMode" class="form-label small fw-semibold">Chunk mode</label>
+                        <select asp-for="Input.ChunkMode" class="form-select">
+                            @foreach (var mode in Model.Modes)
+                            {
+                                <option value="@mode">@mode</option>
+                            }
+                        </select>
+                        <div class="form-text" id="mode-guidance">@Model.ModeGuidance[Model.Input.ChunkMode]</div>
+                        <span asp-validation-for="Input.ChunkMode" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-6">
+                        <label asp-for="Input.ChunkSize" class="form-label small fw-semibold">Chunk size</label>
+                        <input asp-for="Input.ChunkSize" class="form-control" type="number" min="1" />
+                        <div class="form-text">Characters, words, or paragraph count depending on mode.</div>
+                        <span asp-validation-for="Input.ChunkSize" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Input.ChunkOverlap" class="form-label small fw-semibold">Overlap</label>
+                        <input asp-for="Input.ChunkOverlap" class="form-control" type="number" min="0" />
+                        <span asp-validation-for="Input.ChunkOverlap" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Input.MinChunkLength" class="form-label small fw-semibold">Min chunk length</label>
+                        <input asp-for="Input.MinChunkLength" class="form-control" type="number" min="0" />
+                        <span asp-validation-for="Input.MinChunkLength" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-md-4">
+                        <label asp-for="Input.MaxPreviewChunks" class="form-label small fw-semibold">Max preview chunks</label>
+                        <input asp-for="Input.MaxPreviewChunks" class="form-control" type="number" min="1" />
+                        <span asp-validation-for="Input.MaxPreviewChunks" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="Input.Notes" class="form-label small fw-semibold">Notes</label>
+                        <textarea asp-for="Input.Notes" class="form-control" rows="3" placeholder="Reason for this configuration"></textarea>
+                        <span asp-validation-for="Input.Notes" class="text-danger small"></span>
+                    </div>
+
+                    <div class="col-12">
+                        <label asp-for="SampleText" class="form-label small fw-semibold">Sample text preview</label>
+                        <textarea asp-for="SampleText" class="form-control" rows="6"></textarea>
+                        @if (!string.IsNullOrWhiteSpace(Model.PreviewError))
+                        {
+                            <div class="text-danger small mt-2">@Model.PreviewError</div>
+                        }
+                    </div>
+
+                    <div class="col-12 d-flex flex-wrap justify-content-between gap-2">
+                        <button type="submit" asp-page-handler="Preview" class="btn btn-edurag-outline">Preview split</button>
+                        <div class="d-flex gap-2">
+                            <a asp-page="/Documents/ChunkConfig" class="btn btn-edurag-ghost">Reset form</a>
+                            <button type="submit" class="btn btn-edurag-warm">Save config</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            @if (Model.SamplePreview.Count > 0)
+            {
+                <div class="edurag-card p-4">
+                    <div class="d-flex justify-content-between align-items-center gap-3 mb-3">
+                        <h2 class="font-display fs-5 fw-bold mb-0">Sample split result</h2>
+                        <span class="pill-filter">@Model.SamplePreview.Count chunks</span>
+                    </div>
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var chunk in Model.SamplePreview)
+                        {
+                            <div class="border rounded-3 p-3">
+                                <div class="d-flex flex-wrap justify-content-between gap-2 mb-2">
+                                    <div class="fw-semibold">Chunk #@(chunk.ChunkIndex + 1)</div>
+                                    <div class="small text-muted-edurag">@chunk.CharCount chars · @chunk.TokenEstimate tokens est.</div>
+                                </div>
+                                <div class="small" style="white-space:pre-wrap;">@chunk.ChunkText</div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+
+        <div class="col-xl-5">
+            <div class="edurag-card p-4">
+                <h2 class="font-display fs-5 fw-bold mb-3">Recent config history</h2>
+                @if (Model.History.Count == 0)
+                {
+                    <div class="text-muted-edurag small">No saved configuration history yet.</div>
+                }
+                else
+                {
+                    <div class="d-flex flex-column gap-3">
+                        @foreach (var item in Model.History)
+                        {
+                            <div class="border rounded-3 p-3 @(item.IsActive ? "bg-light" : "")">
+                                <div class="d-flex justify-content-between gap-3">
+                                    <div class="fw-semibold">Config #@item.DocumentChunkConfigId · @item.ChunkMode</div>
+                                    @if (item.IsActive)
+                                    {
+                                        <span class="status-badge-indexed">Active</span>
+                                    }
+                                </div>
+                                <div class="small text-muted-edurag">@item.DisplaySummary</div>
+                                <div class="small text-muted-edurag">Min @item.MinChunkLength chars, cap @item.MaxPreviewChunks chunks</div>
+                                <div class="small text-muted-edurag mt-2">
+                                    @item.UpdatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")
+                                    @if (!string.IsNullOrWhiteSpace(item.UpdatedByFullName))
+                                    {
+                                        <span>by @item.UpdatedByFullName</span>
+                                    }
+                                </div>
+                                @if (!string.IsNullOrWhiteSpace(item.Notes))
+                                {
+                                    <div class="small mt-2">@item.Notes</div>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script>
+        (function () {
+            var guidance = {
+                Characters: "Recommended range: 800-3000 chars. Best for mixed file types and stable chunk size.",
+                Words: "Recommended range: 150-500 words. Best when preserving word boundaries matters.",
+                Paragraph: "Recommended range: 1-5 paragraphs. Best for lecture notes, outlines, and structured documents."
+            };
+
+            var mode = document.getElementById("Input_ChunkMode");
+            var size = document.getElementById("Input_ChunkSize");
+            var overlap = document.getElementById("Input_ChunkOverlap");
+            var min = document.getElementById("Input_MinChunkLength");
+            var max = document.getElementById("Input_MaxPreviewChunks");
+            var notes = document.getElementById("Input_Notes");
+            var modeGuidance = document.getElementById("mode-guidance");
+
+            function updateGuidance() {
+                if (modeGuidance && mode) {
+                    modeGuidance.textContent = guidance[mode.value] || guidance.Characters;
+                }
+            }
+
+            document.querySelectorAll(".preset-button").forEach(function (button) {
+                button.addEventListener("click", function () {
+                    mode.value = button.dataset.mode;
+                    size.value = button.dataset.size;
+                    overlap.value = button.dataset.overlap;
+                    min.value = button.dataset.min;
+                    max.value = button.dataset.max;
+                    notes.value = button.dataset.notes;
+                    updateGuidance();
+                });
+            });
+
+            if (mode) {
+                mode.addEventListener("change", updateGuidance);
+                updateGuidance();
+            }
+        })();
+    </script>
+}

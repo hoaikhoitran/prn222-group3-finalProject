@@ -8,6 +8,15 @@
     <h1 class="font-display fs-2 fw-bold mb-1">Upload tài liệu</h1>
     <p class="text-muted-edurag mb-4">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+    @if (!Model.Input.AvailableCourses.Any())
+    {
+        <div class="edurag-card p-5 text-center">
+            <div class="font-display fw-bold fs-5 mb-2">Chưa được gán môn học</div>
+            <div class="text-muted-edurag">Bạn chỉ có thể upload tài liệu cho môn được Admin phân công.</div>
+        </div>
+    }
+    else
+    {
     <form method="post" enctype="multipart/form-data">
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <label class="upload-zone mb-4">
@@ -31,6 +40,7 @@
                             <option value="@c.CourseId">@c.Code — @c.Name</option>
                         }
                     </select>
+                    <div class="form-text">Bạn chỉ được upload tài liệu cho môn được phân công.</div>
                     <span asp-validation-for="Input.CourseId" class="text-danger small"></span>
                 </div>
                 <div class="col-md-6">
@@ -51,4 +61,5 @@
             <a asp-page="/Teacher/IndexStatus" class="btn btn-edurag-outline ms-2">Trạng thái index</a>
         </div>
     </form>
+    }
 </div>

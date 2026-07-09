@@ -29,5 +29,6 @@ public static class SidebarNav
         new() { Page = "/Accounts/Index", Label = "Người dùng", Icon = "users" },
         new() { Page = "/Courses/Index", Label = "Môn học", Icon = "book" },
         new() { Page = "/Documents/All", Label = "Tài liệu", Icon = "file" },
+        new() { Page = "/Documents/ChunkConfig", Label = "Chunk config", Icon = "settings" },
     };
 }

@@ -23,6 +23,8 @@ public partial class AcademicRagDbContext : DbContext
 
     public virtual DbSet<DocumentChunk> DocumentChunks { get; set; }
 
+    public virtual DbSet<DocumentChunkConfig> DocumentChunkConfigs { get; set; }
+
     public virtual DbSet<DocumentIndexLog> DocumentIndexLogs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -184,6 +186,25 @@ public partial class AcademicRagDbContext : DbContext
                 .HasForeignKey(d => d.DocumentId)
                 .OnDelete(DeleteBehavior.Cascade)
                 .HasConstraintName("FK_DocumentChunks_Documents");
+        });
+
+        modelBuilder.Entity<DocumentChunkConfig>(entity =>
+        {
+            entity.HasKey(e => e.DocumentChunkConfigId).HasName("PK_DocumentChunkConfigs");
+
+            entity.HasIndex(e => e.IsActive, "IX_DocumentChunkConfigs_IsActive");
+
+            entity.HasIndex(e => e.UpdatedByAccountId, "IX_DocumentChunkConfigs_UpdatedByAccountId");
+
+            entity.Property(e => e.ChunkMode).HasMaxLength(30);
+            entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
+            entity.Property(e => e.Notes).HasMaxLength(1000);
+            entity.Property(e => e.UpdatedAt).HasDefaultValueSql("(sysutcdatetime())");
+
+            entity.HasOne(d => d.UpdatedByAccount).WithMany()
+                .HasForeignKey(d => d.UpdatedByAccountId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_DocumentChunkConfigs_Accounts");
         });
 
         modelBuilder.Entity<DocumentIndexLog>(entity =>
