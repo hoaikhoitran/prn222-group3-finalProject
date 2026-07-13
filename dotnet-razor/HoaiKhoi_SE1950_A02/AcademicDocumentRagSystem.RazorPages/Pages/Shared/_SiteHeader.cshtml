@@ -1,4 +1,15 @@
-﻿<header class="edurag-header">
+﻿@{
+    var headerRole = Context.Session.GetString("RoleName");
+    var headerIsLoggedIn = !string.IsNullOrEmpty(headerRole);
+    var headerDashboard = headerRole switch
+    {
+        "Admin" => "/Accounts/Index",
+        "Teacher" => "/Teacher/Courses",
+        "Student" => "/Student/Chat",
+        _ => "/Auth/Login"
+    };
+}
+<header class="edurag-header">
     <div class="edurag-container d-flex align-items-center justify-content-between" style="height:3.75rem;">
         <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
             <span class="edurag-logo-mark bg-gradient-warm text-white">
@@ -14,7 +25,23 @@
             <a asp-page="/Home/Contact" class="nav-link px-3">Liên hệ</a>
         </nav>
         <div class="d-flex align-items-center gap-2">
-            <a asp-page="/Auth/Login" class="btn btn-sm btn-edurag-warm">Đăng nhập</a>
+            @if (headerIsLoggedIn)
+            {
+                <a href="@headerDashboard" class="btn btn-sm btn-edurag-warm d-inline-flex align-items-center gap-1">
+                    Workspace
+                    @{ ViewData["Icon"] = "arrow-right"; ViewData["IconSize"] = "13"; }
+                    @await Html.PartialAsync("_Icons")
+                </a>
+                <a asp-page="/Auth/Logout" class="btn btn-sm btn-edurag-ghost d-inline-flex align-items-center gap-1" title="Đăng xuất">
+                    @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "14"; }
+                    @await Html.PartialAsync("_Icons")
+                    <span class="d-none d-md-inline">Đăng xuất</span>
+                </a>
+            }
+            else
+            {
+                <a asp-page="/Auth/Login" class="btn btn-sm btn-edurag-warm">Đăng nhập</a>
+            }
         </div>
     </div>
 </header>
