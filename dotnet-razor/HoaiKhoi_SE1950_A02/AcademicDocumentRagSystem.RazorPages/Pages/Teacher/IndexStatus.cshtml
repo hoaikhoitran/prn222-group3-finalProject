@@ -8,38 +8,53 @@
     var indexed = items.Count(d => d.IndexStatus == "Indexed");
     var processing = items.Count(d => d.IndexStatus != "Indexed" && d.IndexStatus != "Failed");
 }
-<div class="p-4 p-md-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
-        <div>
-            <h1 class="font-display fs-2 fw-bold mb-1">Trạng thái index</h1>
-            <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
+<div class="edurag-page">
+    <div class="page-hero">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <span class="section-chip mb-2">
+                    @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "13"; }
+                    @await Html.PartialAsync("_Icons")
+                    Giảng viên · Pipeline
+                </span>
+                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Trạng thái index</h1>
+                <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
+            </div>
+            <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
+                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+                @await Html.PartialAsync("_Icons")
+                Upload
+            </a>
         </div>
-        <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm btn-sm">+ Upload</a>
     </div>
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
     @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
     <div class="row g-3 mb-4">
         @foreach (var s in new[] {
-            (items.Count.ToString(), "Tổng tài liệu", "database"),
-            (indexed.ToString(), "Đã index", "check-circle"),
-            (processing.ToString(), "Đang xử lý", "clock"),
-            (items.Sum(d => d.TotalChunks).ToString("N0"), "Tổng chunks", "layers") })
+            (items.Count.ToString(), "Tổng tài liệu", "database", "stat-card__icon--warm"),
+            (indexed.ToString(), "Đã index", "check-circle", "stat-card__icon--green"),
+            (processing.ToString(), "Đang xử lý", "clock", "stat-card__icon--amber"),
+            (items.Sum(d => d.TotalChunks).ToString("N0"), "Tổng chunks", "layers", "stat-card__icon--slate") })
         {
             <div class="col-md-3 col-6">
-                <div class="edurag-card p-4 d-flex align-items-center gap-3">
-                    <span class="stat-icon-box bg-gradient-warm text-white shadow-glow">
+                <div class="stat-card d-flex align-items-center gap-3">
+                    <span class="stat-card__icon @s.Item4">
                         @{ ViewData["Icon"] = s.Item3; ViewData["IconSize"] = "18"; }
                         @await Html.PartialAsync("_Icons")
                     </span>
                     <div>
-                        <div class="font-display fs-4 fw-bold lh-1">@s.Item1</div>
-                        <div class="small text-muted-edurag">@s.Item2</div>
+                        <div class="stat-card__value">@s.Item1</div>
+                        <div class="stat-card__label">@s.Item2</div>
                     </div>
                 </div>
             </div>
         }
     </div>
-    <div class="edurag-card overflow-hidden">
+    <div class="card edurag-card overflow-hidden">
+        <div class="card-header d-flex align-items-center justify-content-between" style="background:var(--edurag-sidebar);border-color:var(--edurag-border);">
+            <span class="fw-semibold small">Pipeline tài liệu</span>
+            <span class="text-muted-edurag small">@indexed/@items.Count đã sẵn sàng Q&amp;A</span>
+        </div>
         <div class="table-responsive">
             <table class="table-edurag">
                 <thead><tr><th>Tài liệu</th><th>Môn</th><th>Chunks</th><th>Trạng thái</th><th></th></tr></thead>

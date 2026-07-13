@@ -1,0 +1,8 @@
+Tabler (@tabler/core) — MIT License
+https://github.com/tabler/tabler
+Version: 1.4.0
+
+Vendored files:
+  wwwroot/css/tabler.min.css
+  wwwroot/css/tabler-vendors.min.css
+  wwwroot/js/tabler.min.js

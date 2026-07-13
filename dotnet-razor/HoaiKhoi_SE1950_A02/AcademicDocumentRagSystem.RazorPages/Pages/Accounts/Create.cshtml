@@ -6,7 +6,7 @@
     Layout = "_LayoutDashboard";
 }
 
-<div class="p-4 p-md-5">
+<div class="edurag-page">
     <div class="mb-4">
         <a asp-page="/Accounts/Index" class="btn btn-sm btn-edurag-ghost mb-3 d-inline-flex align-items-center gap-1">
             @{ ViewData["Icon"] = "arrow-left"; ViewData["IconSize"] = "14"; }
@@ -17,7 +17,8 @@
         <p class="text-muted-edurag mb-0">Tạo tài khoản sinh viên hoặc giảng viên. Giảng viên phải được gán một môn học.</p>
     </div>
 
-    <div class="edurag-card p-4 p-md-5" style="max-width:720px;">
+    <div class="card edurag-card" style="max-width:720px;">
+        <div class="card-body p-4">
         <form method="post" class="vstack gap-3" id="createAccountForm" novalidate>
             <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
 
@@ -68,6 +69,7 @@
                 <a asp-page="/Accounts/Index" class="btn btn-edurag-outline">Huỷ</a>
             </div>
         </form>
+        </div>
     </div>
 </div>
 

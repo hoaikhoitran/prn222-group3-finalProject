@@ -1,27 +1,25 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\taste\\Desktop\\Code\\FPT\\PRN222\\Project\\PRN222-group3-asg2\\dotnet-razor\\HoaiKhoi_SE1950_A02\\AcademicDocumentRagSystem.DataAccess\\AcademicDocumentRagSystem.DataAccess.csproj": {}
+    "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/AcademicDocumentRagSystem.DataAccess.csproj": {}
   },
   "projects": {
-    "C:\\Users\\taste\\Desktop\\Code\\FPT\\PRN222\\Project\\PRN222-group3-asg2\\dotnet-razor\\HoaiKhoi_SE1950_A02\\AcademicDocumentRagSystem.DataAccess\\AcademicDocumentRagSystem.DataAccess.csproj": {
+    "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/AcademicDocumentRagSystem.DataAccess.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\taste\\Desktop\\Code\\FPT\\PRN222\\Project\\PRN222-group3-asg2\\dotnet-razor\\HoaiKhoi_SE1950_A02\\AcademicDocumentRagSystem.DataAccess\\AcademicDocumentRagSystem.DataAccess.csproj",
+        "projectUniqueName": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/AcademicDocumentRagSystem.DataAccess.csproj",
         "projectName": "AcademicDocumentRagSystem.DataAccess",
-        "projectPath": "C:\\Users\\taste\\Desktop\\Code\\FPT\\PRN222\\Project\\PRN222-group3-asg2\\dotnet-razor\\HoaiKhoi_SE1950_A02\\AcademicDocumentRagSystem.DataAccess\\AcademicDocumentRagSystem.DataAccess.csproj",
-        "packagesPath": "C:\\Users\\taste\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\taste\\Desktop\\Code\\FPT\\PRN222\\Project\\PRN222-group3-asg2\\dotnet-razor\\HoaiKhoi_SE1950_A02\\AcademicDocumentRagSystem.DataAccess\\obj\\",
+        "projectPath": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/AcademicDocumentRagSystem.DataAccess.csproj",
+        "packagesPath": "/Users/thuathuynh/.nuget/packages/",
+        "outputPath": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\taste\\AppData\\Roaming\\NuGet\\NuGet.Config",
-          "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+          "/Users/thuathuynh/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net8.0"
         ],
         "sources": {
-          "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
           "https://api.nuget.org/v3/index.json": {}
         },
         "frameworks": {
@@ -83,7 +81,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\10.0.201/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/local/share/dotnet/sdk/10.0.202/PortableRuntimeIdentifierGraph.json"
         }
       }
     }

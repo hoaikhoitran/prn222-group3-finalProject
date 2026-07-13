@@ -1,4 +1,4 @@
-﻿<footer class="border-top mt-5 bg-gradient-soft">
+﻿<footer class="edurag-footer mt-5">
     <div class="edurag-container py-5">
         <div class="row g-4">
             <div class="col-md-6">
@@ -7,32 +7,32 @@
                         @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
                         @await Html.PartialAsync("_Icons")
                     </span>
-                    <span class="font-display fw-bold fs-5">EduRAG</span>
+                    <span class="font-display fw-bold fs-4">EduRAG</span>
                 </div>
                 <p class="small text-muted-edurag mb-0" style="max-width:28rem;">
                     Trợ lý học tập AI cho sinh viên Việt Nam. Hỏi đáp dựa trên tài liệu môn học,
-                    trích dẫn nguồn rõ ràng, benchmark RAG vs Fine-tuning nghiêm túc.
+                    trích dẫn nguồn rõ ràng.
                 </p>
             </div>
             <div class="col-md-3">
                 <h4 class="fw-semibold small mb-3">Sản phẩm</h4>
-                <ul class="list-unstyled small text-muted-edurag mb-0">
-                    <li class="mb-2"><a href="/#features" class="text-decoration-none text-muted-edurag">Tính năng</a></li>
-                    <li class="mb-2"><a href="/#research" class="text-decoration-none text-muted-edurag">Nghiên cứu RBL</a></li>
-                    <li><a asp-page="/Auth/Login" class="text-decoration-none text-muted-edurag">Đăng nhập</a></li>
+                <ul class="list-unstyled small mb-0">
+                    <li class="mb-2"><a href="/#features">Tính năng</a></li>
+                    <li class="mb-2"><a href="/#research">Nghiên cứu RBL</a></li>
+                    <li><a asp-page="/Auth/Login">Đăng nhập</a></li>
                 </ul>
             </div>
             <div class="col-md-3">
                 <h4 class="fw-semibold small mb-3">Liên hệ</h4>
                 <ul class="list-unstyled small text-muted-edurag mb-0">
-                    <li class="mb-2"><a asp-page="/Home/Contact" class="text-decoration-none text-muted-edurag">Contact us</a></li>
+                    <li class="mb-2"><a asp-page="/Home/Contact">Contact us</a></li>
                     <li class="mb-2">edurag@university.edu.vn</li>
                     <li>Hà Nội, Việt Nam</li>
                 </ul>
             </div>
         </div>
     </div>
-    <div class="border-top py-3 text-center small text-muted-edurag">
+    <div class="border-top py-3 text-center small text-muted-edurag" style="border-color:var(--edurag-border)!important;">
         © 2026 EduRAG · Research-Based Learning Project
     </div>
 </footer>

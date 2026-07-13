@@ -4,7 +4,8 @@
     ViewData["Title"] = "Upload tài liệu";
     Layout = "_LayoutDashboard";
 }
-<div class="p-4 p-md-5" style="max-width:52rem;">
+<div class="edurag-page" style="max-width:52rem;">
+    <p class="page-pretitle">Giảng viên</p>
     <h1 class="font-display fs-2 fw-bold mb-1">Upload tài liệu</h1>
     <p class="text-muted-edurag mb-4">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
@@ -20,7 +21,7 @@
     <form method="post" enctype="multipart/form-data">
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <label class="upload-zone mb-4">
-            <span class="stat-icon-box bg-gradient-warm text-white shadow-glow mb-3">
+            <span class="stat-icon-box bg-gradient-warm text-white mb-3">
                 @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "20"; }
                 @await Html.PartialAsync("_Icons")
             </span>

@@ -1,10 +1,12 @@
-﻿@page
+@page
 @{
     ViewData["Title"] = "Lỗi";
     Layout = "_LayoutMinimal";
 }
-<div class="text-center py-5">
-    <h1 class="font-display fw-bold mb-3">Đã xảy ra lỗi</h1>
-    <p class="text-muted-edurag mb-4">Hệ thống không thể xử lý yêu cầu của bạn.</p>
-    <a asp-page="/Home/Index" class="btn btn-edurag-warm">Về trang chủ</a>
+<div class="card edurag-card">
+    <div class="card-body text-center p-4 p-md-5">
+        <h1 class="font-display fw-bold mb-2">Đã xảy ra lỗi</h1>
+        <p class="text-muted-edurag mb-4">Hệ thống không thể xử lý yêu cầu của bạn.</p>
+        <a asp-page="/Home/Index" class="btn btn-edurag-warm">Về trang chủ</a>
+    </div>
 </div>

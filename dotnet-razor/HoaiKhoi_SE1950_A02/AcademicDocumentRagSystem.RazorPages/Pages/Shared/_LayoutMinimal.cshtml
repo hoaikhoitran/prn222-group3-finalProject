@@ -4,14 +4,18 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduRAG</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/edurag.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
 </head>
-<body class="edurag-body">
-    <div class="container py-5">
-        @RenderBody()
+<body class="edurag-body d-flex flex-column">
+    <div class="page page-center">
+        <div class="container container-tight py-4 py-md-5">
+            @RenderBody()
+        </div>
     </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/tabler.min.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

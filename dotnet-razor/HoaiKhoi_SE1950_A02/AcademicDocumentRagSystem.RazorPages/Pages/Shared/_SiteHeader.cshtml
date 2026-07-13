@@ -1,17 +1,17 @@
 ﻿<header class="edurag-header">
-    <div class="edurag-container d-flex align-items-center justify-content-between" style="height:4rem;">
+    <div class="edurag-container d-flex align-items-center justify-content-between" style="height:3.75rem;">
         <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
-            <span class="edurag-logo-mark bg-gradient-warm shadow-glow text-white">
+            <span class="edurag-logo-mark bg-gradient-warm text-white">
                 @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
                 @await Html.PartialAsync("_Icons")
             </span>
-            <span class="font-display fw-bold fs-5 mb-0">EduRAG</span>
+            <span class="font-display fw-bold fs-4 mb-0">EduRAG</span>
         </a>
-        <nav class="d-none d-md-flex align-items-center gap-4 small fw-medium text-muted-edurag">
-            <a asp-page="/Home/Index" class="text-decoration-none text-muted-edurag">Trang chủ</a>
-            <a href="/#features" class="text-decoration-none text-muted-edurag">Tính năng</a>
-            <a href="/#research" class="text-decoration-none text-muted-edurag">Nghiên cứu</a>
-            <a asp-page="/Home/Contact" class="text-decoration-none text-muted-edurag">Liên hệ</a>
+        <nav class="d-none d-md-flex align-items-center gap-1">
+            <a asp-page="/Home/Index" class="nav-link px-3">Trang chủ</a>
+            <a href="/#features" class="nav-link px-3">Tính năng</a>
+            <a href="/#research" class="nav-link px-3">Nghiên cứu</a>
+            <a asp-page="/Home/Contact" class="nav-link px-3">Liên hệ</a>
         </nav>
         <div class="d-flex align-items-center gap-2">
             <a asp-page="/Auth/Login" class="btn btn-sm btn-edurag-warm">Đăng nhập</a>

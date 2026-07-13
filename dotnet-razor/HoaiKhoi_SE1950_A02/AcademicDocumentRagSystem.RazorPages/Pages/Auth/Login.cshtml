@@ -6,30 +6,43 @@
 }
 
 <div class="login-split row g-0">
-    <div class="col-lg-6 d-none d-lg-flex login-hero-panel flex-column justify-content-between p-5">
+    <div class="col-lg-5 d-none d-lg-flex login-hero-panel flex-column justify-content-between p-5">
         <div class="grid-bg"></div>
         <a asp-page="/Home/Index" class="position-relative d-flex align-items-center gap-2 text-white text-decoration-none">
-            <span class="rounded-3 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(255,255,255,.15);">
+            <span class="rounded-3 d-inline-flex align-items-center justify-content-center" style="width:40px;height:40px;background:rgba(255,255,255,.14);">
                 @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
                 @await Html.PartialAsync("_Icons")
             </span>
             <span class="font-display fw-bold fs-4">EduRAG</span>
         </a>
         <div class="position-relative">
-            <h2 class="font-display display-6 fw-bold mb-3">Chào mừng trở lại.</h2>
-            <p class="text-white opacity-85 fs-5" style="max-width:28rem;">
-                Đăng nhập để tiếp tục hành trình học tập cùng trợ lý AI cá nhân hóa theo môn học của bạn.
+            <h2 class="font-display display-6 fw-bold mb-3" style="letter-spacing:-.03em;">Chào mừng trở lại</h2>
+            <p class="text-white opacity-85 mb-4" style="max-width:26rem;line-height:1.65;font-size:1.05rem;">
+                Tiếp tục hỏi đáp trên tài liệu môn học — câu trả lời gắn nguồn, trong phạm vi lớp của bạn.
             </p>
-            <ul class="list-unstyled mt-4 text-white opacity-90">
-                <li class="mb-2">• Hỏi đáp tự nhiên với tài liệu</li>
-                <li class="mb-2">• Trích dẫn nguồn rõ ràng</li>
-                <li>• Lưu lịch sử hội thoại theo phiên</li>
-            </ul>
+            <div class="vstack gap-3" style="max-width:24rem;">
+                @foreach (var b in new[] {
+                    ("message", "Hỏi đáp tự nhiên", "Chat tiếng Việt trên slide, giáo trình, PDF"),
+                    ("quote", "Trích dẫn rõ ràng", "Mỗi câu trả lời kèm nguồn trang cụ thể"),
+                    ("clock", "Lịch sử theo phiên", "Hội thoại lưu theo môn, quay lại bất cứ lúc nào") })
+                {
+                    <div class="d-flex align-items-start gap-3">
+                        <span class="rounded-3 d-inline-flex align-items-center justify-content-center flex-shrink-0" style="width:38px;height:38px;background:rgba(255,255,255,.13);">
+                            @{ ViewData["Icon"] = b.Item1; ViewData["IconSize"] = "17"; }
+                            @await Html.PartialAsync("_Icons")
+                        </span>
+                        <div>
+                            <div class="fw-semibold">@b.Item2</div>
+                            <div class="small opacity-75">@b.Item3</div>
+                        </div>
+                    </div>
+                }
+            </div>
         </div>
-        <div class="position-relative small text-white opacity-70">© 2026 EduRAG · RBL Project</div>
+        <div class="position-relative small text-white opacity-65">© 2026 EduRAG · Research-Based Learning Project</div>
     </div>
-    <div class="col-lg-6 d-flex align-items-center justify-content-center p-4 p-lg-5">
-        <div class="w-100" style="max-width:28rem;">
+    <div class="col-lg-7 d-flex align-items-center justify-content-center p-4 p-lg-5" style="background:var(--edurag-bg);min-height:100vh;">
+        <div class="w-100" style="max-width:24rem;">
             <a asp-page="/Home/Index" class="d-lg-none d-flex align-items-center gap-2 mb-4 text-decoration-none text-dark">
                 <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center">
                     @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
@@ -37,7 +50,7 @@
                 </span>
                 <span class="font-display fw-bold fs-5">EduRAG</span>
             </a>
-            <h1 class="font-display fs-2 fw-bold mb-2">Đăng nhập</h1>
+            <h1 class="font-display fs-2 fw-bold mb-1">Đăng nhập</h1>
             <p class="text-muted-edurag mb-4">Nhập email và mật khẩu tài khoản của bạn</p>
 
             <form asp-page="/Auth/Login" method="post" class="vstack gap-3">
@@ -48,14 +61,11 @@
                     <span asp-validation-for="Input.Email" class="text-danger small"></span>
                 </div>
                 <div>
-                    <div class="d-flex justify-content-between align-items-center">
-                        <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
-                        <span class="small text-muted-edurag">Quên mật khẩu?</span>
-                    </div>
+                    <label asp-for="Input.Password" class="form-label">Mật khẩu</label>
                     <input asp-for="Input.Password" type="password" class="form-control form-control-lg" placeholder="••••••••" />
                     <span asp-validation-for="Input.Password" class="text-danger small"></span>
                 </div>
-                <button type="submit" class="btn btn-lg btn-edurag-warm w-100">Đăng nhập</button>
+                <button type="submit" class="btn btn-lg btn-edurag-warm w-100 mt-1">Đăng nhập</button>
             </form>
         </div>
     </div>

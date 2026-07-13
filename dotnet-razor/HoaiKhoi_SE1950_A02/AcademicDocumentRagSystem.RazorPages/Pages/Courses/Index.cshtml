@@ -5,17 +5,29 @@
     Layout = "_LayoutDashboard";
 }
 
-<div class="p-4 p-md-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
-        <div>
-            <h1 class="font-display fs-2 fw-bold mb-1">Quản lý môn học</h1>
-            <p class="text-muted-edurag mb-0">Tạo và quản lý các môn học trong hệ thống</p>
+@{
+    var courses = Model.Courses ?? new List<AcademicDocumentRagSystem.Services.DTOs.Courses.CourseDto>();
+    var totalCourses = courses.Count;
+    var activeCourses = courses.Count(c => c.Status);
+}
+<div class="edurag-page">
+    <div class="page-hero">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <span class="section-chip mb-2">
+                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "13"; }
+                    @await Html.PartialAsync("_Icons")
+                    Admin · Môn học
+                </span>
+                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Quản lý môn học</h1>
+                <p class="text-muted-edurag mb-0">Tạo và quản lý các môn học trong hệ thống — thay đổi được phát realtime tới giảng viên</p>
+            </div>
+            <a asp-page="/Courses/Create" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
+                @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
+                @await Html.PartialAsync("_Icons")
+                Thêm môn học
+            </a>
         </div>
-        <a asp-page="/Courses/Create" class="btn btn-edurag-warm btn-sm d-inline-flex align-items-center gap-1">
-            @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
-            @await Html.PartialAsync("_Icons")
-            Thêm môn học
-        </a>
     </div>
 
     @if (TempData["Error"] != null)
@@ -23,7 +35,62 @@
         <div class="alert alert-danger mb-3">@TempData["Error"]</div>
     }
 
-    <div class="edurag-card overflow-hidden">
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--warm">
+                    @{ ViewData["Icon"] = "layers"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@totalCourses</div>
+                    <div class="stat-card__label">Tổng môn học</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--green">
+                    @{ ViewData["Icon"] = "check-circle"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@activeCourses</div>
+                    <div class="stat-card__label">Đang hoạt động</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--slate">
+                    @{ ViewData["Icon"] = "x"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@(totalCourses - activeCourses)</div>
+                    <div class="stat-card__label">Ngừng hoạt động</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--amber">
+                    @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">Live</div>
+                    <div class="stat-card__label">SignalR đồng bộ</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="card edurag-card overflow-hidden">
+        <div class="card-header d-flex align-items-center justify-content-between" style="background:var(--edurag-sidebar);border-color:var(--edurag-border);">
+            <span class="fw-semibold small">Danh sách môn học</span>
+            <span class="text-muted-edurag small">@totalCourses môn</span>
+        </div>
         @if (Model.Courses == null || !Model.Courses.Any())
         {
             <div class="text-center text-muted-edurag py-5">

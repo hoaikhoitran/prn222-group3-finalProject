@@ -8,11 +8,16 @@
     var searchQuery = Model.SearchQuery;
     var allCodes = Model.AllCourseCodes;
 }
-<div class="p-4 p-md-5">
+<div class="edurag-page">
     <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
         <div>
-            <h1 class="font-display fs-2 fw-bold mb-1">Thư viện tài liệu</h1>
-            <p class="text-muted-edurag mb-0">Tài liệu đã index — @(filterCourse ?? "tất cả môn")</p>
+            <span class="section-chip mb-2">
+                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "13"; }
+                @await Html.PartialAsync("_Icons")
+                Sinh viên · Thư viện
+            </span>
+            <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Thư viện tài liệu</h1>
+            <p class="text-muted-edurag mb-0">@items.Count tài liệu sẵn sàng hỏi đáp — @(filterCourse ?? "tất cả môn")</p>
         </div>
         <form asp-page="/Student/Library" method="get" class="d-flex gap-2">
             @if (!string.IsNullOrEmpty(filterCourse))

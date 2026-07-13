@@ -7,66 +7,76 @@
 
 <section class="position-relative overflow-hidden">
     <div class="position-absolute top-0 start-0 w-100 h-100 grid-bg"></div>
-    <div class="edurag-container position-relative pt-5 pb-5" style="padding-top:6rem!important;">
-        <div class="col-lg-10">
-            <span class="badge-edurag-accent d-inline-flex align-items-center gap-2 mb-4">
-                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "14"; }
+    <div class="edurag-container position-relative text-center" style="padding-top:5.5rem;padding-bottom:3.5rem;">
+        <span class="section-chip mb-4">
+            @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "13"; }
+            @await Html.PartialAsync("_Icons")
+            Research-Based Learning · RAG cho tài liệu học thuật
+        </span>
+        <h1 class="font-display display-3 fw-bold lh-sm mb-3 mx-auto mt-3" style="max-width:46rem;">
+            Hỏi đáp tài liệu môn học — <span class="text-gradient-warm">rõ ràng, có trích dẫn.</span>
+        </h1>
+        <p class="fs-5 text-muted-edurag mb-4 mx-auto" style="max-width:38rem;line-height:1.65;">
+            EduRAG giúp sinh viên và giảng viên tra cứu slide, giáo trình, PDF bằng ngôn ngữ tự nhiên.
+            Mỗi câu trả lời gắn với nguồn trong tài liệu đã upload — không bịa, không lan man.
+        </p>
+        <div class="d-flex flex-wrap justify-content-center gap-2 mb-5">
+            <a asp-page="/Auth/Login" class="btn btn-lg btn-edurag-warm d-inline-flex align-items-center gap-2">
+                Bắt đầu ngay
+                @{ ViewData["Icon"] = "arrow-right"; ViewData["IconSize"] = "16"; }
                 @await Html.PartialAsync("_Icons")
-                Research-Based Learning · RAG vs Fine-tuning
-            </span>
-            <h1 class="font-display display-3 fw-bold lh-sm mb-4">
-                Trợ lý học tập <span class="text-gradient-warm">thông minh</span> dựa trên tài liệu môn học của bạn.
-            </h1>
-            <p class="fs-5 text-muted-edurag mb-4" style="max-width:40rem;">
-                Hỏi đáp tự nhiên bằng tiếng Việt. Mọi câu trả lời đều trích dẫn nguồn từ slide,
-                giáo trình, PDF mà giảng viên upload. Không bịa, không lan man.
-            </p>
-            <div class="d-flex flex-wrap gap-2 mb-5">
-                <a asp-page="/Auth/Login" class="btn btn-lg btn-edurag-warm">
-                    Đăng nhập @{ ViewData["Icon"] = "arrow-right"; ViewData["IconSize"] = "16"; } @await Html.PartialAsync("_Icons")
-                </a>
-            </div>
-            <div class="row g-4" style="max-width:36rem;">
-                @foreach (var s in new[] { ("4", "Embedding models so sánh"), ("50", "Câu hỏi ground-truth"), ("0.91", "RAGAS faithfulness (bge-m3)"), ("3", "Vai trò người dùng") })
-                {
-                    <div class="col-6 col-md-3">
-                        <div class="font-display fs-3 fw-bold text-gradient-warm">@s.Item1</div>
-                        <div class="small text-muted-edurag">@s.Item2</div>
-                    </div>
-                }
-            </div>
+            </a>
+            <a href="/#features" class="btn btn-lg btn-edurag-outline">Khám phá tính năng</a>
+        </div>
+        <div class="row g-4 justify-content-center mx-auto" style="max-width:40rem;">
+            @foreach (var s in new[] { ("PDF · DOCX · PPTX", "Định dạng hỗ trợ"), ("bge-m3", "Embedding đa ngữ"), ("100%", "Câu trả lời có nguồn"), ("3", "Vai trò người dùng") })
+            {
+                <div class="col-6 col-md-3">
+                    <div class="font-display fs-4 fw-bold text-gradient-warm">@s.Item1</div>
+                    <div class="small text-muted-edurag">@s.Item2</div>
+                </div>
+            }
         </div>
     </div>
 </section>
 
-<section class="edurag-container position-relative" style="margin-top:-3rem;z-index:2;">
-    <div class="edurag-card shadow-glow overflow-hidden rounded-4">
-        <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom small text-muted-edurag font-monospace bg-light">
-            <span class="rounded-circle bg-danger opacity-50" style="width:12px;height:12px;"></span>
-            <span class="rounded-circle bg-warning opacity-50" style="width:12px;height:12px;"></span>
-            <span class="rounded-circle bg-success opacity-50" style="width:12px;height:12px;"></span>
-            <span class="ms-2">edurag.app/student/chat</span>
+<section class="edurag-container pb-5">
+    <div class="edurag-card overflow-hidden shadow-soft">
+        <div class="d-flex align-items-center gap-2 px-3 py-2 border-bottom small text-muted-edurag" style="border-color:var(--edurag-border)!important;background:var(--edurag-sidebar);">
+            <span class="rounded-circle" style="width:8px;height:8px;background:#e07a5f;"></span>
+            <span class="rounded-circle" style="width:8px;height:8px;background:#f2cc8f;"></span>
+            <span class="rounded-circle" style="width:8px;height:8px;background:#81b29a;"></span>
+            <span class="ms-2 font-monospace">edurag · student / chat</span>
         </div>
-        <div class="row g-0" style="min-height:420px;">
-            <div class="col-md-4 border-end p-3" style="background:var(--edurag-sidebar);">
-                <div class="small fw-semibold text-muted-edurag text-uppercase mb-2">Hội thoại gần đây</div>
+        <div class="row g-0" style="min-height:380px;">
+            <div class="col-md-4 border-end p-3" style="background:var(--edurag-sidebar);border-color:var(--edurag-border)!important;">
+                <div class="small fw-semibold text-muted-edurag text-uppercase mb-2" style="font-size:11px;letter-spacing:.06em;">Gần đây</div>
                 <div class="chat-conv-item active mb-1">Sự khác nhau AI/ML</div>
-                <div class="chat-conv-item mb-1">Thuật toán A*</div>
-                <div class="chat-conv-item">Tóm tắt chương 2</div>
+                <div class="chat-conv-item mb-1">Thuật toán A* heuristic</div>
+                <div class="chat-conv-item mb-1">Tóm tắt chương 2</div>
+                <div class="chat-conv-item">Ôn tập giữa kỳ</div>
             </div>
-            <div class="col-md-8 p-4">
-                <div class="d-flex justify-content-end mb-3">
-                    <div class="chat-bubble-user">Sự khác nhau giữa AI và Machine Learning là gì ạ?</div>
+            <div class="col-md-8 p-4 p-md-5">
+                <div class="d-flex justify-content-end mb-4">
+                    <div class="chat-bubble-user">Sự khác nhau giữa AI và Machine Learning là gì?</div>
                 </div>
                 <div class="d-flex gap-3">
-                    <div class="rounded-circle bg-gradient-warm text-white d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;">
+                    <div class="chat-avatar">
                         @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "16"; }
                         @await Html.PartialAsync("_Icons")
                     </div>
                     <div>
-                        <div class="chat-bubble-assistant mb-2">AI là lĩnh vực rộng nghiên cứu cách tạo hệ thống thông minh, còn ML là một nhánh con tập trung vào việc học từ dữ liệu...</div>
-                        <span class="citation-chip me-1">Chương 1 - Giới thiệu AI.pdf · tr.12</span>
-                        <span class="citation-chip">Russell & Norvig.pdf · tr.4</span>
+                        <div class="chat-bubble-assistant mb-2">AI là lĩnh vực rộng nghiên cứu cách tạo hệ thống thông minh; Machine Learning là một nhánh tập trung vào việc học từ dữ liệu. Theo giáo trình chương 1, mọi hệ ML đều là AI nhưng không phải AI nào cũng dùng ML…</div>
+                        <span class="citation-chip me-1">
+                            @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "11"; }
+                            @await Html.PartialAsync("_Icons")
+                            Chương 1.pdf · tr.12
+                        </span>
+                        <span class="citation-chip">
+                            @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "11"; }
+                            @await Html.PartialAsync("_Icons")
+                            Russell &amp; Norvig.pdf · tr.4
+                        </span>
                     </div>
                 </div>
             </div>
@@ -74,56 +84,58 @@
     </div>
 </section>
 
-<section id="features" class="edurag-container py-5 my-5">
-    <p class="small fw-semibold text-uppercase mb-2" style="color:var(--edurag-primary);">Tính năng</p>
-    <h2 class="font-display display-5 fw-bold mb-5">Đầy đủ cho một lớp học hiện đại.</h2>
-    <div class="row g-4">
-        @foreach (var f in new[] { ("Quản lý tài liệu", "Upload PDF, DOCX, slide. Tự động chunk & embed theo môn / chương."),
-            ("Chat có trích dẫn", "Trả lời tự nhiên kèm nguồn gốc. Giới hạn trong phạm vi tài liệu."),
-            ("Benchmark RAG vs FT", "Dashboard so sánh chunking, embedding, RAGAS metrics."),
-            ("Đa embedding model", "multilingual-e5, OpenAI, PhoBERT, bge-m3 trên cùng test set."),
-            ("Lịch sử hội thoại", "Lưu phiên theo môn học, dễ dàng quay lại tra cứu."),
-            ("Test set 50 câu", "Ground-truth chuẩn bị bởi giảng viên để đánh giá độ chính xác.") })
+<section id="features" class="edurag-container py-5">
+    <div class="text-center mb-5">
+        <span class="section-chip">Tính năng</span>
+        <h2 class="font-display display-6 fw-bold mt-3 mb-2">Một nền tảng cho lớp học hiện đại.</h2>
+        <p class="text-muted-edurag mx-auto" style="max-width:34rem;">Từ upload tài liệu đến hỏi đáp có trích dẫn — mọi bước trong một hệ thống duy nhất.</p>
+    </div>
+    <div class="row g-3">
+        @foreach (var f in new[] {
+            ("file", "Quản lý tài liệu", "Upload PDF, DOCX, PPTX, TXT. Tự động chunk & embed theo môn học, chương."),
+            ("message", "Chat có trích dẫn", "Trả lời tự nhiên kèm nguồn trang cụ thể. Giới hạn trong phạm vi tài liệu lớp."),
+            ("zap", "Index realtime", "Theo dõi pipeline chunk → embedding → vector store với trạng thái trực quan."),
+            ("layers", "Chunk config linh hoạt", "Admin điều chỉnh chiến lược chunking toàn hệ thống, preview trước khi áp dụng."),
+            ("clock", "Lịch sử hội thoại", "Phiên chat lưu theo môn và tài liệu, dễ dàng quay lại tra cứu."),
+            ("shield", "Phân quyền rõ ràng", "Admin, giảng viên, sinh viên — mỗi vai trò một không gian làm việc riêng.") })
         {
-            <div class="col-md-4">
+            <div class="col-md-6 col-lg-4">
                 <div class="edurag-card p-4 h-100 feature-card">
-                    <div class="edurag-logo-mark bg-gradient-warm text-white mb-3 d-inline-flex align-items-center justify-content-center shadow-glow" style="width:48px;height:48px;">
-                        @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "24"; }
+                    <span class="stat-card__icon stat-card__icon--warm mb-3">
+                        @{ ViewData["Icon"] = f.Item1; ViewData["IconSize"] = "20"; }
                         @await Html.PartialAsync("_Icons")
-                    </div>
-                    <h3 class="font-display fw-bold fs-5 mb-2">@f.Item1</h3>
-                    <p class="small text-muted-edurag mb-0">@f.Item2</p>
+                    </span>
+                    <h3 class="font-display fw-bold fs-5 mb-2">@f.Item2</h3>
+                    <p class="small text-muted-edurag mb-0" style="line-height:1.6;">@f.Item3</p>
                 </div>
             </div>
         }
     </div>
 </section>
 
-<section class="bg-gradient-soft py-5">
+<section class="py-5" style="background:var(--edurag-sidebar);border-top:1px solid var(--edurag-border);border-bottom:1px solid var(--edurag-border);">
     <div class="edurag-container">
         <div class="text-center mb-5">
-            <p class="small fw-semibold text-uppercase mb-2" style="color:var(--edurag-primary);">Ba vai trò</p>
-            <h2 class="font-display display-5 fw-bold">Một nền tảng, ba trải nghiệm riêng biệt.</h2>
+            <span class="section-chip">Ba vai trò</span>
+            <h2 class="font-display display-6 fw-bold mt-3">Một nền tảng, ba trải nghiệm.</h2>
         </div>
-        <div class="row g-4">
-            <div class="col-md-4">
-                <div class="edurag-card p-4 feature-card h-100">
-                    <h3 class="font-display fw-bold fs-4">Sinh viên</h3>
-                    <p class="small text-muted-edurag mb-0">Chat với tài liệu, xem giáo trình, lưu hội thoại theo môn.</p>
+        <div class="row g-3">
+            @foreach (var r in new[] {
+                ("book", "Sinh viên", "Chat với tài liệu, xem giáo trình theo chunk, lưu hội thoại theo môn học."),
+                ("graduation", "Giảng viên", "Upload tài liệu, theo dõi trạng thái index, kiểm thử chatbot trước khi phát hành."),
+                ("shield", "Admin", "Quản lý tài khoản, môn học realtime, cấu hình chunking toàn hệ thống.") })
+            {
+                <div class="col-md-4">
+                    <div class="edurag-card p-4 feature-card h-100 text-center">
+                        <span class="stat-card__icon stat-card__icon--warm mx-auto mb-3">
+                            @{ ViewData["Icon"] = r.Item1; ViewData["IconSize"] = "20"; }
+                            @await Html.PartialAsync("_Icons")
+                        </span>
+                        <h3 class="font-display fw-bold fs-4 mb-2">@r.Item2</h3>
+                        <p class="small text-muted-edurag mb-0" style="line-height:1.6;">@r.Item3</p>
+                    </div>
                 </div>
-            </div>
-            <div class="col-md-4">
-                <div class="edurag-card p-4 feature-card h-100">
-                    <h3 class="font-display fw-bold fs-4">Giảng viên</h3>
-                    <p class="small text-muted-edurag mb-0">Tạo môn, upload tài liệu, xem trạng thái index, kiểm thử chatbot.</p>
-                </div>
-            </div>
-            <div class="col-md-4">
-                <div class="edurag-card p-4 feature-card h-100">
-                    <h3 class="font-display fw-bold fs-4">Admin</h3>
-                    <p class="small text-muted-edurag mb-0">Dashboard tổng quan, benchmark RAG vs fine-tune.</p>
-                </div>
-            </div>
+            }
         </div>
     </div>
 </section>
@@ -131,31 +143,48 @@
 <section id="research" class="edurag-container py-5">
     <div class="row align-items-center g-5">
         <div class="col-lg-6">
-            <p class="small fw-semibold text-uppercase mb-2" style="color:var(--edurag-primary);">Module nghiên cứu</p>
-            <h2 class="font-display display-5 fw-bold mb-4">So sánh RAG vs Fine-tuning trong bối cảnh tiếng Việt.</h2>
-            <p class="text-muted-edurag fs-5">Benchmark trên test set 50 câu với 4 embedding model và 5 chiến lược chunking. Báo cáo qua RAGAS.</p>
+            <span class="section-chip">Nghiên cứu</span>
+            <h2 class="font-display display-6 fw-bold mt-3 mb-3">RAG cho tài liệu học thuật tiếng Việt.</h2>
+            <p class="text-muted-edurag mb-4" style="max-width:36rem;line-height:1.7;">
+                Pipeline embedding + retrieval giới hạn trong corpus lớp học, nhằm giảm hallucination
+                và tăng độ tin cậy khi ôn tập. Đánh giá trên test set ground-truth do giảng viên chuẩn bị.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                @foreach (var step in new[] { "Upload", "Chunk", "Embed", "Retrieve", "Answer + Cite" })
+                {
+                    <span class="citation-chip">@step</span>
+                }
+            </div>
         </div>
         <div class="col-lg-6">
-            <div class="rounded-4 p-1 bg-gradient-hero shadow-glow">
-                <div class="edurag-card rounded-4 p-4">
-                    @foreach (var m in new[] { ("bge-m3", 0.91), ("text-embedding-3-small", 0.88), ("PhoBERT-base", 0.86), ("multilingual-e5-base", 0.82) })
-                    {
-                        <div class="mb-3">
-                            <div class="d-flex justify-content-between small mb-1"><span class="fw-semibold">@m.Item1</span><span style="color:var(--edurag-primary);">@m.Item2</span></div>
-                            <div class="progress rounded-pill" style="height:8px;"><div class="progress-bar bg-gradient-warm" style="width:@(m.Item2 * 100)%"></div></div>
+            <div class="edurag-card p-4 shadow-soft">
+                <div class="small fw-semibold text-muted-edurag text-uppercase mb-3" style="font-size:11px;letter-spacing:.06em;">Faithfulness theo embedding model</div>
+                @foreach (var m in new[] { ("bge-m3", 0.91), ("text-embedding-3-small", 0.88), ("PhoBERT-base", 0.86), ("multilingual-e5-base", 0.82) })
+                {
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between small mb-1">
+                            <span class="fw-semibold">@m.Item1</span>
+                            <span class="text-muted-edurag">@m.Item2</span>
                         </div>
-                    }
-                </div>
+                        <div class="progress" style="height:6px;background:var(--edurag-muted-bg);">
+                            <div class="progress-bar bg-gradient-warm" style="width:@(m.Item2 * 100)%"></div>
+                        </div>
+                    </div>
+                }
+                <div class="small text-muted-edurag mt-2 pt-2 border-top" style="border-color:var(--edurag-border)!important;">Test set 50 câu hỏi ground-truth · RAGAS metrics</div>
             </div>
         </div>
     </div>
 </section>
 
 <section class="edurag-container pb-5">
-    <div class="rounded-4 bg-gradient-hero text-white text-center p-5 shadow-glow">
-        <h2 class="font-display display-5 fw-bold mb-3">Sẵn sàng học thông minh hơn?</h2>
-        <p class="opacity-85 mb-4 mx-auto" style="max-width:32rem;">Đăng nhập để bắt đầu trải nghiệm trợ lý học tập RAG.</p>
-        <a asp-page="/Auth/Login" class="btn btn-light btn-lg">Đăng nhập</a>
+    <div class="rounded-4 bg-gradient-hero text-white text-center p-5 shadow-glow position-relative overflow-hidden">
+        <div class="grid-bg position-absolute top-0 start-0 w-100 h-100" style="opacity:.3;"></div>
+        <div class="position-relative">
+            <h2 class="font-display display-6 fw-bold mb-2">Sẵn sàng học thông minh hơn?</h2>
+            <p class="opacity-85 mb-4 mx-auto" style="max-width:30rem;">Đăng nhập để hỏi đáp trên tài liệu môn học của bạn — có nguồn, có kiểm chứng.</p>
+            <a asp-page="/Auth/Login" class="btn btn-light btn-lg px-4">Đăng nhập</a>
+        </div>
     </div>
 </section>
 

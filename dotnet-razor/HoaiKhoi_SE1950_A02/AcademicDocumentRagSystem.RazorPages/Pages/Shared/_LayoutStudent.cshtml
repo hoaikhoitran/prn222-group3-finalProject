@@ -12,68 +12,74 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduRAG</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/edurag.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
 </head>
 <body class="edurag-body">
-    <div class="dashboard-shell">
-        <aside class="student-sidebar">
-            <div class="student-sidebar__head">
-                <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark mb-3">
-                    <span class="edurag-logo-mark bg-gradient-warm shadow-glow text-white d-inline-flex align-items-center justify-content-center">
-                        @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
+    <div class="page">
+        <div class="dashboard-shell">
+            <aside class="student-sidebar">
+                <div class="student-sidebar__head">
+                    <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark mb-3">
+                        <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center">
+                            @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
+                            @await Html.PartialAsync("_Icons")
+                        </span>
+                        <span>
+                            <span class="font-display fw-bold lh-1 d-block">EduRAG</span>
+                            <span class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">Sinh viên</span>
+                        </span>
+                    </a>
+                    <a asp-page="/Student/Chat" class="btn btn-edurag-warm btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
+                        @{ ViewData["Icon"] = "pen"; ViewData["IconSize"] = "14"; }
                         @await Html.PartialAsync("_Icons")
-                    </span>
-                    <span>
-                        <span class="font-display fw-bold lh-1 d-block">EduRAG</span>
-                        <span class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">Sinh viên</span>
-                    </span>
-                </a>
-                <a asp-page="/Student/Chat" class="btn btn-edurag-warm btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
-                    @{ ViewData["Icon"] = "pen"; ViewData["IconSize"] = "14"; }
-                    @await Html.PartialAsync("_Icons")
-                    Cuộc trò chuyện mới
-                </a>
-            </div>
-            <div class="student-sidebar__body">
-                <a asp-page="/Student/Library"
-                   class="role-sidebar__link @(currentPage.Contains("/Student/Library") || currentPage.Contains("/Student/Document") ? "active" : "")">
-                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
-                    @await Html.PartialAsync("_Icons")
-                    Thư viện
-                </a>
-                @if (sessions.Any())
-                {
-                    <div class="small fw-semibold text-muted-edurag text-uppercase px-2 mt-3 mb-1" style="font-size:11px;letter-spacing:.06em;">Gần đây</div>
-                    @foreach (var s in sessions.Take(12))
-                    {
-                        <a asp-page="/Student/Chat" asp-route-documentId="@s.DocumentId" asp-route-sessionId="@s.ChatSessionId"
-                           class="session-item @(selectedSessionId == s.ChatSessionId ? "active" : "")">
-                            <span class="d-block text-truncate fw-medium">@s.Title</span>
-                            <span class="d-block text-muted-edurag" style="font-size:11px;">@s.CourseCode · @((s.UpdatedAt ?? s.CreatedAt).ToLocalTime().ToString("dd/MM"))</span>
-                        </a>
-                    }
-                }
-            </div>
-            <div class="student-sidebar__footer">
-                <div class="d-flex align-items-center gap-2 px-2 py-2 rounded-3" style="background:rgba(0,0,0,.03);">
-                    <div class="avatar-initial" style="width:34px;height:34px;font-size:13px;">@initial</div>
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="small fw-semibold text-truncate">@fullName</div>
-                        <div class="text-muted-edurag" style="font-size:11px;">Student</div>
-                    </div>
-                    <a asp-page="/Auth/Logout" class="text-muted-edurag" title="Đăng xuất">
-                        @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "15"; }
-                        @await Html.PartialAsync("_Icons")
+                        Cuộc trò chuyện mới
                     </a>
                 </div>
+                <div class="student-sidebar__body">
+                    <a asp-page="/Student/Library"
+                       class="role-sidebar__link @(currentPage.Contains("/Student/Library") || currentPage.Contains("/Student/Document") ? "active" : "")">
+                        @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
+                        @await Html.PartialAsync("_Icons")
+                        Thư viện
+                    </a>
+                    @if (sessions.Any())
+                    {
+                        <div class="small fw-semibold text-muted-edurag text-uppercase px-2 mt-3 mb-1" style="font-size:11px;letter-spacing:.06em;">Gần đây</div>
+                        @foreach (var s in sessions.Take(12))
+                        {
+                            <a asp-page="/Student/Chat" asp-route-documentId="@s.DocumentId" asp-route-sessionId="@s.ChatSessionId"
+                               class="session-item @(selectedSessionId == s.ChatSessionId ? "active" : "")">
+                                <span class="d-block text-truncate fw-medium">@s.Title</span>
+                                <span class="d-block text-muted-edurag" style="font-size:11px;">@s.CourseCode · @((s.UpdatedAt ?? s.CreatedAt).ToLocalTime().ToString("dd/MM"))</span>
+                            </a>
+                        }
+                    }
+                </div>
+                <div class="student-sidebar__footer">
+                    <div class="d-flex align-items-center gap-2 px-2 py-2 rounded-3" style="background:rgba(28,25,23,.04);">
+                        <div class="avatar-initial" style="width:34px;height:34px;font-size:13px;">@initial</div>
+                        <div class="flex-grow-1 min-width-0">
+                            <div class="small fw-semibold text-truncate">@fullName</div>
+                            <div class="text-muted-edurag" style="font-size:11px;">Student</div>
+                        </div>
+                        <a asp-page="/Auth/Logout" class="text-muted-edurag" title="Đăng xuất">
+                            @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "15"; }
+                            @await Html.PartialAsync("_Icons")
+                        </a>
+                    </div>
+                </div>
+            </aside>
+            <div class="page-wrapper dashboard-main">
+                <div class="page-body">
+                    @RenderBody()
+                </div>
             </div>
-        </aside>
-        <main class="dashboard-main">
-            @RenderBody()
-        </main>
+        </div>
     </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/tabler.min.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
