@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Text.RegularExpressions;
 using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml.Presentation;
 using UglyToad.PdfPig;
@@ -13,14 +14,15 @@ namespace AcademicDocumentRagSystem.Services.Chunking
 {
     public class ChunkPreviewGenerator : IChunkPreviewGenerator
     {
-        // Splitting configuration (characters).
-        private const int ChunkSize = 1500;
-        private const int Overlap = 250;
-
         private const string ScanOnlyMessage =
-            "Không trích xuất được text từ tài liệu này. Tài liệu có thể là bản scan hoặc ảnh.";
+            "Khong trich xuat duoc text tu tai lieu nay. Tai lieu co the la ban scan hoac anh.";
 
         public ChunkPreviewResult Generate(string filePath, string fileType)
+        {
+            return Generate(filePath, fileType, ChunkPreviewOptions.Default);
+        }
+
+        public ChunkPreviewResult Generate(string filePath, string fileType, ChunkPreviewOptions options)
         {
             if (string.IsNullOrWhiteSpace(filePath) || !File.Exists(filePath))
             {
@@ -31,7 +33,6 @@ namespace AcademicDocumentRagSystem.Services.Chunking
 
             try
             {
-                // Each "section" carries an optional page/slide number and its text.
                 List<(int? PageNumber, string Text)> sections = extension switch
                 {
                     ".txt" => ExtractTxt(filePath),
@@ -45,11 +46,10 @@ namespace AcademicDocumentRagSystem.Services.Chunking
 
                 if (!hasText)
                 {
-                    // For PDF this almost always means a scanned / image-only file.
                     return ChunkPreviewResult.Fail(ScanOnlyMessage);
                 }
 
-                var items = BuildChunks(sections);
+                var items = BuildChunks(sections, NormalizeOptions(options));
 
                 if (items.Count == 0)
                 {
@@ -64,10 +64,28 @@ namespace AcademicDocumentRagSystem.Services.Chunking
             }
         }
 
-        // ----------------------------------------------------------------- //
-        // Chunking
-        // ----------------------------------------------------------------- //
-        private static List<ChunkPreviewItem> BuildChunks(List<(int? PageNumber, string Text)> sections)
+        public ChunkPreviewResult GenerateFromText(string text, ChunkPreviewOptions options)
+        {
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                return ChunkPreviewResult.Fail("Sample text is required for preview.");
+            }
+
+            var items = BuildChunks(
+                new List<(int? PageNumber, string Text)> { (null, text) },
+                NormalizeOptions(options));
+
+            if (items.Count == 0)
+            {
+                return ChunkPreviewResult.Fail("No chunks were produced. Try lowering the minimum chunk length.");
+            }
+
+            return ChunkPreviewResult.Ok(items);
+        }
+
+        private static List<ChunkPreviewItem> BuildChunks(
+            List<(int? PageNumber, string Text)> sections,
+            ChunkPreviewOptions options)
         {
             var items = new List<ChunkPreviewItem>();
             var chunkIndex = 0;
@@ -81,49 +99,32 @@ namespace AcademicDocumentRagSystem.Services.Chunking
                     continue;
                 }
 
-                var start = 0;
-
-                while (start < text.Length)
+                var chunks = options.ChunkMode switch
                 {
-                    var hardEnd = Math.Min(start + ChunkSize, text.Length);
-                    var end = hardEnd < text.Length
-                        ? FindWordBreak(text, start, hardEnd)
-                        : hardEnd;
+                    "Words" => SplitByWords(text, options.ChunkSize, options.ChunkOverlap),
+                    "Paragraph" => SplitByParagraphs(text, options.ChunkSize, options.ChunkOverlap),
+                    _ => SplitByCharacters(text, options.ChunkSize, options.ChunkOverlap)
+                };
 
-                    if (end <= start)
+                foreach (var chunkText in chunks)
+                {
+                    if (chunkText.Length < options.MinChunkLength)
                     {
-                        end = hardEnd;
+                        continue;
                     }
 
-                    var chunkText = text.Substring(start, end - start).Trim();
-
-                    if (chunkText.Length > 0)
+                    items.Add(new ChunkPreviewItem
                     {
-                        items.Add(new ChunkPreviewItem
-                        {
-                            ChunkIndex = chunkIndex++,
-                            PageNumber = pageNumber,
-                            ChunkText = chunkText,
-                            CharCount = chunkText.Length,
-                            TokenEstimate = EstimateTokens(chunkText)
-                        });
-                    }
+                        ChunkIndex = chunkIndex++,
+                        PageNumber = pageNumber,
+                        ChunkText = chunkText,
+                        CharCount = chunkText.Length,
+                        TokenEstimate = EstimateTokens(chunkText)
+                    });
 
-                    if (end >= text.Length)
+                    if (items.Count >= options.MaxPreviewChunks)
                     {
-                        break;
-                    }
-
-                    start = end - Overlap;
-                    if (start < 0)
-                    {
-                        start = 0;
-                    }
-
-                    // Avoid starting the next window in the middle of a word.
-                    while (start < end && start < text.Length && char.IsWhiteSpace(text[start]))
-                    {
-                        start++;
+                        return items;
                     }
                 }
             }
@@ -131,9 +132,109 @@ namespace AcademicDocumentRagSystem.Services.Chunking
             return items;
         }
 
-        /// <summary>
-        /// Prefer splitting before whitespace so Vietnamese/English words stay intact.
-        /// </summary>
+        private static List<string> SplitByCharacters(string text, int chunkSize, int overlap)
+        {
+            var chunks = new List<string>();
+            var start = 0;
+
+            while (start < text.Length)
+            {
+                var hardEnd = Math.Min(start + chunkSize, text.Length);
+                var end = hardEnd < text.Length
+                    ? FindWordBreak(text, start, hardEnd)
+                    : hardEnd;
+
+                if (end <= start)
+                {
+                    end = hardEnd;
+                }
+
+                var chunkText = text.Substring(start, end - start).Trim();
+                if (chunkText.Length > 0)
+                {
+                    chunks.Add(chunkText);
+                }
+
+                if (end >= text.Length)
+                {
+                    break;
+                }
+
+                start = Math.Max(0, end - overlap);
+                while (start < end && start < text.Length && char.IsWhiteSpace(text[start]))
+                {
+                    start++;
+                }
+            }
+
+            return chunks;
+        }
+
+        private static List<string> SplitByWords(string text, int chunkSize, int overlap)
+        {
+            var words = Regex.Matches(text, @"\S+")
+                .Select(m => m.Value)
+                .ToList();
+
+            if (words.Count == 0)
+            {
+                return new List<string>();
+            }
+
+            var chunks = new List<string>();
+            var stride = Math.Max(1, chunkSize - overlap);
+
+            for (var start = 0; start < words.Count; start += stride)
+            {
+                var count = Math.Min(chunkSize, words.Count - start);
+                chunks.Add(string.Join(" ", words.Skip(start).Take(count)).Trim());
+
+                if (start + count >= words.Count)
+                {
+                    break;
+                }
+            }
+
+            return chunks.Where(c => c.Length > 0).ToList();
+        }
+
+        private static List<string> SplitByParagraphs(string text, int chunkSize, int overlap)
+        {
+            var paragraphs = Regex.Split(text, @"(?:\n\s*){2,}")
+                .Select(p => NormalizeWhitespace(p))
+                .Where(p => !string.IsNullOrWhiteSpace(p))
+                .ToList();
+
+            if (paragraphs.Count <= 1)
+            {
+                paragraphs = text.Split('\n')
+                    .Select(p => NormalizeWhitespace(p))
+                    .Where(p => !string.IsNullOrWhiteSpace(p))
+                    .ToList();
+            }
+
+            if (paragraphs.Count == 0)
+            {
+                return new List<string>();
+            }
+
+            var chunks = new List<string>();
+            var stride = Math.Max(1, chunkSize - overlap);
+
+            for (var start = 0; start < paragraphs.Count; start += stride)
+            {
+                var count = Math.Min(chunkSize, paragraphs.Count - start);
+                chunks.Add(string.Join("\n\n", paragraphs.Skip(start).Take(count)).Trim());
+
+                if (start + count >= paragraphs.Count)
+                {
+                    break;
+                }
+            }
+
+            return chunks.Where(c => c.Length > 0).ToList();
+        }
+
         private static int FindWordBreak(string text, int start, int hardEnd)
         {
             for (var i = hardEnd - 1; i > start; i--)
@@ -147,7 +248,6 @@ namespace AcademicDocumentRagSystem.Services.Chunking
             return hardEnd;
         }
 
-        // Rough token estimate (~4 characters per token).
         private static int EstimateTokens(string text) =>
             (int)Math.Ceiling(text.Length / 4.0);
 
@@ -158,13 +258,35 @@ namespace AcademicDocumentRagSystem.Services.Chunking
                 return string.Empty;
             }
 
-            // Collapse Windows newlines but keep paragraph breaks readable.
             return text.Replace("\r\n", "\n").Replace('\r', '\n').Trim();
         }
 
-        // ----------------------------------------------------------------- //
-        // Extraction per file type
-        // ----------------------------------------------------------------- //
+        private static ChunkPreviewOptions NormalizeOptions(ChunkPreviewOptions? options)
+        {
+            var source = options ?? ChunkPreviewOptions.Default;
+            var size = Math.Max(1, source.ChunkSize);
+            var overlap = Math.Max(0, source.ChunkOverlap);
+
+            if (overlap >= size)
+            {
+                overlap = Math.Max(0, size / 4);
+            }
+
+            return new ChunkPreviewOptions
+            {
+                ChunkMode = source.ChunkMode switch
+                {
+                    "Words" => "Words",
+                    "Paragraph" => "Paragraph",
+                    _ => "Characters"
+                },
+                ChunkSize = size,
+                ChunkOverlap = overlap,
+                MinChunkLength = Math.Max(0, source.MinChunkLength),
+                MaxPreviewChunks = Math.Clamp(source.MaxPreviewChunks, 1, 1000)
+            };
+        }
+
         private static List<(int?, string)> ExtractTxt(string filePath)
         {
             var text = File.ReadAllText(filePath);

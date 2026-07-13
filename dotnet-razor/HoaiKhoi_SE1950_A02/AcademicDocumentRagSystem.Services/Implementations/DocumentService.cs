@@ -33,6 +33,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
         private readonly IAccountRepository _accountRepository;
         private readonly ICourseRepository _courseRepository;
         private readonly IDocumentChunkRepository _chunkRepository;
+        private readonly IDocumentChunkConfigRepository _chunkConfigRepository;
         private readonly IDocumentIndexLogRepository _indexLogRepository;
         private readonly IChunkPreviewGenerator _chunkPreviewGenerator;
         private readonly IRagClient _ragClient;
@@ -43,6 +44,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             IAccountRepository accountRepository,
             ICourseRepository courseRepository,
             IDocumentChunkRepository chunkRepository,
+            IDocumentChunkConfigRepository chunkConfigRepository,
             IDocumentIndexLogRepository indexLogRepository,
             IChunkPreviewGenerator chunkPreviewGenerator,
             IRagClient ragClient,
@@ -52,6 +54,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             _accountRepository = accountRepository;
             _courseRepository = courseRepository;
             _chunkRepository = chunkRepository;
+            _chunkConfigRepository = chunkConfigRepository;
             _indexLogRepository = indexLogRepository;
             _chunkPreviewGenerator = chunkPreviewGenerator;
             _ragClient = ragClient;
@@ -120,23 +123,31 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
         public async Task<List<CourseDto>> GetUploadCoursesForTeacherAsync(int accountId)
         {
-            // All active courses are listed so the teacher can browse them, but the
-            // upload itself is still validated against the teacher's assigned course
-            // (see UploadAndIndexAsync). The form value is never trusted.
-            var courses = await _courseRepository.GetAllAsync();
+            var account = await _accountRepository.GetByIdAsync(accountId);
 
-            return courses
-                .Where(c => c.Status)
-                .OrderBy(c => c.Code)
-                .Select(c => new CourseDto
+            if (account == null || account.Role != TeacherRole || account.CourseId == null)
+            {
+                return new List<CourseDto>();
+            }
+
+            var course = await _courseRepository.GetByIdAsync(account.CourseId.Value);
+
+            if (course == null || !course.Status)
+            {
+                return new List<CourseDto>();
+            }
+
+            return new List<CourseDto>
+            {
+                new()
                 {
-                    CourseId = c.CourseId,
-                    Code = c.Code,
-                    Name = c.Name,
-                    Description = c.Description,
-                    Status = c.Status
-                })
-                .ToList();
+                    CourseId = course.CourseId,
+                    Code = course.Code,
+                    Name = course.Name,
+                    Description = course.Description,
+                    Status = course.Status
+                }
+            };
         }
 
         public async Task<int> UploadAndIndexAsync(DocumentUploadDto dto, int accountId, string email)
@@ -238,7 +249,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             await AddLogAsync(document.DocumentId, "Upload", "Success", accountId, email, null, null);
 
             // MVC-side chunk preview from the saved file (no embeddings / vector data).
-            await GeneratePreviewChunksAsync(document, fullPath, extension, accountId, email);
+            var chunkOptions = await GetChunkPreviewOptionsAsync();
+            await GeneratePreviewChunksAsync(document, fullPath, extension, accountId, email, chunkOptions);
 
             // Existing RAG indexing call (unchanged contract).
             try
@@ -249,7 +261,12 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                     CourseCode = document.CourseCode,
                     Chapter = document.Chapter,
                     FilePath = document.FilePath,
-                    FileName = document.OriginalFileName
+                    FileName = document.OriginalFileName,
+                    ChunkMode = chunkOptions.ChunkMode,
+                    ChunkSize = chunkOptions.ChunkSize,
+                    ChunkOverlap = chunkOptions.ChunkOverlap,
+                    MinChunkLength = chunkOptions.MinChunkLength,
+                    MaxPreviewChunks = chunkOptions.MaxPreviewChunks
                 });
 
                 document.IndexStatus = "Indexed";
@@ -379,7 +396,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             await _chunkRepository.DeleteByDocumentAsync(documentId);
             await _chunkRepository.SaveChangesAsync();
 
-            await GeneratePreviewChunksAsync(document, document.FilePath, document.FileType, accountId, email);
+            var chunkOptions = await GetChunkPreviewOptionsAsync();
+            await GeneratePreviewChunksAsync(document, document.FilePath, document.FileType, accountId, email, chunkOptions);
 
             try
             {
@@ -389,7 +407,12 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                     CourseCode = document.CourseCode,
                     Chapter = document.Chapter,
                     FilePath = document.FilePath,
-                    FileName = document.OriginalFileName
+                    FileName = document.OriginalFileName,
+                    ChunkMode = chunkOptions.ChunkMode,
+                    ChunkSize = chunkOptions.ChunkSize,
+                    ChunkOverlap = chunkOptions.ChunkOverlap,
+                    MinChunkLength = chunkOptions.MinChunkLength,
+                    MaxPreviewChunks = chunkOptions.MaxPreviewChunks
                 });
 
                 document.IndexStatus = "Indexed";
@@ -442,11 +465,17 @@ namespace AcademicDocumentRagSystem.Services.Implementations
         }
 
         private async Task GeneratePreviewChunksAsync(
-            Document document, string filePath, string fileType, int? accountId, string email)
+            Document document,
+            string filePath,
+            string fileType,
+            int? accountId,
+            string email,
+            ChunkPreviewOptions? options = null)
         {
             try
             {
-                var preview = _chunkPreviewGenerator.Generate(filePath, fileType);
+                var effectiveOptions = options ?? await GetChunkPreviewOptionsAsync();
+                var preview = _chunkPreviewGenerator.Generate(filePath, fileType, effectiveOptions);
 
                 if (!preview.Success || preview.Items.Count == 0)
                 {
@@ -479,6 +508,25 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 await AddLogAsync(document.DocumentId, "Preview", "Failed", accountId, email,
                     0, $"Chunk preview generation failed: {ex.Message}");
             }
+        }
+
+        private async Task<ChunkPreviewOptions> GetChunkPreviewOptionsAsync()
+        {
+            var config = await _chunkConfigRepository.GetActiveAsync();
+
+            if (config == null)
+            {
+                return ChunkPreviewOptions.Default;
+            }
+
+            return new ChunkPreviewOptions
+            {
+                ChunkMode = config.ChunkMode,
+                ChunkSize = config.ChunkSize,
+                ChunkOverlap = config.ChunkOverlap,
+                MinChunkLength = config.MinChunkLength,
+                MaxPreviewChunks = config.MaxPreviewChunks
+            };
         }
 
         /// <summary>

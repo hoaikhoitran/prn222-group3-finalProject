@@ -67,3 +67,74 @@ def test_short_text_produces_single_chunk() -> None:
     assert len(chunks) == 1
     assert chunks[0]["chunkText"] == "Hi there"
     assert chunks[0]["chunkIndex"] == 0
+
+
+def test_word_mode_uses_word_windows() -> None:
+    """Word mode measures size and overlap in words, not characters."""
+    text = "one two three four five six seven eight nine ten"
+    pages = [{"text": text, "pageNumber": None, "source": "x.txt"}]
+
+    chunks = chunk_pages(
+        pages,
+        chunk_mode="Words",
+        chunk_size=4,
+        chunk_overlap=1,
+        min_chunk_length=0,
+    )
+
+    assert [c["chunkText"] for c in chunks] == [
+        "one two three four",
+        "four five six seven",
+        "seven eight nine ten",
+    ]
+
+
+def test_paragraph_mode_uses_paragraph_windows() -> None:
+    """Paragraph mode measures size and overlap in paragraphs."""
+    text = "Para 1\n\nPara 2\n\nPara 3\n\nPara 4"
+    pages = [{"text": text, "pageNumber": None, "source": "x.txt"}]
+
+    chunks = chunk_pages(
+        pages,
+        chunk_mode="Paragraph",
+        chunk_size=2,
+        chunk_overlap=1,
+        min_chunk_length=0,
+    )
+
+    assert [c["chunkText"] for c in chunks] == [
+        "Para 1\n\nPara 2",
+        "Para 2\n\nPara 3",
+        "Para 3\n\nPara 4",
+    ]
+
+
+def test_min_chunk_length_filters_short_chunks() -> None:
+    """Chunks shorter than the configured minimum are dropped."""
+    pages = [{"text": "short\n\nthis paragraph is long enough", "pageNumber": None, "source": "x.txt"}]
+
+    chunks = chunk_pages(
+        pages,
+        chunk_mode="Paragraph",
+        chunk_size=1,
+        chunk_overlap=0,
+        min_chunk_length=10,
+    )
+
+    assert [c["chunkText"] for c in chunks] == ["this paragraph is long enough"]
+
+
+def test_max_chunks_caps_output() -> None:
+    """The configured max chunk count caps indexed output."""
+    pages = [{"text": " ".join(str(i) for i in range(100)), "pageNumber": None, "source": "x.txt"}]
+
+    chunks = chunk_pages(
+        pages,
+        chunk_mode="Words",
+        chunk_size=5,
+        chunk_overlap=0,
+        max_chunks=3,
+    )
+
+    assert len(chunks) == 3
+    assert [c["chunkIndex"] for c in chunks] == [0, 1, 2]

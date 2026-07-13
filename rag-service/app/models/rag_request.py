@@ -41,6 +41,39 @@ class IndexDocumentRequest(BaseModel):
         description="Original file name (shown later in answer sources).",
         examples=["PRN222_Chapter_1.pdf"],
     )
+    chunkMode: str = Field(
+        default="Characters",
+        description="Chunking mode sent by the .NET admin config: Characters, Words, or Paragraph.",
+        examples=["Characters"],
+    )
+    chunkSize: int = Field(
+        default=1500,
+        ge=1,
+        le=10000,
+        description="Chunk size. Unit depends on chunkMode.",
+        examples=[1500],
+    )
+    chunkOverlap: int = Field(
+        default=250,
+        ge=0,
+        le=5000,
+        description="Overlap between neighboring chunks. Unit depends on chunkMode.",
+        examples=[250],
+    )
+    minChunkLength: int = Field(
+        default=80,
+        ge=0,
+        le=2000,
+        description="Drop chunks whose final text length is shorter than this many characters.",
+        examples=[80],
+    )
+    maxPreviewChunks: int = Field(
+        default=200,
+        ge=1,
+        le=1000,
+        description="Maximum number of chunks to index for this document.",
+        examples=[200],
+    )
 
 
 class ConversationTurn(BaseModel):
