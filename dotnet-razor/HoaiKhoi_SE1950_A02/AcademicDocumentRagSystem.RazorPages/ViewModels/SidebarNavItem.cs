@@ -26,6 +26,7 @@ public static class SidebarNav
 
     public static List<SidebarNavItem> Admin { get; } = new()
     {
+        new() { Page = "/Admin/Index", Label = "Thống kê", Icon = "chart" },
         new() { Page = "/Accounts/Index", Label = "Người dùng", Icon = "users" },
         new() { Page = "/Courses/Index", Label = "Môn học", Icon = "book" },
         new() { Page = "/Documents/All", Label = "Tài liệu", Icon = "file" },

@@ -74,7 +74,7 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Auth
 
         private IActionResult RedirectToDashboard(string roleName) => roleName switch
         {
-            "Admin" => RedirectToPage("/Accounts/Index"),
+            "Admin" => RedirectToPage("/Admin/Index"),
             "Teacher" => RedirectToPage("/Teacher/Courses"),
             "Student" => RedirectToPage("/Student/Chat"),
             _ => RedirectToPage("/Auth/Login")
