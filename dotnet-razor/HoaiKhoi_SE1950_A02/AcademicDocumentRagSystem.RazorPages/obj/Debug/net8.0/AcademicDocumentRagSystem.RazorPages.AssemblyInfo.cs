@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AcademicDocumentRagSystem.RazorPages")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+44163fdb559c9e21144fab6c080ccd5c34a5f9df")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+d8200b81eb6f28499ca2ac3482d03cdf50516779")]
 [assembly: System.Reflection.AssemblyProductAttribute("AcademicDocumentRagSystem.RazorPages")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AcademicDocumentRagSystem.RazorPages")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

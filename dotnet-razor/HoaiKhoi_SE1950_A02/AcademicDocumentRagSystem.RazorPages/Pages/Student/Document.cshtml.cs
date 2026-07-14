@@ -20,9 +20,7 @@ public class DocumentModel : PageModel
 
     public DocumentDetailsDto Document { get; private set; } = new();
 
-    public DocumentChunkDto? ActiveChunk { get; private set; }
-
-    public async Task<IActionResult> OnGetAsync(int? id, int? chunk)
+    public async Task<IActionResult> OnGetAsync(int? id)
     {
         if (!id.HasValue)
         {
@@ -44,15 +42,6 @@ public class DocumentModel : PageModel
         }
 
         Document = details;
-
-        if (Document.Chunks.Count > 0)
-        {
-            var ordered = Document.Chunks.OrderBy(c => c.ChunkIndex).ToList();
-            ActiveChunk = chunk.HasValue
-                ? ordered.FirstOrDefault(c => c.ChunkIndex == chunk.Value) ?? ordered[0]
-                : ordered[0];
-        }
-
         return Page();
     }
 

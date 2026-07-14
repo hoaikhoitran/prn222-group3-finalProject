@@ -17,7 +17,7 @@
                 Sinh viên · Thư viện
             </span>
             <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Thư viện tài liệu</h1>
-            <p class="text-muted-edurag mb-0">@items.Count tài liệu sẵn sàng hỏi đáp — @(filterCourse ?? "tất cả môn")</p>
+            <p class="text-muted-edurag mb-0">@items.Count tài liệu · @(filterCourse ?? "tất cả môn")</p>
         </div>
         <form asp-page="/Student/Library" method="get" class="d-flex gap-2">
             @if (!string.IsNullOrEmpty(filterCourse))
@@ -60,8 +60,7 @@
                             </div>
                         </div>
                         <div class="small text-muted-edurag text-truncate mb-3">@d.OriginalFileName</div>
-                        <div class="d-flex gap-2 mt-auto align-items-center">
-                            <span class="status-badge-indexed me-auto">Đã index</span>
+                        <div class="d-flex gap-2 mt-auto align-items-center justify-content-end">
                             <a asp-page="/Student/Document" asp-route-id="@d.DocumentId" class="btn btn-sm btn-edurag-ghost d-inline-flex align-items-center gap-1">
                                 @{ ViewData["Icon"] = "eye"; ViewData["IconSize"] = "14"; }
                                 @await Html.PartialAsync("_Icons")

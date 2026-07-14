@@ -4,8 +4,10 @@
     ViewData["Title"] = Model.Document.Title;
     Layout = "_LayoutStudent";
     var doc = Model.Document;
-    var chunk = Model.ActiveChunk;
-    var statusClass = doc.IndexStatus == "Indexed" ? "status-badge-indexed" : "status-badge-processing";
+    var fullText = string.Join("\n\n", doc.Chunks
+        .OrderBy(c => c.ChunkIndex)
+        .Select(c => c.ChunkText)
+        .Where(t => !string.IsNullOrWhiteSpace(t)));
 }
 <div class="d-flex flex-column" style="min-height:100vh;">
     <div class="border-bottom px-4 py-2 d-flex align-items-center gap-3 flex-wrap">
@@ -14,9 +16,8 @@
             @await Html.PartialAsync("_Icons")
             Thư viện
         </a>
-        <span class="@statusClass">@doc.IndexStatus</span>
         <span class="small text-muted-edurag">@doc.CourseCode@(doc.Chapter != null ? $" · {doc.Chapter}" : "")</span>
-        <a asp-page="/Student/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-sm btn-edurag-warm ms-auto">Hỏi đáp RAG</a>
+        <a asp-page="/Student/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-sm btn-edurag-warm ms-auto">Hỏi đáp</a>
     </div>
     <div class="row g-0 flex-grow-1">
         <div class="col-lg-8 border-end p-4 overflow-auto bg-muted-edurag">
@@ -29,62 +30,29 @@
                 <p class="small text-muted-edurag mb-4">
                     @doc.OriginalFileName
                     · @DocumentModel.FormatFileSize(doc.FileSize)
-                    · @doc.TotalChunks chunk@(doc.TotalChunks == 1 ? "" : "s") (RAG)
                 </p>
 
-                @if (!string.IsNullOrEmpty(doc.PreviewMessage) && chunk == null)
+                @if (!string.IsNullOrEmpty(doc.PreviewMessage) && string.IsNullOrWhiteSpace(fullText))
                 {
                     <div class="alert alert-warning small">@doc.PreviewMessage</div>
                 }
 
-                @if (chunk != null)
+                @if (!string.IsNullOrWhiteSpace(fullText))
                 {
-                    <div class="d-flex flex-wrap align-items-center gap-2 mb-2 small text-muted-edurag">
-                        <span class="citation-chip">
-                            Chunk #@chunk.ChunkIndex
-                            @(chunk.PageNumber.HasValue ? $"· trang {chunk.PageNumber}" : "")
-                        </span>
-                        <span>~@chunk.TokenEstimate token · @chunk.CharCount ký tự</span>
-                    </div>
-                    <div class="border rounded-3 p-3 small bg-white" style="white-space:pre-wrap;max-height:520px;overflow:auto;">@chunk.ChunkText</div>
-                    @if (doc.Chunks.Count > 1)
-                    {
-                        <div class="d-flex justify-content-between align-items-center mt-3 gap-2">
-                            @{
-                                var ordered = doc.Chunks.OrderBy(c => c.ChunkIndex).ToList();
-                                var idx = ordered.FindIndex(c => c.ChunkIndex == chunk.ChunkIndex);
-                                var prev = idx > 0 ? ordered[idx - 1] : null;
-                                var next = idx >= 0 && idx < ordered.Count - 1 ? ordered[idx + 1] : null;
-                            }
-                            @if (prev != null)
-                            {
-                                <a asp-page="/Student/Document" asp-route-id="@doc.DocumentId" asp-route-chunk="@prev.ChunkIndex"
-                                   class="btn btn-sm btn-edurag-ghost">← Chunk #@prev.ChunkIndex</a>
-                            }
-                            else
-                            {
-                                <span></span>
-                            }
-                            <span class="small text-muted-edurag">@((idx + 1)) / @doc.Chunks.Count</span>
-                            @if (next != null)
-                            {
-                                <a asp-page="/Student/Document" asp-route-id="@doc.DocumentId" asp-route-chunk="@next.ChunkIndex"
-                                   class="btn btn-sm btn-edurag-ghost">Chunk #@next.ChunkIndex →</a>
-                            }
-                        </div>
-                    }
+                    <div class="border rounded-3 p-3 small bg-white" style="white-space:pre-wrap;max-height:70vh;overflow:auto;">@fullText</div>
                 }
                 else if (doc.TotalChunks > 0)
                 {
                     <p class="text-muted-edurag mb-0">
-                        Không trích xuất được text preview từ file gốc (có thể là bản scan).
-                        RAG vẫn có @doc.TotalChunks chunks —
-                        dùng <a asp-page="/Student/Chat" asp-route-documentId="@doc.DocumentId">Hỏi đáp</a> để truy vấn.
+                        Không trích xuất được nội dung xem trước từ file gốc.
+                        Bạn vẫn có thể
+                        <a asp-page="/Student/Chat" asp-route-documentId="@doc.DocumentId">hỏi đáp</a>
+                        về tài liệu này.
                     </p>
                 }
                 else
                 {
-                    <p class="text-muted-edurag mb-0">Chưa có nội dung preview.</p>
+                    <p class="text-muted-edurag mb-0">Chưa có nội dung để hiển thị.</p>
                 }
             </div>
         </div>
@@ -99,39 +67,12 @@
                 <dt class="text-muted-edurag">Người upload</dt>
                 <dd class="mb-2">@doc.SubmittedByDisplay</dd>
                 <dt class="text-muted-edurag">Tải lên</dt>
-                <dd class="mb-2">@doc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
-                @if (doc.IndexedAt.HasValue)
-                {
-                    <dt class="text-muted-edurag">Index</dt>
-                    <dd class="mb-0">@doc.IndexedAt.Value.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
-                }
+                <dd class="mb-0">@doc.CreatedAt.ToLocalTime().ToString("dd/MM/yyyy HH:mm")</dd>
             </dl>
 
             <h3 class="font-display fw-bold fs-6 mb-1">Hỏi về tài liệu này</h3>
-            <p class="small text-muted-edurag mb-3">Trợ lý chỉ trả lời trong phạm vi nội dung đã index.</p>
-            <a asp-page="/Student/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-edurag-warm w-100 mb-3">Mở chat đầy đủ</a>
-
-            @if (doc.Chunks.Any())
-            {
-                <hr />
-                <p class="small fw-semibold text-muted-edurag text-uppercase mb-2" style="letter-spacing:.05em;">Các chunk preview</p>
-                <ul class="list-unstyled small mb-0">
-                    @foreach (var c in doc.Chunks.OrderBy(x => x.ChunkIndex).Take(12))
-                    {
-                        var isActive = chunk != null && c.ChunkIndex == chunk.ChunkIndex;
-                        <li class="mb-2">
-                            <a asp-page="/Student/Document" asp-route-id="@doc.DocumentId" asp-route-chunk="@c.ChunkIndex"
-                               class="citation-chip text-decoration-none @(isActive ? "active" : "")">
-                                #@c.ChunkIndex @(c.PageNumber.HasValue ? $"· tr.{c.PageNumber}" : "")
-                            </a>
-                        </li>
-                    }
-                </ul>
-                @if (doc.Chunks.Count > 12)
-                {
-                    <p class="small text-muted-edurag mt-2 mb-0">+ @(doc.Chunks.Count - 12) chunk khác</p>
-                }
-            }
+            <p class="small text-muted-edurag mb-3">Trợ lý chỉ trả lời dựa trên nội dung tài liệu.</p>
+            <a asp-page="/Student/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-edurag-warm w-100">Mở chat đầy đủ</a>
         </div>
     </div>
 </div>
