@@ -7,7 +7,7 @@
     var highlightId = Model.HighlightId;
     var indexed = items.Count(d => d.IndexStatus == "Indexed");
     var processing = items.Count(d => d.IndexStatus != "Indexed" && d.IndexStatus != "Failed");
-d    var statusesUrl = Url.Page("/Teacher/IndexStatus", "Statuses");
+    var statusesUrl = Url.Page("/Teacher/IndexStatus", "Statuses");
 }
 <div class="edurag-page" data-index-status data-statuses-url="@statusesUrl">
     <div class="page-hero">

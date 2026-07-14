@@ -10,7 +10,7 @@
         "projectUniqueName": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/AcademicDocumentRagSystem.DataAccess.csproj",
         "projectName": "AcademicDocumentRagSystem.DataAccess",
         "projectPath": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/AcademicDocumentRagSystem.DataAccess.csproj",
-        "packagesPath": "/var/folders/1g/llw74h5x2xz0wjhbshpc9gbc0000gn/T/cursor-sandbox-cache/84cdc089f163f92e77250ddff3625fb3/nuget",
+        "packagesPath": "/Users/thuathuynh/.nuget/packages/",
         "outputPath": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
@@ -91,7 +91,7 @@
         "projectUniqueName": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.Services/AcademicDocumentRagSystem.Services.csproj",
         "projectName": "AcademicDocumentRagSystem.Services",
         "projectPath": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.Services/AcademicDocumentRagSystem.Services.csproj",
-        "packagesPath": "/var/folders/1g/llw74h5x2xz0wjhbshpc9gbc0000gn/T/cursor-sandbox-cache/84cdc089f163f92e77250ddff3625fb3/nuget",
+        "packagesPath": "/Users/thuathuynh/.nuget/packages/",
         "outputPath": "/Users/thuathuynh/RiderProjects/prn222-group3-finalProject/dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.Services/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [

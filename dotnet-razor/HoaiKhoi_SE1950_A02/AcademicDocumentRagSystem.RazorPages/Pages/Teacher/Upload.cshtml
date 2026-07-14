@@ -19,6 +19,7 @@
     else
     {
     <form method="post" enctype="multipart/form-data" data-upload-form>
+        <script type="application/json" id="upload-existing-keys">@Html.Raw(Model.ExistingTitleChapterJson)</script>
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <label class="upload-zone mb-4">
             <span class="stat-icon-box bg-gradient-warm text-white mb-3">
@@ -35,7 +36,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label asp-for="Input.CourseId" class="form-label small fw-semibold">Môn học</label>
-                    <select asp-for="Input.CourseId" class="form-select">
+                    <select asp-for="Input.CourseId" class="form-select" data-upload-course>
                         @foreach (var c in Model.Input.AvailableCourses)
                         {
                             <option value="@c.CourseId">@c.Code — @c.Name</option>
@@ -46,13 +47,16 @@
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.Chapter" class="form-label small fw-semibold">Chương</label>
-                    <input asp-for="Input.Chapter" class="form-control" placeholder="Chương 1" />
+                    <input asp-for="Input.Chapter" class="form-control" placeholder="Chương 1" data-upload-chapter />
+                    <span asp-validation-for="Input.Chapter" class="text-danger small"></span>
+                    <span class="text-danger small d-block" data-upload-chapter-error></span>
                 </div>
             </div>
             <div class="mb-3">
                 <label asp-for="Input.Title" class="form-label small fw-semibold">Tiêu đề</label>
-                <input asp-for="Input.Title" class="form-control" placeholder="VD: Chương 1 - Giới thiệu" />
+                <input asp-for="Input.Title" class="form-control" placeholder="VD: Chương 1 - Giới thiệu" data-upload-title />
                 <span asp-validation-for="Input.Title" class="text-danger small"></span>
+                <span class="text-danger small d-block" data-upload-title-error></span>
             </div>
             <div class="mb-4">
                 <label asp-for="Input.Description" class="form-label small fw-semibold">Mô tả (tuỳ chọn)</label>
