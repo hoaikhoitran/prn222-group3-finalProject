@@ -54,7 +54,12 @@
                 <select asp-for="Input.CourseId" asp-items="Model.Courses" class="form-select" id="accountCourse">
                     <option value="">-- Chọn môn học --</option>
                 </select>
-                <div class="form-text text-muted-edurag" id="courseHelpTeacher">Bắt buộc với Teacher.</div>
+                <div class="form-text text-muted-edurag" id="courseHelpTeacher">
+                    Bắt buộc với Teacher. Chỉ hiện môn chưa có giảng viên đảm nhiệm.
+                </div>
+                <div class="form-text text-danger d-none" id="courseHelpEmpty">
+                    Hiện không còn môn học nào chưa có giảng viên. Hãy tạo môn mới hoặc bỏ gán môn của giảng viên hiện có.
+                </div>
                 <div class="form-text text-muted-edurag d-none" id="courseHelpStudent">Student không được gán môn học.</div>
                 <span asp-validation-for="Input.CourseId" class="text-danger small"></span>
             </div>
@@ -82,13 +87,17 @@
             const courseSelect = document.getElementById('accountCourse');
             const courseHelpTeacher = document.getElementById('courseHelpTeacher');
             const courseHelpStudent = document.getElementById('courseHelpStudent');
+            const courseHelpEmpty = document.getElementById('courseHelpEmpty');
             const teacherRole = '@CreateAccountDto.TeacherRole';
+            const availableCourseCount = @Model.Courses.Count;
 
             function syncCourseField() {
                 const isTeacher = roleSelect.value === teacherRole;
-                courseSelect.disabled = !isTeacher;
-                courseSelect.required = isTeacher;
-                courseHelpTeacher.classList.toggle('d-none', !isTeacher);
+                const noCourses = isTeacher && availableCourseCount === 0;
+                courseSelect.disabled = !isTeacher || noCourses;
+                courseSelect.required = isTeacher && !noCourses;
+                courseHelpTeacher.classList.toggle('d-none', !isTeacher || noCourses);
+                courseHelpEmpty.classList.toggle('d-none', !noCourses);
                 courseHelpStudent.classList.toggle('d-none', isTeacher);
                 if (!isTeacher) {
                     courseSelect.value = '';
