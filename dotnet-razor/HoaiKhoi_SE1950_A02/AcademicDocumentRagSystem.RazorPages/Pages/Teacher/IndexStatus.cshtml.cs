@@ -33,6 +33,37 @@ public class IndexStatusModel : PageModel
         return Page();
     }
 
+    public async Task<IActionResult> OnGetStatusesAsync()
+    {
+        var accountId = HttpContext.Session.GetInt32(SessionKeys.AccountId);
+        if (accountId == null)
+        {
+            return Unauthorized();
+        }
+
+        var documents = await _documentService.GetByTeacherAsync(accountId.Value);
+        var indexed = documents.Count(d => d.IndexStatus == "Indexed");
+        var processing = documents.Count(d => d.IndexStatus != "Indexed" && d.IndexStatus != "Failed");
+
+        return new JsonResult(new
+        {
+            documents = documents.Select(d => new
+            {
+                documentId = d.DocumentId,
+                indexStatus = d.IndexStatus,
+                totalChunks = d.TotalChunks,
+                indexError = d.IndexError
+            }),
+            stats = new
+            {
+                total = documents.Count,
+                indexed,
+                processing,
+                totalChunks = documents.Sum(d => d.TotalChunks)
+            }
+        });
+    }
+
     public async Task<IActionResult> OnPostReIndexAsync(int id)
     {
         var accountId = HttpContext.Session.GetInt32(SessionKeys.AccountId);

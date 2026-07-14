@@ -12,68 +12,98 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduRAG</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/edurag.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem("edurag.sidebarCollapsed") === "1") {
+                    document.documentElement.classList.add("sidebar-collapsed");
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
 <body class="edurag-body">
-    <div class="dashboard-shell">
-        <aside class="student-sidebar">
-            <div class="student-sidebar__head">
-                <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark mb-3">
-                    <span class="edurag-logo-mark bg-gradient-warm shadow-glow text-white d-inline-flex align-items-center justify-content-center">
-                        @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
-                        @await Html.PartialAsync("_Icons")
-                    </span>
-                    <span>
-                        <span class="font-display fw-bold lh-1 d-block">EduRAG</span>
-                        <span class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">Sinh viên</span>
-                    </span>
-                </a>
-                <a asp-page="/Student/Chat" class="btn btn-edurag-warm btn-sm w-100 d-flex align-items-center justify-content-center gap-2">
-                    @{ ViewData["Icon"] = "pen"; ViewData["IconSize"] = "14"; }
-                    @await Html.PartialAsync("_Icons")
-                    Cuộc trò chuyện mới
-                </a>
-            </div>
-            <div class="student-sidebar__body">
-                <a asp-page="/Student/Library"
-                   class="role-sidebar__link @(currentPage.Contains("/Student/Library") || currentPage.Contains("/Student/Document") ? "active" : "")">
-                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
-                    @await Html.PartialAsync("_Icons")
-                    Thư viện
-                </a>
-                @if (sessions.Any())
-                {
-                    <div class="small fw-semibold text-muted-edurag text-uppercase px-2 mt-3 mb-1" style="font-size:11px;letter-spacing:.06em;">Gần đây</div>
-                    @foreach (var s in sessions.Take(12))
-                    {
-                        <a asp-page="/Student/Chat" asp-route-documentId="@s.DocumentId" asp-route-sessionId="@s.ChatSessionId"
-                           class="session-item @(selectedSessionId == s.ChatSessionId ? "active" : "")">
-                            <span class="d-block text-truncate fw-medium">@s.Title</span>
-                            <span class="d-block text-muted-edurag" style="font-size:11px;">@s.CourseCode · @((s.UpdatedAt ?? s.CreatedAt).ToLocalTime().ToString("dd/MM"))</span>
-                        </a>
-                    }
-                }
-            </div>
-            <div class="student-sidebar__footer">
-                <div class="d-flex align-items-center gap-2 px-2 py-2 rounded-3" style="background:rgba(0,0,0,.03);">
-                    <div class="avatar-initial" style="width:34px;height:34px;font-size:13px;">@initial</div>
-                    <div class="flex-grow-1 min-width-0">
-                        <div class="small fw-semibold text-truncate">@fullName</div>
-                        <div class="text-muted-edurag" style="font-size:11px;">Student</div>
+    <div class="page">
+        <div class="dashboard-shell">
+            <aside class="student-sidebar" data-edurag-sidebar aria-label="Điều hướng sinh viên">
+                <div class="student-sidebar__head">
+                    <div class="sidebar-brand-row mb-3">
+                        <div class="sidebar-brand-slot">
+                            <a asp-page="/Home/Index" class="sidebar-brand-link d-flex align-items-center gap-2 text-decoration-none text-dark min-width-0">
+                                <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "20"; }
+                                    @await Html.PartialAsync("_Icons")
+                                </span>
+                                <span class="sidebar-label">
+                                    <span class="font-display fw-bold lh-1 d-block">EduRAG</span>
+                                    <span class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">Sinh viên</span>
+                                </span>
+                            </a>
+                            <button type="button" class="sidebar-toggle" data-sidebar-toggle title="Thu gọn / mở rộng thanh bên" aria-label="Thu gọn / mở rộng thanh bên" aria-expanded="true">
+                                @{ ViewData["Icon"] = "chevron-left"; ViewData["IconSize"] = "16"; }
+                                @await Html.PartialAsync("_Icons")
+                            </button>
+                        </div>
                     </div>
-                    <a asp-page="/Auth/Logout" class="text-muted-edurag" title="Đăng xuất">
-                        @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "15"; }
+                    <a asp-page="/Student/Chat" class="btn btn-edurag-warm btn-sm w-100 d-flex align-items-center justify-content-center gap-2" title="Cuộc trò chuyện mới">
+                        @{ ViewData["Icon"] = "pen"; ViewData["IconSize"] = "14"; }
                         @await Html.PartialAsync("_Icons")
+                        <span class="sidebar-label">Cuộc trò chuyện mới</span>
                     </a>
                 </div>
+                <div class="student-sidebar__body">
+                    <a asp-page="/Student/Library"
+                       class="role-sidebar__link @(currentPage.Contains("/Student/Library") || currentPage.Contains("/Student/Document") ? "active" : "")"
+                       title="Thư viện">
+                        @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
+                        @await Html.PartialAsync("_Icons")
+                        <span class="sidebar-label">Thư viện</span>
+                    </a>
+                    @if (sessions.Any())
+                    {
+                        <div class="sidebar-label small fw-semibold text-muted-edurag text-uppercase px-2 mt-3 mb-1" style="font-size:11px;letter-spacing:.06em;">Gần đây</div>
+                        @foreach (var s in sessions.Take(12))
+                        {
+                            <a asp-page="/Student/Chat" asp-route-documentId="@s.DocumentId" asp-route-sessionId="@s.ChatSessionId"
+                               class="session-item @(selectedSessionId == s.ChatSessionId ? "active" : "")"
+                               title="@s.Title">
+                                <span class="d-block text-truncate fw-medium sidebar-label">@s.Title</span>
+                                <span class="d-block text-muted-edurag sidebar-label" style="font-size:11px;">@s.CourseCode · @((s.UpdatedAt ?? s.CreatedAt).ToLocalTime().ToString("dd/MM"))</span>
+                                <span class="session-item__dot" aria-hidden="true"></span>
+                            </a>
+                        }
+                    }
+                </div>
+                <div class="student-sidebar__footer">
+                    <div class="sidebar-user align-items-center rounded-3" style="background:rgba(28,25,23,.04);">
+                        <div class="sidebar-user-slot">
+                            <div class="avatar-initial" title="@fullName">@initial</div>
+                        </div>
+                        <div class="sidebar-label min-width-0">
+                            <div class="small fw-semibold text-truncate">@fullName</div>
+                            <div class="text-muted-edurag" style="font-size:11px;">Student</div>
+                        </div>
+                        <a asp-page="/Auth/Logout" class="sidebar-logout" data-logout-confirm title="Đăng xuất" aria-label="Đăng xuất">
+                            @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "15"; }
+                            @await Html.PartialAsync("_Icons")
+                        </a>
+                    </div>
+                </div>
+            </aside>
+            <div class="page-wrapper dashboard-main">
+                <div class="page-body">
+                    @RenderBody()
+                </div>
             </div>
-        </aside>
-        <main class="dashboard-main">
-            @RenderBody()
-        </main>
+        </div>
     </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/tabler.min.js" asp-append-version="true"></script>
+    <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

@@ -5,26 +5,42 @@
 }
 @await Html.PartialAsync("_SiteHeader")
 <div class="edurag-container py-5">
-    <h1 class="font-display display-6 fw-bold mb-2">Liên hệ</h1>
-    <p class="text-muted-edurag mb-5">Chúng tôi sẵn sàng hỗ trợ bạn về EduRAG</p>
-    <div class="row g-4 mb-5">
-        <div class="col-md-3"><div class="edurag-card p-4 h-100"><div class="fw-semibold mb-1">Email</div><div class="small text-muted-edurag">edurag@university.edu.vn</div></div></div>
-        <div class="col-md-3"><div class="edurag-card p-4 h-100"><div class="fw-semibold mb-1">Hotline</div><div class="small text-muted-edurag">+84 24 3869 4242</div></div></div>
-        <div class="col-md-3"><div class="edurag-card p-4 h-100"><div class="fw-semibold mb-1">Địa chỉ</div><div class="small text-muted-edurag">Phòng A2-301, Đại học Bách Khoa, Hà Nội</div></div></div>
-        <div class="col-md-3"><div class="edurag-card p-4 h-100"><div class="fw-semibold mb-1">Zalo</div><div class="small text-muted-edurag">@@edurag_official</div></div></div>
+    <span class="section-chip">Hỗ trợ</span>
+    <h1 class="font-display display-6 fw-bold mb-2 mt-3">Liên hệ</h1>
+    <p class="text-muted-edurag mb-4" style="max-width:36rem;">Chúng tôi sẵn sàng hỗ trợ bạn về EduRAG.</p>
+    <div class="row g-3 mb-4">
+        @foreach (var c in new[] {
+            ("mail", "Email", "edurag@university.edu.vn"),
+            ("phone", "Hotline", "+84 24 3869 4242"),
+            ("map-pin", "Địa chỉ", "Phòng A2-301, Đại học Bách Khoa, Hà Nội"),
+            ("message-circle", "Zalo", "@edurag_official") })
+        {
+            <div class="col-md-3">
+                <div class="stat-card h-100">
+                    <span class="stat-card__icon stat-card__icon--warm mb-2">
+                        @{ ViewData["Icon"] = c.Item1; ViewData["IconSize"] = "18"; }
+                        @await Html.PartialAsync("_Icons")
+                    </span>
+                    <div class="fw-semibold mb-1">@c.Item2</div>
+                    <div class="small text-muted-edurag">@c.Item3</div>
+                </div>
+            </div>
+        }
     </div>
     <div class="row">
         <div class="col-lg-8">
-            <div class="edurag-card p-4 p-md-5">
-                <form class="vstack gap-3">
-                    <div class="row g-3">
-                        <div class="col-md-6"><label class="form-label">Họ tên</label><input class="form-control" type="text" /></div>
-                        <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" /></div>
-                    </div>
-                    <div><label class="form-label">Chủ đề</label><input class="form-control" type="text" /></div>
-                    <div><label class="form-label">Nội dung</label><textarea class="form-control" rows="5"></textarea></div>
-                    <button type="button" class="btn btn-edurag-warm align-self-start">Gửi tin nhắn</button>
-                </form>
+            <div class="card edurag-card">
+                <div class="card-body p-4">
+                    <form class="vstack gap-3">
+                        <div class="row g-3">
+                            <div class="col-md-6"><label class="form-label">Họ tên</label><input class="form-control" type="text" /></div>
+                            <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" /></div>
+                        </div>
+                        <div><label class="form-label">Chủ đề</label><input class="form-control" type="text" /></div>
+                        <div><label class="form-label">Nội dung</label><textarea class="form-control" rows="5"></textarea></div>
+                        <button type="button" class="btn btn-edurag-warm align-self-start">Gửi tin nhắn</button>
+                    </form>
+                </div>
             </div>
         </div>
     </div>

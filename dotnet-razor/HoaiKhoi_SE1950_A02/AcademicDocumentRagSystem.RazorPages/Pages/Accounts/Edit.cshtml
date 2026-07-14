@@ -5,7 +5,7 @@
     var accountId = int.TryParse(HttpContext.Request.Query["id"], out var id) ? id : 0;
 }
 
-<div class="p-4 p-md-5">
+<div class="edurag-page">
     <div class="mb-4">
         <a asp-page="/Accounts/Index" class="btn btn-sm btn-edurag-ghost mb-3 d-inline-flex align-items-center gap-1">
             @{ ViewData["Icon"] = "arrow-left"; ViewData["IconSize"] = "14"; }

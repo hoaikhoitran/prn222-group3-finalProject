@@ -5,17 +5,82 @@
     Layout = "_LayoutDashboard";
 }
 
-<div class="p-4 p-md-5">
-    <div class="d-flex flex-wrap justify-content-between align-items-start mb-4 gap-3">
-        <div>
-            <h1 class="font-display fs-2 fw-bold mb-1">Quản lý tài khoản</h1>
-            <p class="text-muted-edurag mb-0">Tạo, cập nhật, lọc và quản lý tài khoản sinh viên, giảng viên</p>
+@{
+    var accounts = Model.Accounts ?? new List<AcademicDocumentRagSystem.Services.DTOs.Accounts.AccountListItemDto>();
+    var totalAccounts = accounts.Count;
+    var teacherCount = accounts.Count(a => a.RoleName == "Teacher");
+    var studentCount = accounts.Count(a => a.RoleName == "Student");
+    var activeCount = accounts.Count(a => a.Status);
+}
+<div class="edurag-page">
+    <div class="page-hero">
+        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
+            <div>
+                <span class="section-chip mb-2">
+                    @{ ViewData["Icon"] = "users"; ViewData["IconSize"] = "13"; }
+                    @await Html.PartialAsync("_Icons")
+                    Admin · Người dùng
+                </span>
+                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Quản lý tài khoản</h1>
+                <p class="text-muted-edurag mb-0">Tạo, cập nhật, lọc và quản lý tài khoản sinh viên, giảng viên</p>
+            </div>
+            <a asp-page="/Accounts/Create" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
+                @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
+                @await Html.PartialAsync("_Icons")
+                Thêm tài khoản
+            </a>
         </div>
-        <a asp-page="/Accounts/Create" class="btn btn-edurag-warm btn-sm d-inline-flex align-items-center gap-1">
-            @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
-            @await Html.PartialAsync("_Icons")
-            Thêm tài khoản
-        </a>
+    </div>
+
+    <div class="row g-3 mb-4">
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--warm">
+                    @{ ViewData["Icon"] = "users"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@totalAccounts</div>
+                    <div class="stat-card__label">Tổng tài khoản</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--slate">
+                    @{ ViewData["Icon"] = "graduation"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@teacherCount</div>
+                    <div class="stat-card__label">Giảng viên</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--amber">
+                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@studentCount</div>
+                    <div class="stat-card__label">Sinh viên</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-6 col-lg-3">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--green">
+                    @{ ViewData["Icon"] = "check-circle"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@activeCount</div>
+                    <div class="stat-card__label">Đang hoạt động</div>
+                </div>
+            </div>
+        </div>
     </div>
 
     @if (TempData["Error"] != null)
@@ -31,7 +96,8 @@
         <div class="alert alert-warning mb-3">@TempData["Warning"]</div>
     }
 
-    <div class="edurag-card p-3 mb-4">
+    <div class="card edurag-card mb-4">
+        <div class="card-body">
         <form asp-page="/Accounts/Index" method="get" class="row g-3 align-items-end">
             <div class="col-md-5">
                 <label class="form-label small fw-semibold" for="searchTerm">Tìm kiếm</label>
@@ -58,9 +124,14 @@
                 <a asp-page="/Accounts/Index" class="btn btn-sm btn-edurag-ghost">Đặt lại</a>
             </div>
         </form>
+        </div>
     </div>
 
-    <div class="edurag-card overflow-hidden">
+    <div class="card edurag-card overflow-hidden">
+        <div class="card-header d-flex align-items-center justify-content-between" style="background:var(--edurag-sidebar);border-color:var(--edurag-border);">
+            <span class="fw-semibold small">Danh sách tài khoản</span>
+            <span class="text-muted-edurag small">@totalAccounts kết quả</span>
+        </div>
         @if (Model.Accounts == null || !Model.Accounts.Any())
         {
             <div class="text-center text-muted-edurag py-5">

@@ -8,7 +8,7 @@
 }
 @if (workspace.ActiveDocument == null && workspace.Documents.Any())
 {
-    <div class="p-4 p-md-5">
+    <div class="edurag-page">
         @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
         {
             <div class="alert alert-success mb-3 py-2 small">@workspace.SuccessMessage</div>
@@ -19,15 +19,16 @@
         }
         <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
             <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
-                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "22"; }
+                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
                 @await Html.PartialAsync("_Icons")
             </div>
             <div>
+                <p class="page-pretitle mb-1">Hỏi đáp</p>
                 <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu</h1>
                 <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index để trợ lý trả lời dựa trên nội dung.</p>
             </div>
         </div>
-        <div class="edurag-card overflow-hidden">
+        <div class="card edurag-card overflow-hidden">
             <div class="table-responsive">
                 <table class="table-edurag">
                     <thead>
@@ -111,36 +112,24 @@ else if (workspace.ActiveDocument != null)
                             </div>
                             <div class="d-flex gap-3 mb-4">
                                 <div class="chat-avatar">
-                                    @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "16"; }
+                                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
                                     @await Html.PartialAsync("_Icons")
                                 </div>
                                 <div class="min-width-0">
                                     <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
-                                    @if (m.Sources.Any())
-                                    {
-                                        <div class="d-flex flex-wrap gap-1 mt-2">
-                                            @foreach (var cit in m.Sources)
-                                            {
-                                                <span class="citation-chip">
-                                                    @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
-                                                    @await Html.PartialAsync("_Icons")
-                                                    @cit.FileName @(cit.PageNumber.HasValue ? $"· tr.{cit.PageNumber}" : "")
-                                                </span>
-                                            }
-                                        </div>
-                                    }
+                                    @await Html.PartialAsync("_CitationChips", m.Sources)
                                 </div>
                             </div>
                         }
                     }
                     else
                     {
-                        <p class="text-muted-edurag text-center py-5">Đặt câu hỏi đầu tiên về tài liệu này.</p>
+                        <p class="text-muted-edurag text-center py-5 mb-0" style="line-height:1.7;">Đặt câu hỏi đầu tiên về tài liệu này.</p>
                     }
                 </div>
             </div>
             <div class="chat-main__inputbar">
-                <form asp-page-handler="Ask" method="post">
+                <form asp-page-handler="Ask" method="post" data-chat-ask>
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="AskForm.DocumentId" />
                     <input type="hidden" asp-for="AskForm.ChatSessionId" />
@@ -159,18 +148,20 @@ else if (workspace.ActiveDocument != null)
 }
 else
 {
-    <div class="p-4 p-md-5">
+    <div class="edurag-page">
         <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
             <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
-                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "22"; }
+                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
                 @await Html.PartialAsync("_Icons")
             </div>
             <div>
+                <p class="page-pretitle mb-1">Hỏi đáp</p>
                 <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu</h1>
                 <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index để trợ lý trả lời dựa trên nội dung.</p>
             </div>
         </div>
-        <div class="edurag-card p-5 text-center">
+        <div class="card edurag-card">
+            <div class="card-body p-5 text-center">
             <div class="chat-avatar mx-auto mb-3" style="width:3rem;height:3rem;opacity:.6;">
                 @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
                 @await Html.PartialAsync("_Icons")
@@ -182,6 +173,12 @@ else
                 @await Html.PartialAsync("_Icons")
                 Thư viện tài liệu
             </a>
+            </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script src="~/js/citation-preview.js" asp-append-version="true"></script>
+    <script src="~/js/chat-claude.js" asp-append-version="true"></script>
 }

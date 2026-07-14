@@ -70,24 +70,12 @@
                             </div>
                             <div class="d-flex gap-3 mb-4">
                                 <div class="chat-avatar">
-                                    @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "16"; }
+                                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
                                     @await Html.PartialAsync("_Icons")
                                 </div>
                                 <div class="min-width-0">
                                     <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
-                                    @if (m.Sources.Any())
-                                    {
-                                        <div class="d-flex flex-wrap gap-1 mt-2">
-                                            @foreach (var cit in m.Sources)
-                                            {
-                                                <span class="citation-chip">
-                                                    @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
-                                                    @await Html.PartialAsync("_Icons")
-                                                    @cit.FileName @(cit.PageNumber.HasValue ? $"· tr.{cit.PageNumber}" : "")
-                                                </span>
-                                            }
-                                        </div>
-                                    }
+                                    @await Html.PartialAsync("_CitationChips", m.Sources)
                                 </div>
                             </div>
                         }
@@ -99,7 +87,7 @@
                 </div>
             </div>
             <div class="chat-main__inputbar">
-                <form asp-page-handler="Ask" method="post">
+                <form asp-page-handler="Ask" method="post" data-chat-ask>
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="AskForm.DocumentId" />
                     <input type="hidden" asp-for="AskForm.ChatSessionId" />
@@ -145,3 +133,8 @@
         }
     </aside>
 </div>
+
+@section Scripts {
+    <script src="~/js/citation-preview.js" asp-append-version="true"></script>
+    <script src="~/js/chat-claude.js" asp-append-version="true"></script>
+}

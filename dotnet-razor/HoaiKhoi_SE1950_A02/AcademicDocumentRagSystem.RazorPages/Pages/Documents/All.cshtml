@@ -13,40 +13,70 @@
     var indexStatuses = new[] { "Pending", "Processing", "Indexed", "Failed" };
 }
 
-<div class="p-4 p-md-5">
-    <div class="d-flex flex-column flex-lg-row justify-content-between gap-3 mb-4">
-        <div>
-            <h1 class="font-display fs-2 fw-bold mb-1">Tất cả tài liệu</h1>
-            <p class="text-muted-edurag mb-0">Danh sách tài liệu đã upload trên toàn hệ thống</p>
+<div class="edurag-page">
+    <div class="page-hero">
+        <div class="d-flex flex-column flex-lg-row justify-content-between gap-3">
+            <div>
+                <span class="section-chip mb-2">
+                    @{ ViewData["Icon"] = "file"; ViewData["IconSize"] = "13"; }
+                    @await Html.PartialAsync("_Icons")
+                    Admin · Tài liệu
+                </span>
+                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Tất cả tài liệu</h1>
+                <p class="text-muted-edurag mb-0">Danh sách tài liệu đã upload trên toàn hệ thống</p>
+            </div>
+            <a asp-page="/Documents/ChunkConfig" class="btn btn-edurag-outline align-self-start d-inline-flex align-items-center gap-1">
+                @{ ViewData["Icon"] = "settings"; ViewData["IconSize"] = "14"; }
+                @await Html.PartialAsync("_Icons")
+                Chunk config
+            </a>
         </div>
-        <a asp-page="/Documents/ChunkConfig" class="btn btn-sm btn-edurag-outline align-self-start">Chunk config</a>
     </div>
 
     <div class="row g-3 mb-4">
         <div class="col-md-4">
-            <div class="edurag-card p-4">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Tài liệu</div>
-                <div class="font-display fs-3 fw-bold">@totalDocuments</div>
-                <div class="small text-muted-edurag">Theo bộ lọc hiện tại</div>
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--warm">
+                    @{ ViewData["Icon"] = "file"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@totalDocuments</div>
+                    <div class="stat-card__label">Tài liệu</div>
+                    <div class="stat-card__hint">Theo bộ lọc hiện tại</div>
+                </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="edurag-card p-4">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Đã index</div>
-                <div class="font-display fs-3 fw-bold text-gradient-warm">@indexedDocuments</div>
-                <div class="small text-muted-edurag">Sẵn sàng cho Q&amp;A</div>
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--green">
+                    @{ ViewData["Icon"] = "check-circle"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@indexedDocuments</div>
+                    <div class="stat-card__label">Đã index</div>
+                    <div class="stat-card__hint">Sẵn sàng cho Q&amp;A</div>
+                </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="edurag-card p-4">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Chunks</div>
-                <div class="font-display fs-3 fw-bold">@totalChunks</div>
-                <div class="small text-muted-edurag">Đơn vị retrieval RAG</div>
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--amber">
+                    @{ ViewData["Icon"] = "layers"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@totalChunks.ToString("N0")</div>
+                    <div class="stat-card__label">Chunks</div>
+                    <div class="stat-card__hint">Đơn vị retrieval RAG</div>
+                </div>
             </div>
         </div>
     </div>
 
-    <div class="edurag-card p-3 mb-4">
+    <div class="card edurag-card mb-4">
+        <div class="card-body">
         <form method="get" class="row g-3 align-items-end">
             <div class="col-md-4">
                 <label class="form-label small fw-semibold" for="CourseId">Môn học</label>
@@ -92,9 +122,14 @@
                 <a asp-page="/Documents/All" class="btn btn-sm btn-edurag-ghost">Đặt lại</a>
             </div>
         </form>
+        </div>
     </div>
 
-    <div class="edurag-card overflow-hidden">
+    <div class="card edurag-card overflow-hidden">
+        <div class="card-header d-flex align-items-center justify-content-between" style="background:var(--edurag-sidebar);border-color:var(--edurag-border);">
+            <span class="fw-semibold small">Danh sách tài liệu</span>
+            <span class="text-muted-edurag small">@totalDocuments kết quả · @indexedDocuments đã index</span>
+        </div>
         @if (Model.Documents == null || !Model.Documents.Any())
         {
             <div class="text-center text-muted-edurag py-5">Không có tài liệu phù hợp bộ lọc.</div>

@@ -4,7 +4,8 @@
     ViewData["Title"] = "Upload tài liệu";
     Layout = "_LayoutDashboard";
 }
-<div class="p-4 p-md-5" style="max-width:52rem;">
+<div class="edurag-page" style="max-width:52rem;">
+    <p class="page-pretitle">Giảng viên</p>
     <h1 class="font-display fs-2 fw-bold mb-1">Upload tài liệu</h1>
     <p class="text-muted-edurag mb-4">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
@@ -17,10 +18,11 @@
     }
     else
     {
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" data-upload-form>
+        <script type="application/json" id="upload-existing-keys">@Html.Raw(Model.ExistingTitleChapterJson)</script>
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <label class="upload-zone mb-4">
-            <span class="stat-icon-box bg-gradient-warm text-white shadow-glow mb-3">
+            <span class="stat-icon-box bg-gradient-warm text-white mb-3">
                 @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "20"; }
                 @await Html.PartialAsync("_Icons")
             </span>
@@ -34,7 +36,7 @@
             <div class="row g-3 mb-3">
                 <div class="col-md-6">
                     <label asp-for="Input.CourseId" class="form-label small fw-semibold">Môn học</label>
-                    <select asp-for="Input.CourseId" class="form-select">
+                    <select asp-for="Input.CourseId" class="form-select" data-upload-course>
                         @foreach (var c in Model.Input.AvailableCourses)
                         {
                             <option value="@c.CourseId">@c.Code — @c.Name</option>
@@ -45,21 +47,27 @@
                 </div>
                 <div class="col-md-6">
                     <label asp-for="Input.Chapter" class="form-label small fw-semibold">Chương</label>
-                    <input asp-for="Input.Chapter" class="form-control" placeholder="Chương 1" />
+                    <input asp-for="Input.Chapter" class="form-control" placeholder="Chương 1" data-upload-chapter />
+                    <span asp-validation-for="Input.Chapter" class="text-danger small"></span>
+                    <span class="text-danger small d-block" data-upload-chapter-error></span>
                 </div>
             </div>
             <div class="mb-3">
                 <label asp-for="Input.Title" class="form-label small fw-semibold">Tiêu đề</label>
-                <input asp-for="Input.Title" class="form-control" placeholder="VD: Chương 1 - Giới thiệu" />
+                <input asp-for="Input.Title" class="form-control" placeholder="VD: Chương 1 - Giới thiệu" data-upload-title />
                 <span asp-validation-for="Input.Title" class="text-danger small"></span>
+                <span class="text-danger small d-block" data-upload-title-error></span>
             </div>
             <div class="mb-4">
                 <label asp-for="Input.Description" class="form-label small fw-semibold">Mô tả (tuỳ chọn)</label>
                 <textarea asp-for="Input.Description" class="form-control" rows="2"></textarea>
             </div>
-            <button type="submit" class="btn btn-edurag-warm">Upload và Index</button>
+            <button type="submit" class="btn btn-edurag-warm" data-upload-submit data-default-label="Upload và Index">Upload và Index</button>
             <a asp-page="/Teacher/IndexStatus" class="btn btn-edurag-outline ms-2">Trạng thái index</a>
         </div>
     </form>
     }
 </div>
+@section Scripts {
+    <script src="~/js/upload-guard.js" asp-append-version="true"></script>
+}

@@ -4,17 +4,34 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - EduRAG</title>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/css/edurag.css" asp-append-version="true" />
+    <link rel="icon" href="~/favicon.svg" type="image/svg+xml" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem("edurag.sidebarCollapsed") === "1") {
+                    document.documentElement.classList.add("sidebar-collapsed");
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
 <body class="edurag-body">
-    <div class="dashboard-shell">
-        @await Html.PartialAsync("_RoleSidebar")
-        <main class="dashboard-main">
-            @RenderBody()
-        </main>
+    <div class="page">
+        <div class="dashboard-shell">
+            @await Html.PartialAsync("_RoleSidebar")
+            <div class="page-wrapper dashboard-main">
+                <div class="page-body">
+                    @RenderBody()
+                </div>
+            </div>
+        </div>
     </div>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/js/tabler.min.js" asp-append-version="true"></script>
+    <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

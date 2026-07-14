@@ -101,8 +101,14 @@ public class CreateModel : PageModel
     private async Task LoadCoursesAsync()
     {
         var courses = await _courseService.GetAllAsync();
+        var teachers = await _accountService.GetAllAsync(null, CreateAccountDto.TeacherRole, null);
+        var assignedCourseIds = teachers
+            .Where(t => t.CourseId.HasValue)
+            .Select(t => t.CourseId!.Value)
+            .ToHashSet();
+
         Courses = courses
-            .Where(c => c.Status)
+            .Where(c => c.Status && !assignedCourseIds.Contains(c.CourseId))
             .Select(c => new SelectListItem
             {
                 Value = c.CourseId.ToString(),
