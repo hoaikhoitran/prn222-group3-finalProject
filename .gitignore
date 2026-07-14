@@ -1,0 +1,16 @@
+# Rider / JetBrains
+.idea/
+*.sln.iml
+*.user
+*.DotSettings.user
+
+# .NET build
+[Bb]in/
+[Oo]bj/
+*.user
+*.suo
+*.cache
+
+# OS
+.DS_Store
+Thumbs.db
