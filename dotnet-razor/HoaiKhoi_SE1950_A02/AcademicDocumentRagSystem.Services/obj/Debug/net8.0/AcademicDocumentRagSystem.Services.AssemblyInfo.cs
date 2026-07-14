@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("AcademicDocumentRagSystem.Services")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+dafb1954f075063717d4008106d452718a9b7c77")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3a16a2ffad7acfdafc68b1086baa1b0f6203687b")]
 [assembly: System.Reflection.AssemblyProductAttribute("AcademicDocumentRagSystem.Services")]
 [assembly: System.Reflection.AssemblyTitleAttribute("AcademicDocumentRagSystem.Services")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

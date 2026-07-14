@@ -18,7 +18,7 @@
     }
     else
     {
-    <form method="post" enctype="multipart/form-data">
+    <form method="post" enctype="multipart/form-data" data-upload-form>
         <div asp-validation-summary="All" class="text-danger mb-3"></div>
         <label class="upload-zone mb-4">
             <span class="stat-icon-box bg-gradient-warm text-white mb-3">
@@ -58,9 +58,12 @@
                 <label asp-for="Input.Description" class="form-label small fw-semibold">Mô tả (tuỳ chọn)</label>
                 <textarea asp-for="Input.Description" class="form-control" rows="2"></textarea>
             </div>
-            <button type="submit" class="btn btn-edurag-warm">Upload và Index</button>
+            <button type="submit" class="btn btn-edurag-warm" data-upload-submit data-default-label="Upload và Index">Upload và Index</button>
             <a asp-page="/Teacher/IndexStatus" class="btn btn-edurag-outline ms-2">Trạng thái index</a>
         </div>
     </form>
     }
 </div>
+@section Scripts {
+    <script src="~/js/upload-guard.js" asp-append-version="true"></script>
+}

@@ -7,8 +7,9 @@
     var highlightId = Model.HighlightId;
     var indexed = items.Count(d => d.IndexStatus == "Indexed");
     var processing = items.Count(d => d.IndexStatus != "Indexed" && d.IndexStatus != "Failed");
+d    var statusesUrl = Url.Page("/Teacher/IndexStatus", "Statuses");
 }
-<div class="edurag-page">
+<div class="edurag-page" data-index-status data-statuses-url="@statusesUrl">
     <div class="page-hero">
         <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
             <div>
@@ -30,30 +31,59 @@
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
     @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
     <div class="row g-3 mb-4">
-        @foreach (var s in new[] {
-            (items.Count.ToString(), "Tổng tài liệu", "database", "stat-card__icon--warm"),
-            (indexed.ToString(), "Đã index", "check-circle", "stat-card__icon--green"),
-            (processing.ToString(), "Đang xử lý", "clock", "stat-card__icon--amber"),
-            (items.Sum(d => d.TotalChunks).ToString("N0"), "Tổng chunks", "layers", "stat-card__icon--slate") })
-        {
-            <div class="col-md-3 col-6">
-                <div class="stat-card d-flex align-items-center gap-3">
-                    <span class="stat-card__icon @s.Item4">
-                        @{ ViewData["Icon"] = s.Item3; ViewData["IconSize"] = "18"; }
-                        @await Html.PartialAsync("_Icons")
-                    </span>
-                    <div>
-                        <div class="stat-card__value">@s.Item1</div>
-                        <div class="stat-card__label">@s.Item2</div>
-                    </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--warm">
+                    @{ ViewData["Icon"] = "database"; ViewData["IconSize"] = "18"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value">@items.Count</div>
+                    <div class="stat-card__label">Tổng tài liệu</div>
                 </div>
             </div>
-        }
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--green">
+                    @{ ViewData["Icon"] = "check-circle"; ViewData["IconSize"] = "18"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value" data-stat-indexed>@indexed</div>
+                    <div class="stat-card__label">Đã index</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--amber">
+                    @{ ViewData["Icon"] = "clock"; ViewData["IconSize"] = "18"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value" data-stat-processing>@processing</div>
+                    <div class="stat-card__label">Đang xử lý</div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-6">
+            <div class="stat-card d-flex align-items-center gap-3">
+                <span class="stat-card__icon stat-card__icon--slate">
+                    @{ ViewData["Icon"] = "layers"; ViewData["IconSize"] = "18"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div>
+                    <div class="stat-card__value" data-stat-chunks>@items.Sum(d => d.TotalChunks).ToString("N0")</div>
+                    <div class="stat-card__label">Tổng chunks</div>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="card edurag-card overflow-hidden">
         <div class="card-header d-flex align-items-center justify-content-between" style="background:var(--edurag-sidebar);border-color:var(--edurag-border);">
             <span class="fw-semibold small">Pipeline tài liệu</span>
-            <span class="text-muted-edurag small">@indexed/@items.Count đã sẵn sàng Q&amp;A</span>
+            <span class="text-muted-edurag small" data-stat-ready>@indexed/@items.Count đã sẵn sàng Q&amp;A</span>
         </div>
         <div class="table-responsive">
             <table class="table-edurag">
@@ -63,22 +93,22 @@
                     {
                         var statusClass = d.IndexStatus == "Indexed" ? "status-badge-indexed" : d.IndexStatus == "Failed" ? "status-badge-failed" : "status-badge-processing";
                         var statusLabel = d.IndexStatus == "Indexed" ? "Đã index" : d.IndexStatus == "Failed" ? "Lỗi" : "Đang xử lý";
-                        <tr class="@(highlightId == d.DocumentId ? "highlight" : "")">
+                        <tr class="@(highlightId == d.DocumentId ? "highlight" : "")" data-document-id="@d.DocumentId" data-index-status="@d.IndexStatus">
                             <td>
                                 <div class="fw-semibold">@d.Title</div>
                                 <div class="small text-muted-edurag">@d.OriginalFileName</div>
                             </td>
                             <td>@d.CourseCode</td>
-                            <td>@d.TotalChunks</td>
-                            <td>
+                            <td data-total-chunks>@d.TotalChunks</td>
+                            <td data-index-badge>
                                 <span class="@statusClass">@statusLabel</span>
                                 @if (!string.IsNullOrEmpty(d.IndexError)) { <div class="small text-danger">@d.IndexError</div> }
                             </td>
                             <td class="text-end text-nowrap">
                                 <a asp-page="/Documents/Details" asp-route-id="@d.DocumentId" class="btn btn-sm btn-edurag-ghost">Chi tiết</a>
-                                <form asp-page-handler="ReIndex" asp-route-id="@d.DocumentId" method="post" class="d-inline">
+                                <form asp-page-handler="ReIndex" asp-route-id="@d.DocumentId" method="post" class="d-inline" data-reindex-form>
                                     @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-edurag-outline">Re-index</button>
+                                    <button type="submit" class="btn btn-sm btn-edurag-outline" data-reindex-submit>Re-index</button>
                                 </form>
                             </td>
                         </tr>
@@ -92,3 +122,35 @@
         </div>
     </div>
 </div>
+@section Scripts {
+    <script src="~/js/index-status-poll.js" asp-append-version="true"></script>
+    <script>
+        (function () {
+            document.querySelectorAll("[data-reindex-form]").forEach(function (form) {
+                var btn = form.querySelector("[data-reindex-submit]");
+                form.addEventListener("submit", function (event) {
+                    if (form.getAttribute("data-submitting") === "1") {
+                        event.preventDefault();
+                        return;
+                    }
+                    form.setAttribute("data-submitting", "1");
+                    if (btn) {
+                        btn.disabled = true;
+                        btn.textContent = "Đang re-index…";
+                    }
+                    var row = form.closest("[data-document-id]");
+                    if (row) {
+                        row.setAttribute("data-index-status", "Processing");
+                        var badgeHost = row.querySelector("[data-index-badge]");
+                        if (badgeHost) {
+                            badgeHost.innerHTML = '<span class="status-badge-processing">Đang xử lý</span>';
+                        }
+                    }
+                    if (window.EduRagIndexStatusPoll && typeof window.EduRagIndexStatusPoll.start === "function") {
+                        window.EduRagIndexStatusPoll.start();
+                    }
+                });
+            });
+        })();
+    </script>
+}

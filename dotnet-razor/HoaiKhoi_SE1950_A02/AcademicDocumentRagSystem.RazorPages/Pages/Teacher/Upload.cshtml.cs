@@ -60,7 +60,7 @@ public class UploadModel : PageModel
         try
         {
             var documentId = await _documentService.UploadAndIndexAsync(Input, accountId.Value, email);
-            TempData["Success"] = "Tài liệu đã upload và đang được index.";
+            TempData["Success"] = "Tài liệu đã upload và index xong.";
             return RedirectToPage("/Teacher/IndexStatus", new { highlight = documentId });
         }
         catch (Exception ex)

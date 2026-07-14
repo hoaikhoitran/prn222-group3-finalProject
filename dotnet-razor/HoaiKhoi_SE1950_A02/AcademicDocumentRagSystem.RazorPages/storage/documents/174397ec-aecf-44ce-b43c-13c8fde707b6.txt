@@ -1,0 +1,347 @@
+# CI/CD + VPS Deploy Guide (willaai.tech)
+
+Tai lieu nay mo ta day du cach deploy he thong `FE + BE + AI + Postgres` len 1 VPS Ubuntu, su dung:
+
+- Docker Compose cho runtime
+- Caddy cho reverse proxy + SSL tu dong
+- GitHub Actions cho CI/CD (merge/push `main` la tu deploy)
+
+## 1) Kien truc trien khai
+
+Domain:
+
+- `willaai.tech`, `www.willaai.tech` -> Frontend
+- `api.willaai.tech` -> Backend (Spring Boot)
+- `ai.willaai.tech` -> AI service (FastAPI)
+
+Service trong Docker Compose:
+
+- `frontend` (build tu repo `ewill-fe`)
+- `backend` (build tu repo `WillA_AI`)
+- `ai-server` (build tu repo `qwenv3x2`)
+- `postgres` (container DB)
+
+Cong noi bo tren VPS:
+
+- `127.0.0.1:3000` -> frontend container
+- `127.0.0.1:8080` -> backend container
+- `127.0.0.1:8000` -> ai-server container
+- Postgres chi noi bo trong Docker network
+
+## 2) Repositories
+
+- FE: `git@github.com:SpicyPox/ewill-fe.git`
+- BE: `git@github.com:phnanhky/WillA_AI.git`
+- AI: `git@github.com:vuongdenchoi/qwenv3x2.git`
+
+## 3) Prerequisites VPS
+
+Da lam:
+
+- UFW mo `22`, `80`, `443`
+
+Can co them:
+
+- Docker + Docker Compose plugin
+- Caddy
+- SSH deploy keys cho pull code tu GitHub
+
+### 3.1 Cai Docker
+
+```bash
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
+newgrp docker
+docker --version
+docker compose version
+```
+
+### 3.2 Cai Caddy
+
+```bash
+sudo apt install -y debian-keyring debian-archive-keyring apt-transport-https
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/gpg.key' | sudo gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+curl -1sLf 'https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt' | sudo tee /etc/apt/sources.list.d/caddy-stable.list
+sudo apt update
+sudo apt install -y caddy
+sudo systemctl enable caddy
+sudo systemctl start caddy
+```
+
+## 4) DNS requirements
+
+Tao A records tro ve IP VPS:
+
+- `@`
+- `www`
+- `api`
+- `ai`
+
+## 5) Cau truc thu muc tren VPS
+
+```bash
+mkdir -p /opt/willa/{infra,fe,be,ai}
+```
+
+Clone repo vao dung thu muc:
+
+```bash
+git clone git@github.com:SpicyPox/ewill-fe.git /opt/willa/fe
+git clone git@github.com:phnanhky/WillA_AI.git /opt/willa/be
+git clone git@github.com:vuongdenchoi/qwenv3x2.git /opt/willa/ai
+```
+
+## 6) SSH deploy keys (read-only)
+
+Neu moi repo dung 1 deploy key rieng, can dung `~/.ssh/config` alias.
+
+Vi du:
+
+```sshconfig
+Host github-fe
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_fe
+  IdentitiesOnly yes
+
+Host github-be
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_be
+  IdentitiesOnly yes
+
+Host github-ai
+  HostName github.com
+  User git
+  IdentityFile ~/.ssh/id_ed25519_ai
+  IdentitiesOnly yes
+```
+
+Set remote:
+
+```bash
+git -C /opt/willa/fe remote set-url origin git@github-fe:SpicyPox/ewill-fe.git
+git -C /opt/willa/be remote set-url origin git@github-be:phnanhky/WillA_AI.git
+git -C /opt/willa/ai remote set-url origin git@github-ai:vuongdenchoi/qwenv3x2.git
+```
+
+Test:
+
+```bash
+ssh -T github-fe
+ssh -T github-be
+ssh -T github-ai
+```
+
+## 7) Docker Compose (runtime chung)
+
+File: `/opt/willa/infra/docker-compose.yml`
+
+```yaml
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: willa-ai-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: willa_ai
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d willa_ai"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  ai-server:
+    build: /opt/willa/ai
+    container_name: ai-server
+    restart: unless-stopped
+    env_file:
+      - /opt/willa/ai/.env
+    ports:
+      - "127.0.0.1:8000:8000"
+
+  backend:
+    build: /opt/willa/be
+    container_name: willa-backend
+    restart: unless-stopped
+    env_file:
+      - /opt/willa/be/.env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      ai-server:
+        condition: service_started
+    ports:
+      - "127.0.0.1:8080:8080"
+
+  frontend:
+    build:
+      context: /opt/willa/fe
+      args:
+        VITE_WILLA_API_URL: https://api.willaai.tech
+    container_name: willa-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "127.0.0.1:3000:80"
+
+volumes:
+  pgdata:
+```
+
+File env compose: `/opt/willa/infra/.env`
+
+```env
+POSTGRES_PASSWORD=postgres
+```
+
+Luu y:
+
+- `infra/.env` chi cap bien cho `docker-compose.yml`
+- app env thuc su nam o `/opt/willa/be/.env` va `/opt/willa/ai/.env`
+
+## 8) Caddy configuration
+
+File: `/etc/caddy/Caddyfile`
+
+```caddy
+willaai.tech, www.willaai.tech {
+    reverse_proxy 127.0.0.1:3000
+    encode gzip
+}
+
+api.willaai.tech {
+    reverse_proxy 127.0.0.1:8080
+    encode gzip
+}
+
+ai.willaai.tech {
+    reverse_proxy 127.0.0.1:8000
+    encode gzip
+}
+```
+
+Apply:
+
+```bash
+sudo caddy fmt --overwrite /etc/caddy/Caddyfile
+sudo caddy validate --config /etc/caddy/Caddyfile
+sudo systemctl reload caddy
+```
+
+## 9) App env files tren VPS
+
+### 9.1 Backend env
+
+File: `/opt/willa/be/.env`
+
+Bat buoc dung DB hostname la ten service postgres:
+
+```env
+SPRING_DATASOURCE_URL=jdbc:postgresql://willa-ai-postgres:5432/willa_ai
+SPRING_DATASOURCE_USERNAME=postgres
+SPRING_DATASOURCE_PASSWORD=postgres
+
+APP_BASE_URL=https://api.willaai.tech
+APP_FRONTEND_URL=https://willaai.tech
+AI_SERVER_URL=http://ai-server:8000
+```
+
+Va cac bien khac cua project (`JWT_*`, `PAYOS_*`, `R2_*`, `FIREBASE_*`, `MAIL_*`, ...).
+
+### 9.2 AI env
+
+File: `/opt/willa/ai/.env`
+
+```env
+DASHSCOPE_API_KEY=your_key_here
+QWEN_MODEL=qwen3-vl-flash
+```
+
+## 10) Chay lan dau (manual deploy)
+
+```bash
+cd /opt/willa/infra
+docker compose --env-file .env up -d --build
+docker compose ps
+```
+
+Theo doi logs:
+
+```bash
+docker compose logs -f postgres
+docker compose logs -f backend
+docker compose logs -f ai-server
+docker compose logs -f frontend
+```
+
+## 11) GitHub Actions workflows (da tao trong 3 repo)
+
+Moi workflow:
+
+- trigger khi push `main`
+- SSH vao VPS
+- `git pull --ff-only` repo tuong ung
+- `docker compose up -d --build <service>`
+
+Secrets can co tren moi repo:
+
+- `VPS_HOST`
+- `VPS_USER`
+- `VPS_PORT`
+- `VPS_SSH_KEY`
+
+## 12) Verify sau deploy
+
+```bash
+curl -I https://willaai.tech
+curl -I https://api.willaai.tech
+curl -I https://ai.willaai.tech/health
+```
+
+Kiem tra Caddy:
+
+```bash
+sudo systemctl status caddy --no-pager
+sudo journalctl -u caddy -f
+```
+
+## 13) Common issues
+
+### 13.1 `Permission denied (publickey)` khi `git pull` tren VPS
+
+Nguyen nhan:
+
+- remote URL chua dung SSH alias/key dung repo
+- sai permission key/config
+
+Fix:
+
+- xac nhan `~/.ssh/config`
+- `chmod 700 ~/.ssh`, `chmod 600 ~/.ssh/config ~/.ssh/id_ed25519_*`
+- test `ssh -T github-fe|github-be|github-ai`
+
+### 13.2 FE build fail TypeScript trong Docker
+
+Build se fail neu code TS co error. Can fix tren repo FE roi push main.
+
+### 13.3 SSL chua len
+
+Check:
+
+- DNS da tro dung IP chua
+- port `80/443` mo chua
+- log Caddy (`journalctl -u caddy -f`)
+
+## 14) Bao mat (rat quan trong)
+
+- Khong commit `.env` chua secrets len GitHub.
+- Rotate ngay neu da lo secrets (mail password, JWT, Firebase private key, PayOS, R2, AI key, DB password).
+- Deploy keys de `Read-only` la dung.
+- VPS khong can quyen push len GitHub.
+
