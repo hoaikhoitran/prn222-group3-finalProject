@@ -628,6 +628,35 @@ body.edurag-body {
   background: var(--edurag-bg);
   overflow: hidden;
 }
+/* Typing indicator (Claude-like) */
+.chat-typing {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 2.4rem;
+}
+.chat-typing__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--edurag-primary);
+  opacity: .35;
+  animation: chat-typing-bounce 1.2s infinite ease-in-out;
+}
+.chat-typing__dot:nth-child(2) { animation-delay: .15s; }
+.chat-typing__dot:nth-child(3) { animation-delay: .3s; }
+@keyframes chat-typing-bounce {
+  0%, 60%, 100% { transform: translateY(0); opacity: .35; }
+  30% { transform: translateY(-4px); opacity: 1; }
+}
+.chat-msg-in {
+  animation: chat-msg-in .25s ease-out;
+}
+@keyframes chat-msg-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
 .chat-conv-item {
   padding: 0.625rem 0.75rem;
   border-radius: 0.5rem;

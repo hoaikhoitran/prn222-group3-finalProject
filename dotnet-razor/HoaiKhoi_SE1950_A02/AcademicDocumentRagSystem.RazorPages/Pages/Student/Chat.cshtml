@@ -141,7 +141,7 @@ else if (workspace.ActiveDocument != null)
                 </div>
             </div>
             <div class="chat-main__inputbar">
-                <form asp-page-handler="Ask" method="post">
+                <form asp-page-handler="Ask" method="post" data-chat-ask>
                     @Html.AntiForgeryToken()
                     <input type="hidden" asp-for="AskForm.DocumentId" />
                     <input type="hidden" asp-for="AskForm.ChatSessionId" />
@@ -188,4 +188,8 @@ else
             </div>
         </div>
     </div>
+}
+
+@section Scripts {
+    <script src="~/js/chat-claude.js" asp-append-version="true"></script>
 }
