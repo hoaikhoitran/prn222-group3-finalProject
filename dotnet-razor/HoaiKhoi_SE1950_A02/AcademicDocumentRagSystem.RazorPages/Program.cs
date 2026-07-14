@@ -1,5 +1,7 @@
 ﻿using AcademicDocumentRagSystem.RazorPages.Hubs;
 using AcademicDocumentRagSystem.Services;
+using AcademicDocumentRagSystem.Services.Interfaces; // Thêm namespace chứa IDashboardService
+using AcademicDocumentRagSystem.Services.Implementations; // Thêm namespace chứa lớp DashboardService triển khai thực tế
 using AcademicDocumentRagSystem.Services.Maintenance;
 
 namespace AcademicDocumentRagSystem.RazorPages
@@ -25,6 +27,9 @@ namespace AcademicDocumentRagSystem.RazorPages
             });
 
             builder.Services.AddSignalR();
+
+            builder.Services.AddScoped<IDashboardService, DashboardService>();
+
             builder.Services.AddApplicationServices(builder.Configuration);
 
             var app = builder.Build();

@@ -1,0 +1,168 @@
+﻿@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Admin.IndexModel
+@{
+    ViewData["Title"] = "Thống kê hệ thống";
+    Layout = "_LayoutDashboard";
+}
+
+<div class="p-4 p-md-5">
+    <div class="mb-4">
+        <h1 class="font-display fs-2 fw-bold mb-1">Hệ thống Báo cáo & Thống kê</h1>
+        <p class="text-muted-edurag mb-0">Tổng quan vận hành cơ sở dữ liệu học thuật và hiệu năng phân đoạn dữ liệu.</p>
+    </div>
+
+    <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
+        <div class="col">
+            <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #f4f7fe;">
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Tài khoản</div>
+                <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalAccounts</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #fef6f0;">
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Môn học</div>
+                <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalCourses</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #eef9f5;">
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Tài liệu gốc</div>
+                <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalDocuments</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #f6f8fa;">
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Phiên chat</div>
+                <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalChatSessions</div>
+            </div>
+        </div>
+        <div class="col">
+            <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #fbf2ff;">
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Tin nhắn</div>
+                <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalChatMessages</div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <div class="col-12 col-lg-4 d-flex flex-column gap-4">
+            <div class="edurag-card p-4">
+                <h3 class="font-display fs-5 fw-bold mb-1">Trạng thái RAG Indexing</h3>
+                <p class="text-muted-edurag small mb-4">Trạng thái xử lý và lưu trữ tài liệu trên hệ thống.</p>
+
+                <div class="d-flex flex-column gap-3">
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #f8f9fa;">
+                        <span class="text-secondary fw-medium"><span class="me-2"></span>Đang chờ (Pending)</span>
+                        <span class="status-badge-pending px-3 py-1.5 fs-6">@Model.Statistics.DocsPending</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #e8f4fd;">
+                        <span class="text-primary fw-medium"><span class="me-2"></span>Đang xử lý</span>
+                        <span class="status-badge-processing px-3 py-1.5 fs-6">@Model.Statistics.DocsProcessing</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #eafaf1;">
+                        <span class="text-success fw-medium"><span class="me-2"></span>Thành công (Indexed)</span>
+                        <span class="status-badge-indexed px-3 py-1.5 fs-6">@Model.Statistics.DocsIndexed</span>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #fdf2f2;">
+                        <span class="text-danger fw-medium"><span class="me-2"></span>Thất bại (Failed)</span>
+                        <span class="status-badge-failed px-3 py-1.5 fs-6">@Model.Statistics.DocsFailed</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="edurag-card p-4">
+                <h3 class="font-display fs-5 fw-bold mb-1">Báo cáo tiêu tốn Token</h3>
+                <p class="text-muted-edurag small mb-4">Giám sát số Token tiêu thụ</p>
+
+                <div class="d-flex flex-column gap-3">
+                    <div class="p-3 rounded-3" style="background-color: #f4f7fe;">
+                        <div class="text-muted-edurag small fw-semibold text-uppercase">Embedding (Chunking)</div>
+                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalEmbeddingTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                    </div>
+                    <div class="p-3 rounded-3" style="background-color: #fbf2ff;">
+                        <div class="text-muted-edurag small fw-semibold text-uppercase">Chatbot Tương tác</div>
+                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalChatTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                    </div>
+                    <div class="p-3 rounded-3 border border-dashed" style="background-color: #fffde7; border-color: #fdedad !important;">
+                        <div class="text-warning-dark small fw-bold text-uppercase" style="color: #856404;">TỔNG CỘNG TIÊU THỤ</div>
+                        <div class="fs-3 fw-bold mt-1" style="color: #856404;">@Model.Statistics.TotalTokensUsed.ToString("N0") <span class="fs-6 fw-normal">tokens</span></div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="col-12 col-lg-8">
+            <div class="edurag-card p-4 h-100 overflow-hidden">
+                <h3 class="font-display fs-5 fw-bold mb-1">Báo cáo hoạt động theo Môn học</h3>
+                <p class="text-muted-edurag small mb-4">Top các môn học có lượng dữ liệu học thuật lớn và tần suất tương tác Chatbot cao nhất.</p>
+
+                <div class="table-responsive">
+                    <table class="table-edurag align-middle m-0">
+                        <thead>
+                            <tr>
+                                <th>Mã môn</th>
+                                <th>Tên môn học</th>
+                                <th class="text-center">Tài liệu</th>
+                                <th class="text-end">Lượt chat</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Statistics.CourseReports != null && Model.Statistics.CourseReports.Any())
+                            {
+                                foreach (var report in Model.Statistics.CourseReports)
+                                {
+                                    <tr>
+                                        <td class="fw-bold text-primary">@report.CourseCode</td>
+                                        <td class="fw-medium text-dark">@report.CourseName</td>
+                                        <td class="text-center">
+                                            <span class="badge rounded-pill bg-light text-dark border px-2 py-1">@report.DocumentCount</span>
+                                        </td>
+                                        <td class="text-end">
+                                            <span class="badge px-2.5 py-1.5 rounded-3 fw-semibold" style="background-color: #fff4ec; color: #f26522;">
+                                                @report.ChatSessionCount
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="4" class="text-center py-4 text-muted-edurag">Chưa có dữ liệu thống kê môn học.</td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                    <td class="d-none"></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .style-card-stat {
+        transition: transform 0.2s ease;
+    }
+
+        .style-card-stat:hover {
+            transform: translateY(-2px);
+        }
+
+    .status-badge-pending {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+
+    .status-badge-processing {
+        background-color: #e0f2fe;
+        color: #0369a1;
+        border-radius: 6px;
+        font-weight: 600;
+    }
+</style>
