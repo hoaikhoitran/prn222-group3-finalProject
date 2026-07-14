@@ -75,19 +75,7 @@
                                 </div>
                                 <div class="min-width-0">
                                     <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
-                                    @if (m.Sources.Any())
-                                    {
-                                        <div class="d-flex flex-wrap gap-1 mt-2">
-                                            @foreach (var cit in m.Sources)
-                                            {
-                                                <span class="citation-chip">
-                                                    @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
-                                                    @await Html.PartialAsync("_Icons")
-                                                    @cit.FileName @(cit.PageNumber.HasValue ? $"· tr.{cit.PageNumber}" : "")
-                                                </span>
-                                            }
-                                        </div>
-                                    }
+                                    @await Html.PartialAsync("_CitationChips", m.Sources)
                                 </div>
                             </div>
                         }
@@ -147,5 +135,6 @@
 </div>
 
 @section Scripts {
+    <script src="~/js/citation-preview.js" asp-append-version="true"></script>
     <script src="~/js/chat-claude.js" asp-append-version="true"></script>
 }

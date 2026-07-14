@@ -1,0 +1,52 @@
+@using AcademicDocumentRagSystem.Services.DTOs.Rag
+@model IEnumerable<RagSourceDto>
+@{
+    var sources = (Model ?? Enumerable.Empty<RagSourceDto>())
+        .Where(s => s != null)
+        .GroupBy(s =>
+        {
+            var text = (s.Text ?? string.Empty).Trim();
+            if (!string.IsNullOrEmpty(text))
+            {
+                return "t:" + text;
+            }
+
+            return $"f:{s.FileName}|p:{s.PageNumber}|c:{s.ChunkIndex}";
+        })
+        .Select(g => g.First())
+        .ToList();
+}
+@if (sources.Any())
+{
+    <div class="citation-row d-flex flex-wrap gap-1 mt-2">
+        @foreach (var cit in sources)
+        {
+            var fileLabel = string.IsNullOrWhiteSpace(cit.FileName) ? "Tài liệu" : cit.FileName;
+            var locLabel = cit.PageNumber.HasValue
+                ? $"tr.{cit.PageNumber}"
+                : $"đoạn {cit.ChunkIndex + 1}";
+            var metaLabel = $"{fileLabel} · {locLabel}";
+            var preview = string.IsNullOrWhiteSpace(cit.Text)
+                ? "Không có đoạn trích dẫn cho nguồn này."
+                : cit.Text.Trim();
+            <div class="citation-chip-wrap">
+                <button type="button"
+                        class="citation-chip"
+                        aria-expanded="false"
+                        title="@metaLabel — bấm hoặc di chuột để xem đoạn trích">
+                    @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
+                    @await Html.PartialAsync("_Icons")
+                    <span>@fileLabel</span>
+                    <span class="citation-chip__loc">· @locLabel</span>
+                </button>
+                <div class="citation-popover" hidden>
+                    <div class="citation-popover__head">
+                        <span class="fw-semibold">@metaLabel</span>
+                        <button type="button" class="citation-popover__close" aria-label="Đóng">&times;</button>
+                    </div>
+                    <div class="citation-popover__text">@preview</div>
+                </div>
+            </div>
+        }
+    </div>
+}
