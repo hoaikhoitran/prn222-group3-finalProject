@@ -460,31 +460,49 @@ body.edurag-body {
   position: sticky;
   top: 0;
   height: 100vh;
+  transition: width .28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
 }
 .role-sidebar__brand {
-  padding: 1.15rem 1.1rem;
+  padding: 1.15rem 1.05rem;
   border-bottom: 1px solid var(--edurag-border);
   background:
     radial-gradient(circle at 90% -30%, rgba(217, 119, 6, 0.09), transparent 60%),
     transparent;
+  transition: padding .28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .role-sidebar__nav {
   flex: 1;
-  padding: 0.65rem;
+  padding: 0.65rem 1.05rem;
   overflow-y: auto;
+  overflow-x: hidden;
+  transition: padding .28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .role-sidebar__link {
-  display: flex;
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
   align-items: center;
-  gap: 0.7rem;
-  padding: 0.55rem 0.7rem;
+  column-gap: 0.55rem;
+  padding: 0.55rem 0;
   border-radius: 0.65rem;
   font-size: 0.875rem;
   font-weight: 500;
   color: var(--edurag-fg);
   text-decoration: none;
   margin-bottom: 0.2rem;
-  transition: background 0.15s, color 0.15s;
+  transition:
+    background 0.15s,
+    color 0.15s,
+    column-gap .28s cubic-bezier(0.4, 0, 0.2, 1),
+    grid-template-columns .28s cubic-bezier(0.4, 0, 0.2, 1),
+    padding .28s cubic-bezier(0.4, 0, 0.2, 1),
+    width .28s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  overflow: hidden;
+}
+.role-sidebar__link > svg {
+  justify-self: center;
+  flex-shrink: 0;
 }
 .role-sidebar__link:hover {
   background: var(--edurag-accent);
@@ -496,8 +514,9 @@ body.edurag-body {
   box-shadow: none;
 }
 .role-sidebar__footer {
-  padding: 0.75rem;
+  padding: 0.75rem 1.05rem;
   border-top: 1px solid var(--edurag-border);
+  transition: padding .28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .dashboard-main {
   flex: 1;
@@ -517,19 +536,25 @@ body.edurag-body {
   position: sticky;
   top: 0;
   height: 100vh;
+  transition: width .28s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-x: hidden;
 }
 .student-sidebar__head {
-  padding: 1rem 1.1rem;
+  padding: 1rem 1.05rem;
   border-bottom: 1px solid var(--edurag-border);
+  transition: padding .28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .student-sidebar__body {
   flex: 1;
   overflow-y: auto;
-  padding: 0.65rem;
+  overflow-x: hidden;
+  padding: 0.65rem 1.05rem;
+  transition: padding .28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .student-sidebar__footer {
-  padding: 0.75rem;
+  padding: 0.75rem 1.05rem;
   border-top: 1px solid var(--edurag-border);
+  transition: padding .28s cubic-bezier(0.4, 0, 0.2, 1);
 }
 .session-item {
   display: block;
@@ -549,6 +574,292 @@ body.edurag-body {
   color: #fff;
 }
 .session-item.active .text-muted-edurag { color: rgba(255,255,255,.72) !important; }
+/* Sidebar collapse / expand — continuous clip; icons sit in a fixed 2.25rem column
+   so (rail 4.35rem − 2.25rem) / 2 = 1.05rem padding keeps them optically centered
+   without a late justify-content snap. */
+.sidebar-brand-row {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.sidebar-brand-slot {
+  position: relative;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-width: 0;
+}
+.sidebar-brand-link {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  column-gap: 0.55rem;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition:
+    grid-template-columns .28s cubic-bezier(0.4, 0, 0.2, 1),
+    column-gap .28s cubic-bezier(0.4, 0, 0.2, 1),
+    width .28s cubic-bezier(0.4, 0, 0.2, 1),
+    flex-basis .28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-brand-link .edurag-logo-mark {
+  justify-self: center;
+}
+.sidebar-label {
+  display: inline-block;
+  vertical-align: middle;
+  white-space: nowrap;
+  overflow: hidden;
+  max-width: 14rem;
+  opacity: 1;
+  transition:
+    max-width .28s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity .22s ease,
+    max-height .28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-brand-link .sidebar-label {
+  display: block;
+  max-height: 2.6rem;
+  min-width: 0;
+}
+.sidebar-toggle {
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--edurag-border);
+  background: var(--edurag-card);
+  color: var(--edurag-muted);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  padding: 0;
+  cursor: pointer;
+  margin-left: 0.35rem;
+  transition: background .15s, color .15s, opacity .18s ease, transform .28s ease, width .28s ease, height .28s ease, margin .28s ease;
+}
+.sidebar-toggle:hover {
+  background: var(--edurag-accent);
+  color: var(--edurag-fg);
+}
+.sidebar-brand-slot .edurag-logo-mark {
+  transition: opacity .18s ease;
+}
+.student-sidebar__head .btn {
+  display: grid;
+  grid-template-columns: 2.25rem minmax(0, 1fr);
+  column-gap: 0.45rem;
+  align-items: center;
+  justify-content: stretch;
+  overflow: hidden;
+  white-space: nowrap;
+  padding-left: 0;
+  padding-right: 0.75rem;
+  transition:
+    width .28s cubic-bezier(0.4, 0, 0.2, 1),
+    padding .28s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius .28s ease,
+    column-gap .28s cubic-bezier(0.4, 0, 0.2, 1),
+    grid-template-columns .28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.student-sidebar__head .btn > svg {
+  justify-self: center;
+}
+.sidebar-user {
+  position: relative;
+  display: grid !important;
+  grid-template-columns: 2.25rem minmax(0, 1fr) 1.85rem;
+  align-items: center;
+  column-gap: 0.55rem;
+  overflow: hidden;
+  width: 100%;
+  padding: 0.35rem 0 !important;
+  transition:
+    grid-template-columns .28s cubic-bezier(0.4, 0, 0.2, 1),
+    column-gap .28s cubic-bezier(0.4, 0, 0.2, 1),
+    padding .28s cubic-bezier(0.4, 0, 0.2, 1),
+    width .28s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.sidebar-user-slot {
+  position: relative;
+  width: 2.25rem;
+  height: 2.25rem;
+  flex-shrink: 0;
+  justify-self: center;
+}
+.sidebar-user-slot .avatar-initial {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  font-size: 0.85rem !important;
+  transition: opacity .18s ease;
+}
+.sidebar-logout {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 0.55rem;
+  border: 1px solid var(--edurag-border);
+  background: var(--edurag-card);
+  color: var(--edurag-muted);
+  text-decoration: none;
+  flex-shrink: 0;
+  transition: background .15s, color .15s, opacity .18s ease, transform .28s ease, width .28s ease, height .28s ease;
+}
+.sidebar-logout:hover {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.session-item {
+  overflow: hidden;
+}
+.session-item__dot {
+  display: block;
+  width: 0;
+  height: 0;
+  margin: 0 auto;
+  opacity: 0;
+  border-radius: 50%;
+  background: currentColor;
+  overflow: hidden;
+  transition: width .2s ease, height .2s ease, opacity .2s ease;
+}
+
+html.sidebar-collapsed .role-sidebar,
+html.sidebar-collapsed .student-sidebar {
+  width: 4.35rem;
+}
+html.sidebar-collapsed .sidebar-label {
+  max-width: 0 !important;
+  width: 0 !important;
+  min-width: 0 !important;
+  flex: 0 0 0 !important;
+  opacity: 0;
+  pointer-events: none;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+}
+html.sidebar-collapsed .sidebar-brand-link .sidebar-label {
+  max-height: 0;
+}
+html.sidebar-collapsed .role-sidebar__brand,
+html.sidebar-collapsed .student-sidebar__head {
+  padding-left: 1.05rem;
+  padding-right: 1.05rem;
+}
+html.sidebar-collapsed .role-sidebar__nav,
+html.sidebar-collapsed .student-sidebar__body,
+html.sidebar-collapsed .role-sidebar__footer,
+html.sidebar-collapsed .student-sidebar__footer {
+  padding-left: 1.05rem;
+  padding-right: 1.05rem;
+}
+html.sidebar-collapsed .sidebar-brand-link {
+  grid-template-columns: 2.25rem 0fr;
+  column-gap: 0;
+  width: 2.25rem;
+  flex: 0 0 2.25rem;
+}
+html.sidebar-collapsed .role-sidebar__link {
+  grid-template-columns: 2.25rem 0fr;
+  column-gap: 0;
+  width: 2.25rem;
+  padding: 0.55rem 0;
+}
+html.sidebar-collapsed .sidebar-toggle {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2.25rem;
+  height: 2.25rem;
+  margin-left: 0;
+  border-radius: 0.7rem;
+  transform: translateY(-50%) rotate(180deg);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: var(--edurag-shadow-soft);
+}
+html.sidebar-collapsed .sidebar-brand-slot:hover .sidebar-toggle,
+html.sidebar-collapsed .sidebar-brand-slot:focus-within .sidebar-toggle {
+  opacity: 1;
+  pointer-events: auto;
+}
+html.sidebar-collapsed .sidebar-brand-slot:hover .edurag-logo-mark,
+html.sidebar-collapsed .sidebar-brand-slot:focus-within .edurag-logo-mark {
+  opacity: 0;
+}
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock .sidebar-toggle,
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:hover .sidebar-toggle,
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:focus-within .sidebar-toggle {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock .edurag-logo-mark,
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:hover .edurag-logo-mark,
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:focus-within .edurag-logo-mark {
+  opacity: 1 !important;
+}
+html.sidebar-collapsed .student-sidebar__head .btn {
+  grid-template-columns: 2.25rem 0fr;
+  column-gap: 0;
+  width: 2.25rem;
+  height: 2.25rem;
+  padding: 0;
+  border-radius: 0.7rem;
+}
+html.sidebar-collapsed .sidebar-user {
+  grid-template-columns: 2.25rem 0fr 0fr !important;
+  column-gap: 0 !important;
+  gap: 0 !important;
+  width: 2.25rem;
+  padding: 0.35rem 0 !important;
+  background: transparent !important;
+}
+html.sidebar-collapsed .sidebar-logout {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: 0.7rem;
+  transform: translateY(-50%);
+  opacity: 0;
+  pointer-events: none;
+  z-index: 2;
+  box-shadow: var(--edurag-shadow-soft);
+}
+html.sidebar-collapsed .sidebar-user:hover .sidebar-logout,
+html.sidebar-collapsed .sidebar-user:focus-within .sidebar-logout {
+  opacity: 1;
+  pointer-events: auto;
+}
+html.sidebar-collapsed .sidebar-user:hover .avatar-initial,
+html.sidebar-collapsed .sidebar-user:focus-within .avatar-initial {
+  opacity: 0;
+}
+html.sidebar-collapsed .session-item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.25rem;
+  padding: 0.65rem 0;
+}
+html.sidebar-collapsed .session-item__dot {
+  width: 0.45rem;
+  height: 0.45rem;
+  opacity: .45;
+}
+html.sidebar-collapsed .session-item.active .session-item__dot {
+  opacity: 1;
+  background: #fff;
+}
 
 /* Chat workspace */
 .chat-grid {

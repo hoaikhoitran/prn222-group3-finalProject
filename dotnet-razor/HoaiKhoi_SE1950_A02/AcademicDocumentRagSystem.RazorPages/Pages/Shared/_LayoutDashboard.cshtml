@@ -7,6 +7,15 @@
     <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
+    <script>
+        (function () {
+            try {
+                if (localStorage.getItem("edurag.sidebarCollapsed") === "1") {
+                    document.documentElement.classList.add("sidebar-collapsed");
+                }
+            } catch (e) { }
+        })();
+    </script>
 </head>
 <body class="edurag-body">
     <div class="page">
@@ -21,6 +30,7 @@
     </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/tabler.min.js" asp-append-version="true"></script>
+    <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

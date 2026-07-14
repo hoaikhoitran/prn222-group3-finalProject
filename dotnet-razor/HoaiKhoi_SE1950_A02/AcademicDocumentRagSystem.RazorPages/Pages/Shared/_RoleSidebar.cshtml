@@ -23,18 +23,26 @@
     var roleName = sessionRole ?? ViewBag.SidebarRole as string ?? "";
     var initial = !string.IsNullOrEmpty(fullName) ? fullName[0].ToString().ToUpper() : "U";
 }
-<aside class="role-sidebar">
+<aside class="role-sidebar" data-edurag-sidebar aria-label="Điều hướng">
     <div class="role-sidebar__brand">
-        <a asp-page="/Home/Index" class="d-flex align-items-center gap-2 text-decoration-none text-dark">
-            <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center">
-                @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
-                @await Html.PartialAsync("_Icons")
-            </span>
-            <div>
-                <div class="font-display fw-bold lh-1">EduRAG</div>
-                <div class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">@accent</div>
+        <div class="sidebar-brand-row">
+            <div class="sidebar-brand-slot">
+                <a asp-page="/Home/Index" class="sidebar-brand-link d-flex align-items-center gap-2 text-decoration-none text-dark min-width-0">
+                    <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center flex-shrink-0">
+                        @{ ViewData["Icon"] = "sparkles"; ViewData["IconSize"] = "20"; }
+                        @await Html.PartialAsync("_Icons")
+                    </span>
+                    <span class="sidebar-label">
+                        <span class="font-display fw-bold lh-1 d-block">EduRAG</span>
+                        <span class="text-uppercase text-muted-edurag" style="font-size:11px;letter-spacing:.08em;">@accent</span>
+                    </span>
+                </a>
+                <button type="button" class="sidebar-toggle" data-sidebar-toggle title="Thu gọn / mở rộng thanh bên" aria-label="Thu gọn / mở rộng thanh bên" aria-expanded="true">
+                    @{ ViewData["Icon"] = "chevron-left"; ViewData["IconSize"] = "16"; }
+                    @await Html.PartialAsync("_Icons")
+                </button>
             </div>
-        </a>
+        </div>
     </div>
     <nav class="role-sidebar__nav">
         @foreach (var item in navItems)
@@ -56,21 +64,24 @@
                 || currentPage.StartsWith(pageBase + "/", StringComparison.OrdinalIgnoreCase)
                 || isIndexFamily || isAllFamily;
             <a asp-page="@item.Page"
-               class="role-sidebar__link @(isActive ? "active" : "")">
+               class="role-sidebar__link @(isActive ? "active" : "")"
+               title="@item.Label">
                 @{ ViewData["Icon"] = item.Icon; ViewData["IconSize"] = "16"; }
                 @await Html.PartialAsync("_Icons")
-                @item.Label
+                <span class="sidebar-label">@item.Label</span>
             </a>
         }
     </nav>
     <div class="role-sidebar__footer">
-        <div class="d-flex align-items-center gap-3 px-2 py-2 rounded-3" style="background:rgba(28,25,23,.04);">
-            <div class="avatar-initial" style="width:36px;height:36px;font-size:14px;">@initial</div>
-            <div class="flex-grow-1 min-width-0">
+        <div class="sidebar-user align-items-center rounded-3" style="background:rgba(28,25,23,.04);">
+            <div class="sidebar-user-slot">
+                <div class="avatar-initial" title="@fullName">@initial</div>
+            </div>
+            <div class="sidebar-label min-width-0">
                 <div class="small fw-semibold text-truncate">@fullName</div>
                 <div class="text-muted-edurag" style="font-size:12px;">@roleName</div>
             </div>
-            <a asp-page="/Auth/Logout" class="text-muted-edurag" title="Đăng xuất">
+            <a asp-page="/Auth/Logout" class="sidebar-logout" data-logout-confirm title="Đăng xuất" aria-label="Đăng xuất">
                 @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "16"; }
                 @await Html.PartialAsync("_Icons")
             </a>
