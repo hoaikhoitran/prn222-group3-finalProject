@@ -594,9 +594,8 @@ body.edurag-body {
   color: #fff;
 }
 .session-item.active .text-muted-edurag { color: rgba(255,255,255,.72) !important; }
-/* Sidebar collapse / expand — continuous clip; icons sit in a fixed 2.25rem column
-   so (rail 4.35rem − 2.25rem) / 2 = 1.05rem padding keeps them optically centered
-   without a late justify-content snap. */
+/* Sidebar collapse / expand — the collapsed 2.5rem icon track leaves a small
+   safety gutter around 2.25rem marks while preserving one centered axis. */
 .sidebar-brand-row {
   display: flex;
   align-items: center;
@@ -667,6 +666,27 @@ body.edurag-body {
 }
 .sidebar-brand-slot .edurag-logo-mark {
   transition: opacity .18s ease;
+}
+.sidebar-brand-slot .edurag-logo-mark > svg {
+  transition: opacity .18s ease;
+}
+html.sidebar-collapsing .sidebar-toggle,
+html.sidebar-expanding .sidebar-toggle {
+  opacity: 0 !important;
+  pointer-events: none !important;
+  transition: none !important;
+}
+html.sidebar-expanding .sidebar-toggle {
+  position: absolute;
+  left: 0.125rem;
+  top: 50%;
+  margin-left: 0;
+  transform: translateY(-50%);
+}
+html.sidebar-collapsing .edurag-logo-mark,
+html.sidebar-expanding .edurag-logo-mark {
+  opacity: 1 !important;
+  transition: none !important;
 }
 .student-sidebar__head .btn {
   display: grid;
@@ -752,18 +772,13 @@ body.edurag-body {
 
 html.sidebar-collapsed .role-sidebar,
 html.sidebar-collapsed .student-sidebar {
-  width: 4.35rem;
+  width: 4.6rem;
 }
 html.sidebar-collapsed .sidebar-label {
   max-width: 0 !important;
-  width: 0 !important;
   min-width: 0 !important;
-  flex: 0 0 0 !important;
   opacity: 0;
   pointer-events: none;
-  margin: 0 !important;
-  padding: 0 !important;
-  border: 0 !important;
 }
 html.sidebar-collapsed .sidebar-brand-link .sidebar-label {
   max-height: 0;
@@ -781,38 +796,47 @@ html.sidebar-collapsed .student-sidebar__footer {
   padding-right: 1.05rem;
 }
 html.sidebar-collapsed .sidebar-brand-link {
-  grid-template-columns: 2.25rem 0fr;
+  grid-template-columns: 2.5rem minmax(0, 0fr);
   column-gap: 0;
-  width: 2.25rem;
-  flex: 0 0 2.25rem;
+  width: 100%;
+  flex: 1 1 auto;
 }
 html.sidebar-collapsed .role-sidebar__link {
-  grid-template-columns: 2.25rem 0fr;
+  grid-template-columns: 2.5rem minmax(0, 0fr);
   column-gap: 0;
-  width: 2.25rem;
+  width: 100%;
   padding: 0.55rem 0;
 }
 html.sidebar-collapsed .sidebar-toggle {
   position: absolute;
-  left: 0;
+  left: 0.125rem;
   top: 50%;
   width: 2.25rem;
   height: 2.25rem;
   margin-left: 0;
+  border: 0;
   border-radius: 0.7rem;
+  background: transparent;
+  color: #fff;
   transform: translateY(-50%) rotate(180deg);
   opacity: 0;
   pointer-events: none;
   z-index: 2;
-  box-shadow: var(--edurag-shadow-soft);
+  box-shadow: none;
 }
 html.sidebar-collapsed .sidebar-brand-slot:hover .sidebar-toggle,
 html.sidebar-collapsed .sidebar-brand-slot:focus-within .sidebar-toggle {
   opacity: 1;
   pointer-events: auto;
+  background: transparent;
+  color: #fff;
 }
 html.sidebar-collapsed .sidebar-brand-slot:hover .edurag-logo-mark,
 html.sidebar-collapsed .sidebar-brand-slot:focus-within .edurag-logo-mark {
+  opacity: 1;
+}
+html.sidebar-collapsed .sidebar-brand-slot:hover .edurag-logo-mark > svg,
+html.sidebar-collapsed .sidebar-brand-slot:focus-within .edurag-logo-mark > svg {
   opacity: 0;
 }
 html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock .sidebar-toggle,
@@ -826,25 +850,29 @@ html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:hover .edurag-logo
 html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:focus-within .edurag-logo-mark {
   opacity: 1 !important;
 }
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock .edurag-logo-mark > svg,
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:hover .edurag-logo-mark > svg,
+html.sidebar-collapsed .sidebar-brand-slot.sidebar-hover-lock:focus-within .edurag-logo-mark > svg {
+  opacity: 1 !important;
+}
 html.sidebar-collapsed .student-sidebar__head .btn {
-  grid-template-columns: 2.25rem 0fr;
+  grid-template-columns: 2.5rem minmax(0, 0fr);
   column-gap: 0;
-  width: 2.25rem;
+  width: 100%;
   height: 2.25rem;
   padding: 0;
   border-radius: 0.7rem;
 }
 html.sidebar-collapsed .sidebar-user {
-  grid-template-columns: 2.25rem 0fr 0fr !important;
+  grid-template-columns: 2.5rem minmax(0, 0fr) 0fr !important;
   column-gap: 0 !important;
-  gap: 0 !important;
-  width: 2.25rem;
+  width: 100%;
   padding: 0.35rem 0 !important;
   background: transparent !important;
 }
 html.sidebar-collapsed .sidebar-logout {
   position: absolute;
-  left: 0;
+  left: 0.125rem;
   top: 50%;
   width: 2.25rem;
   height: 2.25rem;
@@ -869,6 +897,8 @@ html.sidebar-collapsed .student-sidebar .session-item {
   align-items: center;
   justify-content: center;
   width: 2.25rem;
+  margin-left: auto;
+  margin-right: auto;
   padding: 0.65rem 0;
 }
 html.sidebar-collapsed .student-sidebar .session-item__dot {

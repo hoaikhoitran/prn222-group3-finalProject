@@ -4,6 +4,7 @@
     "use strict";
 
     var KEY = "edurag.sidebarCollapsed";
+    var transitionTimer = null;
 
     function isCollapsed() {
         try { return localStorage.getItem(KEY) === "1"; } catch (e) { return false; }
@@ -17,13 +18,27 @@
         });
     }
 
-    function setCollapsed(collapsed) {
+    function setCollapsed(collapsed, animate) {
         try { localStorage.setItem(KEY, collapsed ? "1" : "0"); } catch (e) { /* ignore */ }
         var root = document.documentElement;
+        if (transitionTimer) {
+            window.clearTimeout(transitionTimer);
+            transitionTimer = null;
+        }
+        root.classList.remove("sidebar-collapsing", "sidebar-expanding");
+        if (animate) {
+            root.classList.add(collapsed ? "sidebar-collapsing" : "sidebar-expanding");
+        }
         root.classList.toggle("sidebar-collapsed", collapsed);
         root.classList.remove("sidebar-collapsed-settled");
-        root.classList.remove("sidebar-expanding");
         syncToggleUi(collapsed);
+
+        if (animate) {
+            transitionTimer = window.setTimeout(function () {
+                root.classList.remove("sidebar-collapsing", "sidebar-expanding");
+                transitionTimer = null;
+            }, 320);
+        }
     }
 
     function lockHoverReveal(slot) {
@@ -36,7 +51,7 @@
         slot.addEventListener("mouseleave", unlock);
     }
 
-    setCollapsed(isCollapsed());
+    setCollapsed(isCollapsed(), false);
 
     document.addEventListener("click", function (event) {
         var logout = event.target.closest && event.target.closest("[data-logout-confirm]");
@@ -52,7 +67,7 @@
         event.preventDefault();
 
         var willCollapse = !document.documentElement.classList.contains("sidebar-collapsed");
-        setCollapsed(willCollapse);
+        setCollapsed(willCollapse, true);
 
         if (willCollapse) {
             lockHoverReveal(btn.closest(".sidebar-brand-slot"));
