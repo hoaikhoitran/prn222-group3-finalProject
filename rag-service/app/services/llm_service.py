@@ -338,6 +338,100 @@ def _clean_exact_answer(value: str) -> str:
     return " ".join((value or "").split()).strip()
 
 
+def _group_contexts_by_document(
+    contexts: list[dict[str, Any]]
+) -> list[list[tuple[int, dict[str, Any]]]]:
+    grouped_contexts: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for global_index, ctx in enumerate(contexts):
+        meta = ctx.get("metadata") or {}
+        document_key = str(meta.get("documentId") or ctx.get("id") or global_index)
+        grouped_contexts.setdefault(document_key, []).append((global_index, ctx))
+
+    groups = list(grouped_contexts.values())
+    for group in groups:
+        group.sort(
+            key=lambda item: int((item[1].get("metadata") or {}).get("chunkIndex", 0))
+        )
+
+    return groups
+
+
+def _find_suffix_prefix_overlap(left: str, right: str) -> int:
+    """Return exact overlap length between the end of left and start of right."""
+    if not left or not right:
+        return 0
+
+    max_length = min(len(left), len(right), 5000)
+    if max_length < 3:
+        return 0
+
+    min_length = min(20, max(3, max_length // 4))
+    for length in range(max_length, min_length - 1, -1):
+        if left[-length:] == right[:length]:
+            return length
+
+    return 0
+
+
+def _build_combined_context(
+    group: list[tuple[int, dict[str, Any]]],
+    *,
+    separator: str,
+    remove_overlap: bool,
+) -> tuple[str, list[tuple[int, int, int]]]:
+    parts: list[str] = []
+    spans: list[tuple[int, int, int]] = []
+    combined_text = ""
+
+    for global_index, ctx in group:
+        text = ctx.get("text", "") or ""
+        if not text:
+            continue
+
+        overlap = _find_suffix_prefix_overlap(combined_text, text) if remove_overlap else 0
+        append_text = text[overlap:] if overlap else text
+
+        if combined_text and not overlap and separator:
+            parts.append(separator)
+            combined_text += separator
+
+        start = len(combined_text)
+        parts.append(append_text)
+        combined_text += append_text
+        if append_text:
+            spans.append((start, len(combined_text), global_index))
+
+    return "".join(parts), spans
+
+
+def _iter_combined_context_candidates(
+    group: list[tuple[int, dict[str, Any]]]
+) -> list[tuple[str, list[tuple[int, int, int]]]]:
+    candidates: list[tuple[str, list[tuple[int, int, int]]]] = []
+    seen: set[str] = set()
+
+    # 1. Normal admin presets with overlap: reconstruct the document first.
+    # 2. Tiny character chunks can split the marker itself, so also try a
+    #    zero-separator reconstruction.
+    # 3. Non-overlap variants are fallback guards for unusual boundaries.
+    for remove_overlap, separator in (
+        (True, "\n"),
+        (False, "\n"),
+        (True, ""),
+        (False, ""),
+        (True, " "),
+        (False, " "),
+    ):
+        combined_text, spans = _build_combined_context(
+            group, separator=separator, remove_overlap=remove_overlap
+        )
+        if combined_text and combined_text not in seen:
+            seen.add(combined_text)
+            candidates.append((combined_text, spans))
+
+    return candidates
+
+
 def _extract_answer_exact(question: str, text: str) -> str | None:
     """
     Return a verbatim ANSWER_EXACT block from structured evaluation docs.
@@ -379,8 +473,13 @@ def _extract_answer_exact(question: str, text: str) -> str | None:
 
 def has_exact_answer_items(contexts: list[dict[str, Any]]) -> bool:
     """Return true when contexts contain structured exact-answer blocks."""
-    combined_text = "\n".join(ctx.get("text", "") for ctx in contexts)
-    return bool(_ANSWER_EXACT_ITEM_RE.search(combined_text)) or "ANSWER_EXACT:" in combined_text.upper()
+    for group in _group_contexts_by_document(contexts):
+        for combined_text, _ in _iter_combined_context_candidates(group):
+            if _ANSWER_EXACT_ITEM_RE.search(combined_text):
+                return True
+            if "ANSWER_EXACT:" in combined_text.upper():
+                return True
+    return False
 
 
 def _text_contains_answer(text: str, answer: str) -> bool:
@@ -413,54 +512,30 @@ def generate_exact_answer_with_usage(
     if not contexts:
         return None
 
-    grouped_contexts: dict[str, list[tuple[int, dict[str, Any]]]] = {}
-    for global_index, ctx in enumerate(contexts):
-        meta = ctx.get("metadata") or {}
-        document_key = str(meta.get("documentId") or ctx.get("id") or global_index)
-        grouped_contexts.setdefault(document_key, []).append((global_index, ctx))
-
-    for group in grouped_contexts.values():
-        group.sort(
-            key=lambda item: int((item[1].get("metadata") or {}).get("chunkIndex", 0))
-        )
-
-        parts: list[str] = []
-        spans: list[tuple[int, int, int]] = []
-        cursor = 0
-        for global_index, ctx in group:
-            if parts:
-                parts.append("\n")
-                cursor += 1
-
-            text = ctx.get("text", "") or ""
-            start = cursor
-            parts.append(text)
-            cursor += len(text)
-            spans.append((start, cursor, global_index))
-
-        combined_text = "".join(parts)
+    for group in _group_contexts_by_document(contexts):
         canonical_question = _canonical_exact_question(question)
 
-        for match in _ANSWER_EXACT_ITEM_RE.finditer(combined_text):
-            if _canonical_exact_question(match.group("question")) != canonical_question:
-                continue
+        for combined_text, spans in _iter_combined_context_candidates(group):
+            for match in _ANSWER_EXACT_ITEM_RE.finditer(combined_text):
+                if _canonical_exact_question(match.group("question")) != canonical_question:
+                    continue
 
-            exact_answer = _clean_exact_answer(match.group("answer"))
-            if not exact_answer:
-                continue
+                exact_answer = _clean_exact_answer(match.group("answer"))
+                if not exact_answer:
+                    continue
 
-            answer_start = match.start("answer")
-            source_index = group[0][0]
-            for start, end, global_index in spans:
-                if start <= answer_start <= end:
-                    source_index = global_index
-                    break
+                answer_start = match.start("answer")
+                source_index = group[0][0]
+                for start, end, global_index in spans:
+                    if start <= answer_start <= end:
+                        source_index = global_index
+                        break
 
-            return {
-                "answer": exact_answer,
-                "usage": None,
-                "sourceCitationIds": [f"C{source_index + 1}"],
-            }
+                return {
+                    "answer": exact_answer,
+                    "usage": None,
+                    "sourceCitationIds": [f"C{source_index + 1}"],
+                }
 
     return None
 
