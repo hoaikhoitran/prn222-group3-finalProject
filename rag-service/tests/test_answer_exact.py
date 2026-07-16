@@ -5,6 +5,7 @@ from app.services import llm_service
 from app.services.llm_service import generate_answer
 from app.services.llm_service import generate_exact_answer_with_usage
 from app.services.llm_service import generate_answer_with_usage
+from app.services.llm_service import has_exact_answer_items
 
 
 def test_answer_exact_block_bypasses_llm_and_returns_verbatim(monkeypatch) -> None:
@@ -180,3 +181,124 @@ def test_answer_exact_reconstructs_item_split_across_chunks() -> None:
         "trong chương trình."
     )
     assert result["sourceCitationIds"] == ["C2"]
+
+
+def test_answer_exact_prefers_wide_window_when_answer_is_split() -> None:
+    contexts = [
+        {
+            "id": "doc_050::chunk::1",
+            "text": (
+                "QUESTION: Chuẩn hóa cơ sở dữ liệu (Normalization) là gì? "
+                "ANSWER_EXACT: Là kỹ thuật thiết"
+            ),
+            "metadata": {
+                "documentId": "doc_050",
+                "fileName": "DBI202_ThietKeCoSoDuLieu.docx",
+                "pageNumber": 1,
+                "chunkIndex": 1,
+            },
+        },
+        {
+            "id": "doc_050::chunk::2",
+            "text": (
+                "kế cơ sở dữ liệu quan hệ nhằm giảm thiểu dư thừa dữ liệu "
+                "và tránh các dị thường (anomalies) khi thêm, sửa, xóa dữ liệu. "
+                "COURSE_TOPIC: DBI202 - Chuẩn hóa SOURCE_DOCUMENT: "
+                "DBI202_ThietKeCoSoDuLieu.docx END_OF_TEST_ITEM"
+            ),
+            "metadata": {
+                "documentId": "doc_050",
+                "fileName": "DBI202_ThietKeCoSoDuLieu.docx",
+                "pageNumber": 1,
+                "chunkIndex": 2,
+            },
+        },
+    ]
+
+    result = generate_exact_answer_with_usage(
+        "Chuẩn hóa cơ sở dữ liệu (Normalization) là gì?",
+        contexts,
+    )
+
+    assert result is not None
+    assert result["answer"] == (
+        "Là kỹ thuật thiết kế cơ sở dữ liệu quan hệ nhằm giảm thiểu dư thừa "
+        "dữ liệu và tránh các dị thường (anomalies) khi thêm, sửa, xóa dữ liệu."
+    )
+
+
+
+def test_answer_exact_removes_overlapped_chunk_text_before_parsing() -> None:
+    full_text = (
+        "INTRO "
+        "QUESTION: What should overlap-aware parsing remove? "
+        "ANSWER_EXACT: It removes duplicated chunk overlap before reading the exact answer. "
+        "COURSE_TOPIC: Demo SOURCE_DOCUMENT: demo.docx END_OF_TEST_ITEM"
+    )
+    chunk_a = full_text[:120]
+    chunk_b = full_text[80:]
+    contexts = [
+        {
+            "id": "demo::chunk::0",
+            "text": chunk_a,
+            "metadata": {
+                "documentId": "demo",
+                "fileName": "demo.docx",
+                "pageNumber": 1,
+                "chunkIndex": 0,
+            },
+        },
+        {
+            "id": "demo::chunk::1",
+            "text": chunk_b,
+            "metadata": {
+                "documentId": "demo",
+                "fileName": "demo.docx",
+                "pageNumber": 1,
+                "chunkIndex": 1,
+            },
+        },
+    ]
+
+    result = generate_exact_answer_with_usage(
+        "What should overlap-aware parsing remove?", contexts
+    )
+
+    assert result is not None
+    assert result["answer"] == (
+        "It removes duplicated chunk overlap before reading the exact answer."
+    )
+    assert result["sourceCitationIds"] == ["C1"]
+
+
+def test_answer_exact_reconstructs_tiny_character_chunks() -> None:
+    full_text = (
+        "QUESTION: Can tiny chunks split exact markers? "
+        "ANSWER_EXACT: Yes, the parser still reconstructs the full item. "
+        "SOURCE_DOCUMENT: tiny.docx END_OF_TEST_ITEM"
+    )
+    contexts = []
+    for index in range(0, len(full_text), 5):
+        chunk_index = index // 5
+        contexts.append(
+            {
+                "id": f"tiny::chunk::{chunk_index}",
+                "text": full_text[index : index + 5],
+                "metadata": {
+                    "documentId": "tiny",
+                    "fileName": "tiny.docx",
+                    "pageNumber": 1,
+                    "chunkIndex": chunk_index,
+                },
+            }
+        )
+
+    assert has_exact_answer_items(contexts)
+
+    result = generate_exact_answer_with_usage(
+        "Can tiny chunks split exact markers?", contexts
+    )
+
+    assert result is not None
+    assert result["answer"] == "Yes, the parser still reconstructs the full item."
+    assert len(result["sourceCitationIds"]) == 1
