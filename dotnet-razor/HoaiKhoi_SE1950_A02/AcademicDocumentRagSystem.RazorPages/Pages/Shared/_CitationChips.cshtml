@@ -30,16 +30,11 @@
     <div class="citation-row d-flex flex-wrap gap-1 mt-1">
         @foreach (var cit in sources)
         {
-            var citationLabel = string.IsNullOrWhiteSpace(cit.CitationId)
-                ? $"đoạn {cit.ChunkIndex + 1}"
-                : cit.CitationId.Trim().ToUpperInvariant();
             var fileLabel = string.IsNullOrWhiteSpace(cit.FileName) ? "Tài liệu" : cit.FileName;
-            var locLabel = cit.PageNumber.HasValue
-                ? $"trang {cit.PageNumber}"
-                : $"đoạn {cit.ChunkIndex + 1}";
-            var metaLabel = $"[{citationLabel}] {fileLabel} · {locLabel}";
+            var locLabel = $"Chunk {cit.ChunkIndex + 1}";
+            var metaLabel = $"{fileLabel} · {locLabel}";
             var preview = string.IsNullOrWhiteSpace(cit.Text)
-                ? "Không có đoạn trích dẫn cho nguồn này."
+                ? "Không có nội dung trích dẫn cho nguồn này."
                 : cit.Text.Trim();
 
             var hasUploaderName = !string.IsNullOrWhiteSpace(cit.UploadedByFullName);
@@ -48,10 +43,10 @@
                 <button type="button"
                         class="citation-chip"
                         aria-expanded="false"
-                        title="@metaLabel — bấm hoặc di chuột để xem đoạn trích">
+                        title="@metaLabel — bấm hoặc di chuột để xem nội dung trích dẫn">
                     @{ ViewData["Icon"] = "quote"; ViewData["IconSize"] = "12"; }
                     @await Html.PartialAsync("_Icons")
-                    <span>[@citationLabel] @fileLabel</span>
+                    <span>@fileLabel</span>
                     <span class="citation-chip__loc">· @locLabel</span>
                 </button>
                 <div class="citation-popover" hidden>
@@ -60,32 +55,39 @@
                         <button type="button" class="citation-popover__close" aria-label="Đóng">&times;</button>
                     </div>
                     <div class="citation-popover__meta small text-muted-edurag px-3 pt-2" style="line-height:1.6;">
-                        <div><span class="fw-semibold">Citation:</span> @citationLabel</div>
                         <div><span class="fw-semibold">Tài liệu:</span> @fileLabel</div>
+                        @if (!string.IsNullOrWhiteSpace(cit.Chapter))
+                        {
+                            <div><span class="fw-semibold">Chương:</span> @cit.Chapter</div>
+                        }
+                        else
+                        {
+                            <div><span class="fw-semibold">Chương:</span> Không có thông tin</div>
+                        }
                         @if (cit.PageNumber.HasValue)
                         {
                             <div><span class="fw-semibold">Trang:</span> @cit.PageNumber</div>
                         }
-                        <div><span class="fw-semibold">Chunk:</span> @cit.ChunkIndex</div>
+                        <div><span class="fw-semibold">Chunk số:</span> @(cit.ChunkIndex + 1)</div>
                         @if (hasUploaderName && hasUploaderEmail)
                         {
-                            <div><span class="fw-semibold">Người tải lên:</span> @cit.UploadedByFullName</div>
+                            <div><span class="fw-semibold">Người đăng tải:</span> @cit.UploadedByFullName</div>
                             <div><span class="fw-semibold">Email:</span> @cit.UploadedByEmail</div>
                         }
                         else if (hasUploaderName)
                         {
-                            <div><span class="fw-semibold">Người tải lên:</span> @cit.UploadedByFullName</div>
+                            <div><span class="fw-semibold">Người đăng tải:</span> @cit.UploadedByFullName</div>
                         }
                         else if (hasUploaderEmail)
                         {
-                            <div><span class="fw-semibold">Người tải lên:</span> @cit.UploadedByEmail</div>
+                            <div><span class="fw-semibold">Người đăng tải:</span> @cit.UploadedByEmail</div>
                         }
                         else
                         {
-                            <div><span class="fw-semibold">Người tải lên:</span> Không có thông tin người tải lên</div>
+                            <div><span class="fw-semibold">Người đăng tải:</span> Không có thông tin</div>
                         }
                     </div>
-                    <div class="citation-popover__label small fw-semibold px-3 pt-2 text-muted-edurag">Đoạn được dùng:</div>
+                    <div class="citation-popover__label small fw-semibold px-3 pt-2 text-muted-edurag">Nội dung được sử dụng:</div>
                     <div class="citation-popover__text">@preview</div>
                 </div>
             </div>

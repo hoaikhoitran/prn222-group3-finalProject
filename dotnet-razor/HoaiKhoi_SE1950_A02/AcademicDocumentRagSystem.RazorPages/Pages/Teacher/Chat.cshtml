@@ -14,6 +14,7 @@
         <div class="chat-main__header">
             <div class="flex-grow-1 min-width-0">
                 <div class="d-flex align-items-center gap-2">
+                    <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar chatbot-avatar--sm" />
                     <span class="font-display fw-bold text-truncate">Thử nghiệm chatbot</span>
                     <span class="badge-edurag-accent">Chế độ thử nghiệm</span>
                 </div>
@@ -69,12 +70,9 @@
                                 <div class="chat-bubble-user">@m.Question</div>
                             </div>
                             <div class="d-flex gap-3 mb-4">
-                                <div class="chat-avatar">
-                                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
-                                    @await Html.PartialAsync("_Icons")
-                                </div>
+                                <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar" />
                                 <div class="min-width-0">
-                                    <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
+                                    <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(MockDataProvider.StripCitationMarkers(m.Answer)))</div>
                                     @await Html.PartialAsync("_CitationChips", m.Sources)
                                 </div>
                             </div>
@@ -82,7 +80,10 @@
                     }
                     else
                     {
-                        <p class="text-muted-edurag text-center py-5">Đặt câu hỏi để kiểm tra chất lượng câu trả lời từ tài liệu này.</p>
+                        <div class="text-center py-5" data-chat-empty>
+                            <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="edurag-chatbot-empty-image mb-3" />
+                            <p class="text-muted-edurag mb-0">Xin chào, tôi là trợ lý EduRAG. Hãy đặt câu hỏi dựa trên tài liệu đã chọn.</p>
+                        </div>
                     }
                 </div>
             </div>

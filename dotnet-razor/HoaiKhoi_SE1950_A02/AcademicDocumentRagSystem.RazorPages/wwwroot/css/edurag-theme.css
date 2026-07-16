@@ -1007,6 +1007,45 @@ html.sidebar-collapsed .student-sidebar .session-item.active .session-item__dot 
   justify-content: center;
   flex-shrink: 0;
 }
+/* EduRAG robot mascot. object-fit: contain keeps the full robot
+   (antenna, hand) visible; the rounded square never crops content. */
+.chatbot-avatar {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  flex-shrink: 0;
+  border-radius: 10px;
+  background: #fdf2f6;
+}
+.chatbot-avatar--sm {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+}
+.chatbot-avatar--md {
+  width: 48px;
+  height: 48px;
+}
+.edurag-chatbot-empty-image {
+  width: clamp(150px, 18vw, 230px);
+  height: auto;
+  object-fit: contain;
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+  background: transparent;
+  box-shadow: none;
+}
+.chat-typing-row .chatbot-avatar {
+  animation: chatbot-float 2.2s ease-in-out infinite;
+}
+@keyframes chatbot-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .chat-typing-row .chatbot-avatar { animation: none; }
+}
 .chat-oos {
   background: #fffbeb;
   border: 1px solid #fde68a;

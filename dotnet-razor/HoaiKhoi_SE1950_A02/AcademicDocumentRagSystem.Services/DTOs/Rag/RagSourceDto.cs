@@ -40,4 +40,8 @@ public class RagSourceDto
     /// <summary>Uploader email, enriched on the .NET side from SQL document metadata.</summary>
     [JsonPropertyName("uploadedByEmail")]
     public string? UploadedByEmail { get; set; }
+
+    /// <summary>Document chapter, enriched on the .NET side from SQL document metadata.</summary>
+    [JsonPropertyName("chapter")]
+    public string? Chapter { get; set; }
 }

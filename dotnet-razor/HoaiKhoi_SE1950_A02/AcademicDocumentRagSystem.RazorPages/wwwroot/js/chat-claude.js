@@ -18,7 +18,7 @@
     }
 
     function removeEmptyState() {
-        var empty = thread.querySelector("p.text-muted-edurag.text-center");
+        var empty = thread.querySelector("[data-chat-empty], p.text-muted-edurag.text-center");
         if (empty) { empty.remove(); }
     }
 
@@ -37,9 +37,7 @@
         var row = document.createElement("div");
         row.className = "d-flex gap-3 mb-4 chat-typing-row chat-msg-in";
         row.innerHTML =
-            '<div class="chat-avatar">' +
-            '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>' +
-            '</div>' +
+            '<img src="/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar" />' +
             '<div class="chat-bubble-assistant chat-typing" aria-label="Đang trả lời">' +
             '<span class="chat-typing__dot"></span><span class="chat-typing__dot"></span><span class="chat-typing__dot"></span>' +
             '</div>';

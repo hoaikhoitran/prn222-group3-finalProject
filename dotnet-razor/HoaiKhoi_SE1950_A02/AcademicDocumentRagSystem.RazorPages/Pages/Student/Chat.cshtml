@@ -18,10 +18,7 @@
             <div class="alert alert-danger mb-3 py-2 small">@workspace.ErrorMessage</div>
         }
         <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
-            <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
-                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
-                @await Html.PartialAsync("_Icons")
-            </div>
+            <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar chatbot-avatar--md" />
             <div>
                 <p class="page-pretitle mb-1">Hỏi đáp</p>
                 <h1 class="font-display fs-2 fw-bold mb-1">Chọn môn học</h1>
@@ -82,12 +79,9 @@ else if (!string.IsNullOrWhiteSpace(workspace.SelectedCourseCode) && workspace.D
                                 <div class="chat-bubble-user">@m.Question</div>
                             </div>
                             <div class="d-flex gap-3 mb-4">
-                                <div class="chat-avatar">
-                                    @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "16"; }
-                                    @await Html.PartialAsync("_Icons")
-                                </div>
+                                <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar" />
                                 <div class="min-width-0">
-                                    <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(m.Answer))</div>
+                                    <div class="chat-bubble-assistant">@Html.Raw(MockDataProvider.FormatBoldMarkdown(MockDataProvider.StripCitationMarkers(m.Answer)))</div>
                                     @await Html.PartialAsync("_CitationChips", m.Sources)
                                 </div>
                             </div>
@@ -95,7 +89,10 @@ else if (!string.IsNullOrWhiteSpace(workspace.SelectedCourseCode) && workspace.D
                     }
                     else
                     {
-                        <p class="text-muted-edurag text-center py-5 mb-0" style="line-height:1.7;">Đặt câu hỏi đầu tiên về môn @workspace.SelectedCourseCode.</p>
+                        <div class="text-center py-5" data-chat-empty>
+                            <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="edurag-chatbot-empty-image mb-3" />
+                            <p class="text-muted-edurag mb-0" style="line-height:1.7;">Xin chào, tôi là trợ lý EduRAG. Hãy đặt câu hỏi dựa trên tài liệu đã chọn.</p>
+                        </div>
                     }
                 </div>
             </div>
@@ -121,10 +118,7 @@ else
 {
     <div class="edurag-page">
         <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
-            <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
-                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
-                @await Html.PartialAsync("_Icons")
-            </div>
+            <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar chatbot-avatar--md" />
             <div>
                 <p class="page-pretitle mb-1">Hỏi đáp</p>
                 <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu</h1>
@@ -133,10 +127,7 @@ else
         </div>
         <div class="card edurag-card">
             <div class="card-body p-5 text-center">
-            <div class="chat-avatar mx-auto mb-3" style="width:3rem;height:3rem;opacity:.6;">
-                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
-                @await Html.PartialAsync("_Icons")
-            </div>
+            <img src="~/images/edurag-chatbot-transparent.png" alt="Trợ lý EduRAG" class="chatbot-avatar chatbot-avatar--md mx-auto mb-3 d-block" style="opacity:.7;" />
             <h2 class="font-display fs-5 fw-bold mb-2">Chưa có tài liệu đã index</h2>
             <p class="text-muted-edurag mb-4">Hiện chưa có tài liệu nào sẵn sàng để hỏi đáp. Vui lòng liên hệ giảng viên hoặc xem thư viện.</p>
             <a asp-page="/Student/Library" class="btn btn-edurag-warm d-inline-flex align-items-center gap-2">

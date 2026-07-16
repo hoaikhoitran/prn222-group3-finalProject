@@ -135,7 +135,7 @@ public class DashboardService : IDashboardService
     {
         var messages = ApplyPeriod(_context.ChatMessages.AsQueryable(), m => m.CreatedAt, start, end);
 
-        // Tokens are attributed to the account that asked (ChatMessage.AccountId).
+        // Gemini tokens are attributed to the account that asked (ChatMessage.AccountId).
         var usageRows = await messages
             .GroupBy(m => m.AccountId)
             .Select(g => new UserTokenUsageDto
@@ -149,20 +149,53 @@ public class DashboardService : IDashboardService
             })
             .ToListAsync();
 
-        if (usageRows.Count == 0)
+        // Chunk token estimates are attributed to the uploader
+        // (Document.SubmittedByAccountId). Queried separately from chat usage
+        // and merged by AccountId — never joined — so rows can't multiply and
+        // neither token kind can be counted twice. Chunks whose document has
+        // no uploader are skipped rather than assigned to a fake account.
+        var chunks = ApplyPeriod(_context.DocumentChunks.AsQueryable(), c => c.CreatedAt, start, end);
+        var chunkRows = await chunks
+            .Where(c => c.Document.SubmittedByAccountId != null)
+            .GroupBy(c => c.Document.SubmittedByAccountId!.Value)
+            .Select(g => new
+            {
+                AccountId = g.Key,
+                ChunkCount = g.Count(),
+                ChunkTokenEstimate = g.Sum(c => (long)(c.TokenEstimate ?? 0))
+            })
+            .ToListAsync();
+
+        // Union of both groups: ask-only, upload-only, and both each get one row.
+        var rowsByAccount = usageRows.ToDictionary(r => r.AccountId);
+        foreach (var chunkRow in chunkRows)
         {
-            return usageRows;
+            if (!rowsByAccount.TryGetValue(chunkRow.AccountId, out var row))
+            {
+                row = new UserTokenUsageDto { AccountId = chunkRow.AccountId };
+                rowsByAccount.Add(chunkRow.AccountId, row);
+            }
+
+            row.ChunkCount = chunkRow.ChunkCount;
+            row.ChunkTokenEstimate = chunkRow.ChunkTokenEstimate;
         }
+
+        if (rowsByAccount.Count == 0)
+        {
+            return new List<UserTokenUsageDto>();
+        }
+
+        var allRows = rowsByAccount.Values.ToList();
 
         // Left-join account info separately so a physically deleted account
         // (legacy data) can never break the report.
-        var accountIds = usageRows.Select(r => r.AccountId).ToList();
+        var accountIds = allRows.Select(r => r.AccountId).ToList();
         var accounts = await _context.Accounts
             .Where(a => accountIds.Contains(a.AccountId))
             .Select(a => new { a.AccountId, a.FullName, a.Email, a.Role })
             .ToDictionaryAsync(a => a.AccountId);
 
-        foreach (var row in usageRows)
+        foreach (var row in allRows)
         {
             if (accounts.TryGetValue(row.AccountId, out var account))
             {
@@ -180,9 +213,10 @@ public class DashboardService : IDashboardService
             }
         }
 
-        return usageRows
-            .OrderByDescending(r => r.TotalTokens)
-            .ThenByDescending(r => r.MessageCount)
+        return allRows
+            .OrderByDescending(r => r.CombinedTotalTokens)
+            .ThenByDescending(r => r.TotalTokens)
+            .ThenByDescending(r => r.ChunkTokenEstimate)
             .ToList();
     }
 
