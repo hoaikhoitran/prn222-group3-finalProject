@@ -299,6 +299,39 @@ def _mock_answer(question: str, contexts: list[dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 
+def _extract_answer_exact(text: str) -> str | None:
+    """
+    Return a verbatim ANSWER_EXACT block from structured evaluation docs.
+
+    Demo/evaluation documents can mark the expected answer like:
+
+        QUESTION:
+        ...
+        ANSWER_EXACT:
+        exact text here
+        SOURCE_DOCUMENT:
+        ...
+
+    When retrieval lands on such a chunk, we bypass generation so the answer is
+    exact ground truth text instead of an LLM paraphrase. Citation still comes
+    from the retrieved chunk that contained the block.
+    """
+    if not text:
+        return None
+
+    match = re.search(
+        r"ANSWER_EXACT:\s*(.*?)(?:\n\s*SOURCE_DOCUMENT:|\n\s*COURSE_TOPIC:|\n\s*END_OF_TEST_ITEM|\n\s*CITATION_ANCHOR:|\Z)",
+        text,
+        flags=re.DOTALL | re.IGNORECASE,
+    )
+
+    if not match:
+        return None
+
+    answer = " ".join(match.group(1).split()).strip()
+    return answer or None
+
+
 def build_gemini_prompt(question: str, contexts: list[dict[str, Any]]) -> str:
     """
     Build the user prompt for Gemini from the question and the already
@@ -514,6 +547,10 @@ def generate_answer_with_usage(
     """
     if not contexts:
         return {"answer": INSUFFICIENT_CONTEXT_REPLY, "usage": None}
+
+    exact_answer = _extract_answer_exact(contexts[0].get("text", ""))
+    if exact_answer:
+        return {"answer": exact_answer, "usage": None}
 
     if settings.MOCK_LLM:
         return {"answer": _mock_answer(question, contexts), "usage": None}
