@@ -88,7 +88,14 @@
         <div class="col-12 col-lg-4 d-flex flex-column gap-4">
             <div class="edurag-card p-4">
                 <h3 class="font-display fs-5 fw-bold mb-1">Trạng thái RAG Indexing</h3>
-                <p class="text-muted-edurag small mb-4">Trạng thái xử lý các tài liệu upload trong kỳ đang xem.</p>
+                <p class="text-muted-edurag small mb-4">Trạng thái xử lý các tài liệu đã tải lên hệ thống.</p>
+
+                <div class="mx-auto mb-4" style="max-width: 240px; position: relative;">
+                    <canvas id="rag-status-chart" aria-label="Biểu đồ trạng thái RAG Indexing" role="img"></canvas>
+                    <div id="rag-status-chart-empty" class="text-center text-muted-edurag small py-4" hidden>
+                        Chưa có tài liệu nào để thống kê.
+                    </div>
+                </div>
 
                 <div class="d-flex flex-column gap-3">
                     <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #f8f9fa;">
@@ -111,39 +118,41 @@
             </div>
 
             <div class="edurag-card p-4">
-                <h3 class="font-display fs-5 fw-bold mb-1">Token LLM thực tế</h3>
-                <p class="text-muted-edurag small mb-3">Usage do AI provider trả về cho các câu hỏi trong kỳ. Không phải số ước lượng.</p>
+                <h3 class="font-display fs-5 fw-bold mb-1">Token dùng để trả lời câu hỏi</h3>
+                <p class="text-muted-edurag small mb-3">Số token Gemini thực tế sử dụng khi tiếp nhận câu hỏi và tạo câu trả lời.</p>
 
                 <div class="d-flex flex-column gap-3">
                     <div class="p-3 rounded-3" style="background-color: #f4f7fe;">
-                        <div class="text-muted-edurag small fw-semibold text-uppercase">Prompt tokens</div>
+                        <div class="text-muted-edurag small fw-semibold text-uppercase">Token đầu vào</div>
                         <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalPromptTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
                     </div>
                     <div class="p-3 rounded-3" style="background-color: #fbf2ff;">
-                        <div class="text-muted-edurag small fw-semibold text-uppercase">Completion tokens</div>
+                        <div class="text-muted-edurag small fw-semibold text-uppercase">Token câu trả lời</div>
                         <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalCompletionTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
                     </div>
                     <div class="p-3 rounded-3 border border-dashed" style="background-color: #fffde7; border-color: #fdedad !important;">
-                        <div class="small fw-bold text-uppercase" style="color: #856404;">Tổng LLM tokens</div>
+                        <div class="small fw-bold text-uppercase" style="color: #856404;">Tổng token đã sử dụng</div>
                         <div class="fs-3 fw-bold mt-1" style="color: #856404;">@Model.Statistics.TotalLlmTokens.ToString("N0") <span class="fs-6 fw-normal">tokens</span></div>
                     </div>
-                    @if (Model.Statistics.MessagesWithoutUsage > 0)
-                    {
-                        <div class="small text-muted-edurag">
-                            @Model.Statistics.MessagesWithoutUsage tin nhắn không có dữ liệu usage
-                            (lịch sử cũ hoặc câu trả lời không gọi AI) — không tính vào các số trên.
-                        </div>
-                    }
                 </div>
             </div>
 
             <div class="edurag-card p-4">
-                <h3 class="font-display fs-5 fw-bold mb-1">Ước lượng token nội dung chunk</h3>
-                <p class="text-muted-edurag small mb-3">Ước lượng kích thước nội dung các chunk tạo trong kỳ — <strong>không phải</strong> usage thực từ provider, không cộng chung với token LLM.</p>
+                <h3 class="font-display fs-5 fw-bold mb-1">Token nội dung tài liệu</h3>
+                <p class="text-muted-edurag small mb-3">Ước lượng dựa trên nội dung các chunk đã lưu.</p>
                 <div class="p-3 rounded-3" style="background-color: #f6f8fa;">
-                    <div class="text-muted-edurag small fw-semibold text-uppercase">Chunk token estimate</div>
-                    <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.ChunkTokenEstimate.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens (ước lượng)</span></div>
-                    <div class="small text-muted-edurag mt-1">@Model.Statistics.TotalVectorChunks chunks trong kỳ</div>
+                    <div class="text-muted-edurag small fw-semibold text-uppercase">Token ước lượng</div>
+                    <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.ChunkTokenEstimate.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                    <div class="small text-muted-edurag mt-1">@Model.Statistics.TotalVectorChunks chunk đã tạo</div>
+                </div>
+            </div>
+
+            <div class="edurag-card p-4">
+                <h3 class="font-display fs-5 fw-bold mb-1">Tổng token hệ thống</h3>
+                <p class="text-muted-edurag small mb-3">Tổng token Gemini và token nội dung chunk ước lượng.</p>
+                <div class="p-3 rounded-3" style="background-color: #eef9f5;">
+                    <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalSystemTokens.ToString("N0") <span class="fs-6 text-secondary fw-normal">tokens</span></div>
+                    <div class="small text-muted-edurag mt-1">= @Model.Statistics.TotalLlmTokens.ToString("N0") Gemini + @Model.Statistics.ChunkTokenEstimate.ToString("N0") chunk ước lượng</div>
                 </div>
             </div>
 
@@ -152,7 +161,8 @@
         <div class="col-12 col-lg-8 d-flex flex-column gap-4">
             <div class="edurag-card p-4 overflow-hidden">
                 <h3 class="font-display fs-5 fw-bold mb-1">Token theo tài khoản</h3>
-                <p class="text-muted-edurag small mb-4">Token LLM thực tế tính cho tài khoản đã đặt câu hỏi, trong phạm vi: <strong>@Model.ScopeLabel</strong>.</p>
+                <p class="text-muted-edurag small mb-1">Token Gemini tính cho tài khoản đã đặt câu hỏi; token chunk tính cho người upload tài liệu. Phạm vi: <strong>@Model.ScopeLabel</strong>.</p>
+                <p class="text-muted-edurag small mb-4">Token Gemini là usage thực tế từ AI; token chunk là số ước lượng nội dung tài liệu đã phân đoạn.</p>
 
                 <div class="table-responsive">
                     <table class="table-edurag align-middle m-0">
@@ -161,10 +171,12 @@
                                 <th>Người dùng</th>
                                 <th>Vai trò</th>
                                 <th class="text-center">Số câu hỏi</th>
-                                <th class="text-end">Prompt</th>
-                                <th class="text-end">Completion</th>
-                                <th class="text-end">Total</th>
-                                <th class="text-center">Thiếu usage</th>
+                                <th class="text-end">Token đầu vào</th>
+                                <th class="text-end">Token câu trả lời</th>
+                                <th class="text-end">Tổng token Gemini</th>
+                                <th class="text-center">Số chunk</th>
+                                <th class="text-end">Token chunk ước lượng</th>
+                                <th class="text-end">Tổng token hệ thống</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -186,24 +198,17 @@
                                         <td class="text-center">@user.MessageCount</td>
                                         <td class="text-end">@user.PromptTokens.ToString("N0")</td>
                                         <td class="text-end">@user.CompletionTokens.ToString("N0")</td>
-                                        <td class="text-end fw-bold">@user.TotalTokens.ToString("N0")</td>
-                                        <td class="text-center">
-                                            @if (user.MissingUsageCount > 0)
-                                            {
-                                                <span class="badge rounded-pill bg-light text-dark border px-2 py-1" title="Tin nhắn không có dữ liệu usage từ provider">@user.MissingUsageCount</span>
-                                            }
-                                            else
-                                            {
-                                                <span class="text-muted-edurag">—</span>
-                                            }
-                                        </td>
+                                        <td class="text-end">@user.TotalTokens.ToString("N0")</td>
+                                        <td class="text-center">@user.ChunkCount.ToString("N0")</td>
+                                        <td class="text-end">@user.ChunkTokenEstimate.ToString("N0")</td>
+                                        <td class="text-end fw-bold">@user.CombinedTotalTokens.ToString("N0")</td>
                                     </tr>
                                 }
                             }
                             else
                             {
                                 <tr>
-                                    <td colspan="7" class="text-center py-4 text-muted-edurag">Không có câu hỏi nào trong phạm vi @Model.ScopeLabel.</td>
+                                    <td colspan="9" class="text-center py-4 text-muted-edurag">Không có dữ liệu token nào trong phạm vi @Model.ScopeLabel.</td>
                                 </tr>
                             }
                         </tbody>
@@ -297,6 +302,65 @@
             var hasYear = !!yearSelect.value;
             monthSelect.disabled = !hasYear;
             if (!hasYear) { monthSelect.value = ""; }
+        });
+    })();
+</script>
+
+<script src="~/lib/chartjs/chart.umd.min.js" asp-append-version="true"></script>
+<script>
+    // Doughnut chart mirrors the four indexing-status counters already
+    // rendered in the card; it never queries anything on its own.
+    (function () {
+        var canvas = document.getElementById("rag-status-chart");
+        var emptyNote = document.getElementById("rag-status-chart-empty");
+        if (!canvas || typeof Chart === "undefined") { return; }
+
+        var counts = [
+            @Model.Statistics.DocsPending,
+            @Model.Statistics.DocsProcessing,
+            @Model.Statistics.DocsIndexed,
+            @Model.Statistics.DocsFailed
+        ];
+        var total = counts.reduce(function (sum, n) { return sum + n; }, 0);
+
+        if (total === 0) {
+            canvas.hidden = true;
+            if (emptyNote) { emptyNote.hidden = false; }
+            return;
+        }
+
+        var labels = ["Đang chờ", "Đang xử lý", "Thành công", "Thất bại"];
+        new Chart(canvas, {
+            type: "doughnut",
+            data: {
+                labels: labels.map(function (label, i) { return label + " (" + counts[i] + ")"; }),
+                datasets: [{
+                    data: counts,
+                    backgroundColor: ["#9ca3af", "#0ea5e9", "#10b981", "#ef4444"],
+                    borderColor: "#ffffff",
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: true,
+                cutout: "62%",
+                plugins: {
+                    legend: {
+                        position: "bottom",
+                        labels: { boxWidth: 12, font: { size: 12 } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var value = ctx.parsed;
+                                var pct = Math.round((value / total) * 100);
+                                return " " + value + " tài liệu (" + pct + "%)";
+                            }
+                        }
+                    }
+                }
+            }
         });
     })();
 </script>

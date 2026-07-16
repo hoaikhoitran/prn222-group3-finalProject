@@ -32,9 +32,16 @@ public class DashboardStatisticDto
     /// <summary>
     /// Sum of DocumentChunk.TokenEstimate for chunks created in the period.
     /// This is a CONTENT-SIZE ESTIMATE, not real provider usage — it is shown
-    /// separately and never added to the real LLM token numbers.
+    /// separately and never folded into <see cref="TotalLlmTokens"/>.
     /// </summary>
     public long ChunkTokenEstimate { get; set; }
+
+    /// <summary>
+    /// System-wide token total: real Gemini tokens plus the chunk content
+    /// estimate. Computed, never persisted; TotalLlmTokens stays Gemini-only.
+    /// </summary>
+    public long TotalSystemTokens =>
+        TotalLlmTokens + ChunkTokenEstimate;
 
     public List<CourseActivityReportDto> CourseReports { get; set; } = new();
 

@@ -29,18 +29,6 @@
                             <div class="text-muted-edurag" style="font-size:11px;">Chunks</div>
                         </div>
                     </div>
-                    @{
-                        var indexPct = card.DocumentCount > 0 ? (int)Math.Round(100.0 * card.IndexedCount / card.DocumentCount) : 0;
-                    }
-                    <div class="mb-3">
-                        <div class="d-flex justify-content-between mb-1" style="font-size:11px;">
-                            <span class="fw-semibold text-muted-edurag text-uppercase" style="letter-spacing:.05em;">Tiến độ index</span>
-                            <span class="fw-semibold">@indexPct%</span>
-                        </div>
-                        <div class="progress" style="height:5px;background:var(--edurag-muted-bg);">
-                            <div class="progress-bar bg-gradient-warm" style="width:@indexPct%"></div>
-                        </div>
-                    </div>
                     <div class="d-flex gap-2 mt-auto">
                         <a asp-page="/Teacher/Library" asp-route-course="@card.Course.Code" class="btn btn-sm btn-edurag-outline flex-grow-1">Tài liệu</a>
                         <a asp-page="/Teacher/Upload" class="btn btn-sm btn-edurag-warm flex-grow-1">Upload</a>

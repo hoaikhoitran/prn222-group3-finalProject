@@ -132,6 +132,7 @@ public class ChatService : IChatService
         {
             source.UploadedByFullName = uploaderFullName;
             source.UploadedByEmail = uploaderEmail;
+            source.Chapter = document.Chapter;
         }
 
         return await SaveAndBuildAnswerAsync(session, accountId, document, dto.Question,
