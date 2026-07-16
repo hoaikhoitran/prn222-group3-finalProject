@@ -21,7 +21,7 @@ public class ChatModel : PageModel
     [BindProperty]
     public AskQuestionDto AskForm { get; set; } = new();
 
-    public async Task<IActionResult> OnGetAsync(int? documentId, int? sessionId)
+    public async Task<IActionResult> OnGetAsync(string? courseCode, int? documentId, int? sessionId)
     {
         var accountId = HttpContext.Session.GetInt32(SessionKeys.AccountId);
         if (accountId == null)
@@ -31,7 +31,7 @@ public class ChatModel : PageModel
 
         Workspace = await _chatService.GetWorkspaceAsync(accountId.Value, documentId, sessionId);
 
-        // Legacy Chat/Index: show document picker when landing without explicit selection.
+        // Landing page: students choose a course first, then a document.
         if (!documentId.HasValue && !sessionId.HasValue)
         {
             Workspace.SelectedDocumentId = null;
@@ -39,8 +39,10 @@ public class ChatModel : PageModel
             Workspace.ActiveDocument = null;
             Workspace.ActiveSession = null;
             Workspace.AskForm = new AskQuestionDto();
-            Workspace.ShowDocumentPicker = true;
         }
+
+        ApplyCourseSelection(courseCode, documentId, sessionId);
+        Workspace.ShowDocumentPicker = !string.IsNullOrWhiteSpace(Workspace.SelectedCourseCode);
 
         Workspace.SuccessMessage = TempData["Success"] as string;
         Workspace.ErrorMessage = TempData["Error"] as string;
@@ -67,6 +69,7 @@ public class ChatModel : PageModel
         {
             Workspace = await _chatService.GetWorkspaceAsync(
                 accountId.Value, AskForm.DocumentId, AskForm.ChatSessionId);
+            ApplyCourseSelection(null, AskForm.DocumentId, AskForm.ChatSessionId);
             Workspace.AskForm = AskForm;
             Workspace.ErrorMessage = "Vui lòng nhập câu hỏi.";
             ViewData["RecentSessions"] = Workspace.Sessions;
@@ -83,6 +86,38 @@ public class ChatModel : PageModel
         {
             TempData["Error"] = ex.Message;
             return RedirectToPage(new { documentId = AskForm.DocumentId, sessionId = AskForm.ChatSessionId });
+        }
+    }
+
+    private void ApplyCourseSelection(string? courseCode, int? documentId, int? sessionId)
+    {
+        var allDocuments = Workspace.Documents;
+        Workspace.CourseCodes = allDocuments
+            .Select(d => d.CourseCode)
+            .Where(c => !string.IsNullOrWhiteSpace(c))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(c => c)
+            .ToList();
+
+        var selectedCourseCode = courseCode;
+
+        if (string.IsNullOrWhiteSpace(selectedCourseCode) && Workspace.ActiveDocument != null)
+        {
+            selectedCourseCode = Workspace.ActiveDocument.CourseCode;
+        }
+
+        if (string.IsNullOrWhiteSpace(selectedCourseCode) && sessionId.HasValue && Workspace.ActiveSession != null)
+        {
+            selectedCourseCode = Workspace.ActiveSession.CourseCode;
+        }
+
+        Workspace.SelectedCourseCode = selectedCourseCode;
+
+        if (!string.IsNullOrWhiteSpace(selectedCourseCode) && !documentId.HasValue && !sessionId.HasValue)
+        {
+            Workspace.Documents = allDocuments
+                .Where(d => string.Equals(d.CourseCode, selectedCourseCode, StringComparison.OrdinalIgnoreCase))
+                .ToList();
         }
     }
 }

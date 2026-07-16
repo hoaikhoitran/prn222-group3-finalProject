@@ -6,7 +6,7 @@
     Layout = "_LayoutStudent";
     var workspace = Model.Workspace;
 }
-@if (workspace.ActiveDocument == null && workspace.Documents.Any())
+@if (workspace.ActiveDocument == null && string.IsNullOrWhiteSpace(workspace.SelectedCourseCode) && workspace.CourseCodes.Any())
 {
     <div class="edurag-page">
         @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
@@ -24,9 +24,56 @@
             </div>
             <div>
                 <p class="page-pretitle mb-1">Hỏi đáp</p>
-                <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu</h1>
-                <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index để trợ lý trả lời dựa trên nội dung.</p>
+                <h1 class="font-display fs-2 fw-bold mb-1">Chọn môn học</h1>
+                <p class="text-muted-edurag mb-0">Chọn môn trước, sau đó chọn tài liệu đã index để bắt đầu hỏi đáp.</p>
             </div>
+        </div>
+        <div class="row g-3">
+            @foreach (var courseCode in workspace.CourseCodes)
+            {
+                var count = workspace.Documents.Count(d => string.Equals(d.CourseCode, courseCode, StringComparison.OrdinalIgnoreCase));
+                <div class="col-md-6 col-xl-4">
+                    <a asp-page="/Student/Chat"
+                       asp-route-courseCode="@courseCode"
+                       class="edurag-card p-4 d-block text-decoration-none h-100">
+                        <div class="d-flex align-items-center gap-3">
+                            <span class="stat-icon-box bg-gradient-warm text-white">
+                                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "18"; }
+                                @await Html.PartialAsync("_Icons")
+                            </span>
+                            <div>
+                                <div class="font-display fw-bold fs-5 text-dark">@courseCode</div>
+                                <div class="small text-muted-edurag">@count tài liệu đã index</div>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+}
+else if (workspace.ActiveDocument == null && !string.IsNullOrWhiteSpace(workspace.SelectedCourseCode) && workspace.Documents.Any())
+{
+    <div class="edurag-page">
+        @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
+        {
+            <div class="alert alert-success mb-3 py-2 small">@workspace.SuccessMessage</div>
+        }
+        @if (!string.IsNullOrEmpty(workspace.ErrorMessage))
+        {
+            <div class="alert alert-danger mb-3 py-2 small">@workspace.ErrorMessage</div>
+        }
+        <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
+            <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
+                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </div>
+            <div>
+                <p class="page-pretitle mb-1">Hỏi đáp</p>
+                <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu môn @workspace.SelectedCourseCode</h1>
+                <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index trong môn này để trợ lý trả lời dựa trên nội dung.</p>
+            </div>
+            <a asp-page="/Student/Chat" class="btn btn-sm btn-edurag-outline ms-auto align-self-center">Đổi môn</a>
         </div>
         <div class="card edurag-card overflow-hidden">
             <div class="table-responsive">
