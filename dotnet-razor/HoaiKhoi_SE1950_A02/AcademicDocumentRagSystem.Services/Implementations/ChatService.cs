@@ -103,7 +103,7 @@ public class ChatService : IChatService
         {
             var uploaderAnswer = BuildUploaderAnswer(document, uploaderFullName, uploaderEmail);
             return await SaveAndBuildAnswerAsync(session, accountId, document, dto.Question,
-                uploaderAnswer, new List<RagSourceDto>());
+                uploaderAnswer, new List<RagSourceDto>(), usage: null);
         }
 
         var history = BuildConversationHistory(session);
@@ -121,6 +121,7 @@ public class ChatService : IChatService
 
         // Enrich each citation with uploader provenance from SQL. All retrieved chunks
         // belong to the single selected document, so they share its uploader.
+        // Uploader data coming from Python is never trusted; SQL is the authority.
         foreach (var source in ragResponse.Sources)
         {
             source.UploadedByFullName = uploaderFullName;
@@ -128,12 +129,13 @@ public class ChatService : IChatService
         }
 
         return await SaveAndBuildAnswerAsync(session, accountId, document, dto.Question,
-            ragResponse.Answer, ragResponse.Sources);
+            ragResponse.Answer, ragResponse.Sources, ragResponse.Usage);
     }
 
     private async Task<ChatAnswerDto> SaveAndBuildAnswerAsync(
         ChatSession session, int accountId, Document document,
-        string question, string answer, List<RagSourceDto> sources)
+        string question, string answer, List<RagSourceDto> sources,
+        RagUsageDto? usage)
     {
         var sourcesJson = JsonSerializer.Serialize(sources);
 
@@ -145,6 +147,9 @@ public class ChatService : IChatService
             Question = question,
             Answer = answer,
             SourcesJson = sourcesJson,
+            PromptTokens = usage?.PromptTokens,
+            CompletionTokens = usage?.CompletionTokens,
+            TotalTokens = usage?.TotalTokens,
             CreatedAt = DateTime.UtcNow
         };
 

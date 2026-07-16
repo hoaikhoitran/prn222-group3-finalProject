@@ -99,14 +99,14 @@ def test_out_of_scope_query_returns_fallback_and_empty_sources(monkeypatch) -> N
     """
     _install_fakes(monkeypatch, [])  # nothing passed the threshold
 
-    # Spy on llm_service.generate_answer to prove it is NOT called.
+    # Spy on the generation entry point to prove it is NOT called.
     call_count = {"n": 0}
 
     def spy_generate_answer(question, contexts):  # noqa: ANN001
         call_count["n"] += 1
-        return "SHOULD NOT BE CALLED"
+        return {"answer": "SHOULD NOT BE CALLED", "usage": None}
 
-    monkeypatch.setattr(rag_service, "generate_answer", spy_generate_answer)
+    monkeypatch.setattr(rag_service, "generate_answer_with_usage", spy_generate_answer)
 
     result = rag_service.ask(
         question="React Native là gì?",

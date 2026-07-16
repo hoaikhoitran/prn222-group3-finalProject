@@ -1,26 +1,66 @@
-﻿@page
+@page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Admin.IndexModel
 @{
     ViewData["Title"] = "Thống kê hệ thống";
     Layout = "_LayoutDashboard";
+    var monthNames = new[] { "Tháng 1", "Tháng 2", "Tháng 3", "Tháng 4", "Tháng 5", "Tháng 6", "Tháng 7", "Tháng 8", "Tháng 9", "Tháng 10", "Tháng 11", "Tháng 12" };
 }
 
 <div class="p-4 p-md-5">
     <div class="mb-4">
-        <h1 class="font-display fs-2 fw-bold mb-1">Hệ thống Báo cáo & Thống kê</h1>
+        <h1 class="font-display fs-2 fw-bold mb-1">Hệ thống Báo cáo &amp; Thống kê</h1>
         <p class="text-muted-edurag mb-0">Tổng quan vận hành cơ sở dữ liệu học thuật và hiệu năng phân đoạn dữ liệu.</p>
+    </div>
+
+    @* ------- Bộ lọc tháng / năm (GET query để reload/chia sẻ URL) ------- *@
+    <div class="edurag-card p-3 mb-4">
+        <form method="get" class="d-flex flex-wrap align-items-end gap-3">
+            <div>
+                <label for="filter-year" class="form-label small fw-semibold text-muted-edurag mb-1">Năm</label>
+                <select id="filter-year" name="year" class="form-select form-select-sm" style="min-width:8rem;">
+                    <option value="">— Tất cả —</option>
+                    @foreach (var y in Model.Statistics.AvailableYears)
+                    {
+                        <option value="@y" selected="@(Model.SelectedYear == y)">@y</option>
+                    }
+                </select>
+            </div>
+            <div>
+                <label for="filter-month" class="form-label small fw-semibold text-muted-edurag mb-1">Tháng</label>
+                <select id="filter-month" name="month" class="form-select form-select-sm" style="min-width:8rem;"
+                        disabled="@(Model.SelectedYear == null)">
+                    <option value="">— Cả năm —</option>
+                    @for (var m = 1; m <= 12; m++)
+                    {
+                        <option value="@m" selected="@(Model.SelectedMonth == m)">@monthNames[m - 1]</option>
+                    }
+                </select>
+            </div>
+            <div class="d-flex gap-2">
+                <button type="submit" class="btn btn-sm btn-edurag-warm">Áp dụng</button>
+                <a asp-page="/Admin/Index" class="btn btn-sm btn-edurag-outline">Tất cả thời gian</a>
+            </div>
+            <div class="ms-auto text-end">
+                <div class="small text-muted-edurag">Đang xem</div>
+                <div class="fw-bold">@Model.ScopeLabel</div>
+            </div>
+        </form>
+        @if (!string.IsNullOrEmpty(Model.FilterWarning))
+        {
+            <div class="alert alert-warning py-2 small mt-3 mb-0">@Model.FilterWarning</div>
+        }
     </div>
 
     <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
         <div class="col">
             <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #f4f7fe;">
-                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Tài khoản</div>
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Tài khoản <span class="fw-normal">(toàn hệ thống)</span></div>
                 <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalAccounts</div>
             </div>
         </div>
         <div class="col">
             <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #fef6f0;">
-                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Môn học</div>
+                <div class="text-muted-edurag fw-semibold small text-uppercase mb-1">Môn học <span class="fw-normal">(toàn hệ thống)</span></div>
                 <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalCourses</div>
             </div>
         </div>
@@ -48,7 +88,7 @@
         <div class="col-12 col-lg-4 d-flex flex-column gap-4">
             <div class="edurag-card p-4">
                 <h3 class="font-display fs-5 fw-bold mb-1">Trạng thái RAG Indexing</h3>
-                <p class="text-muted-edurag small mb-4">Trạng thái xử lý và lưu trữ tài liệu trên hệ thống.</p>
+                <p class="text-muted-edurag small mb-4">Trạng thái xử lý các tài liệu upload trong kỳ đang xem.</p>
 
                 <div class="d-flex flex-column gap-3">
                     <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #f8f9fa;">
@@ -71,31 +111,109 @@
             </div>
 
             <div class="edurag-card p-4">
-                <h3 class="font-display fs-5 fw-bold mb-1">Báo cáo tiêu tốn Token</h3>
-                <p class="text-muted-edurag small mb-4">Giám sát số Token tiêu thụ</p>
+                <h3 class="font-display fs-5 fw-bold mb-1">Token LLM thực tế</h3>
+                <p class="text-muted-edurag small mb-3">Usage do AI provider trả về cho các câu hỏi trong kỳ. Không phải số ước lượng.</p>
 
                 <div class="d-flex flex-column gap-3">
                     <div class="p-3 rounded-3" style="background-color: #f4f7fe;">
-                        <div class="text-muted-edurag small fw-semibold text-uppercase">Embedding (Chunking)</div>
-                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalEmbeddingTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                        <div class="text-muted-edurag small fw-semibold text-uppercase">Prompt tokens</div>
+                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalPromptTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
                     </div>
                     <div class="p-3 rounded-3" style="background-color: #fbf2ff;">
-                        <div class="text-muted-edurag small fw-semibold text-uppercase">Chatbot Tương tác</div>
-                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalChatTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                        <div class="text-muted-edurag small fw-semibold text-uppercase">Completion tokens</div>
+                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalCompletionTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
                     </div>
                     <div class="p-3 rounded-3 border border-dashed" style="background-color: #fffde7; border-color: #fdedad !important;">
-                        <div class="text-warning-dark small fw-bold text-uppercase" style="color: #856404;">TỔNG CỘNG TIÊU THỤ</div>
-                        <div class="fs-3 fw-bold mt-1" style="color: #856404;">@Model.Statistics.TotalTokensUsed.ToString("N0") <span class="fs-6 fw-normal">tokens</span></div>
+                        <div class="small fw-bold text-uppercase" style="color: #856404;">Tổng LLM tokens</div>
+                        <div class="fs-3 fw-bold mt-1" style="color: #856404;">@Model.Statistics.TotalLlmTokens.ToString("N0") <span class="fs-6 fw-normal">tokens</span></div>
                     </div>
+                    @if (Model.Statistics.MessagesWithoutUsage > 0)
+                    {
+                        <div class="small text-muted-edurag">
+                            @Model.Statistics.MessagesWithoutUsage tin nhắn không có dữ liệu usage
+                            (lịch sử cũ hoặc câu trả lời không gọi AI) — không tính vào các số trên.
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="edurag-card p-4">
+                <h3 class="font-display fs-5 fw-bold mb-1">Ước lượng token nội dung chunk</h3>
+                <p class="text-muted-edurag small mb-3">Ước lượng kích thước nội dung các chunk tạo trong kỳ — <strong>không phải</strong> usage thực từ provider, không cộng chung với token LLM.</p>
+                <div class="p-3 rounded-3" style="background-color: #f6f8fa;">
+                    <div class="text-muted-edurag small fw-semibold text-uppercase">Chunk token estimate</div>
+                    <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.ChunkTokenEstimate.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens (ước lượng)</span></div>
+                    <div class="small text-muted-edurag mt-1">@Model.Statistics.TotalVectorChunks chunks trong kỳ</div>
                 </div>
             </div>
 
         </div>
 
-        <div class="col-12 col-lg-8">
-            <div class="edurag-card p-4 h-100 overflow-hidden">
+        <div class="col-12 col-lg-8 d-flex flex-column gap-4">
+            <div class="edurag-card p-4 overflow-hidden">
+                <h3 class="font-display fs-5 fw-bold mb-1">Token theo tài khoản</h3>
+                <p class="text-muted-edurag small mb-4">Token LLM thực tế tính cho tài khoản đã đặt câu hỏi, trong phạm vi: <strong>@Model.ScopeLabel</strong>.</p>
+
+                <div class="table-responsive">
+                    <table class="table-edurag align-middle m-0">
+                        <thead>
+                            <tr>
+                                <th>Người dùng</th>
+                                <th>Vai trò</th>
+                                <th class="text-center">Số câu hỏi</th>
+                                <th class="text-end">Prompt</th>
+                                <th class="text-end">Completion</th>
+                                <th class="text-end">Total</th>
+                                <th class="text-center">Thiếu usage</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @if (Model.Statistics.UserTokenReports.Any())
+                            {
+                                foreach (var user in Model.Statistics.UserTokenReports)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="fw-semibold text-dark">@user.FullName</div>
+                                            @if (!string.IsNullOrEmpty(user.Email))
+                                            {
+                                                <div class="small text-muted-edurag">@user.Email</div>
+                                            }
+                                        </td>
+                                        <td>
+                                            <span class="@(user.RoleName == "Teacher" ? "role-badge-teacher" : "badge rounded-pill bg-light text-dark border") px-2 py-1">@user.RoleName</span>
+                                        </td>
+                                        <td class="text-center">@user.MessageCount</td>
+                                        <td class="text-end">@user.PromptTokens.ToString("N0")</td>
+                                        <td class="text-end">@user.CompletionTokens.ToString("N0")</td>
+                                        <td class="text-end fw-bold">@user.TotalTokens.ToString("N0")</td>
+                                        <td class="text-center">
+                                            @if (user.MissingUsageCount > 0)
+                                            {
+                                                <span class="badge rounded-pill bg-light text-dark border px-2 py-1" title="Tin nhắn không có dữ liệu usage từ provider">@user.MissingUsageCount</span>
+                                            }
+                                            else
+                                            {
+                                                <span class="text-muted-edurag">—</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            }
+                            else
+                            {
+                                <tr>
+                                    <td colspan="7" class="text-center py-4 text-muted-edurag">Không có câu hỏi nào trong phạm vi @Model.ScopeLabel.</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="edurag-card p-4 overflow-hidden">
                 <h3 class="font-display fs-5 fw-bold mb-1">Báo cáo hoạt động theo Môn học</h3>
-                <p class="text-muted-edurag small mb-4">Top các môn học có lượng dữ liệu học thuật lớn và tần suất tương tác Chatbot cao nhất.</p>
+                <p class="text-muted-edurag small mb-4">Top các môn học theo tương tác trong phạm vi: <strong>@Model.ScopeLabel</strong>.</p>
 
                 <div class="table-responsive">
                     <table class="table-edurag align-middle m-0">
@@ -104,7 +222,9 @@
                                 <th>Mã môn</th>
                                 <th>Tên môn học</th>
                                 <th class="text-center">Tài liệu</th>
-                                <th class="text-end">Lượt chat</th>
+                                <th class="text-center">Phiên chat</th>
+                                <th class="text-center">Tin nhắn</th>
+                                <th class="text-end">Tokens</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -118,21 +238,20 @@
                                         <td class="text-center">
                                             <span class="badge rounded-pill bg-light text-dark border px-2 py-1">@report.DocumentCount</span>
                                         </td>
-                                        <td class="text-end">
+                                        <td class="text-center">
                                             <span class="badge px-2.5 py-1.5 rounded-3 fw-semibold" style="background-color: #fff4ec; color: #f26522;">
                                                 @report.ChatSessionCount
                                             </span>
                                         </td>
+                                        <td class="text-center">@report.ChatMessageCount</td>
+                                        <td class="text-end fw-semibold">@report.TotalTokens.ToString("N0")</td>
                                     </tr>
                                 }
                             }
                             else
                             {
                                 <tr>
-                                    <td colspan="4" class="text-center py-4 text-muted-edurag">Chưa có dữ liệu thống kê môn học.</td>
-                                    <td class="d-none"></td>
-                                    <td class="d-none"></td>
-                                    <td class="d-none"></td>
+                                    <td colspan="6" class="text-center py-4 text-muted-edurag">Chưa có dữ liệu thống kê môn học trong phạm vi @Model.ScopeLabel.</td>
                                 </tr>
                             }
                         </tbody>
@@ -166,3 +285,18 @@
         font-weight: 600;
     }
 </style>
+
+<script>
+    // Month is only selectable once a year is chosen; clearing the year
+    // clears + disables the month so ?month never travels without ?year.
+    (function () {
+        var yearSelect = document.getElementById("filter-year");
+        var monthSelect = document.getElementById("filter-month");
+        if (!yearSelect || !monthSelect) { return; }
+        yearSelect.addEventListener("change", function () {
+            var hasYear = !!yearSelect.value;
+            monthSelect.disabled = !hasYear;
+            if (!hasYear) { monthSelect.value = ""; }
+        });
+    })();
+</script>

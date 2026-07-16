@@ -1,28 +1,48 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 
 namespace AcademicDocumentRagSystem.Services.DTOs.Dashboard;
 
 public class DashboardStatisticDto
 {
+    // Master data — always all-time (labeled as such on the UI).
     public int TotalAccounts { get; set; }
     public int TotalCourses { get; set; }
+
+    // Activity metrics — respect the selected month/year filter.
     public int TotalDocuments { get; set; }
     public int TotalChatSessions { get; set; }
     public int TotalChatMessages { get; set; }
     public int TotalVectorChunks { get; set; }
 
-    // Trạng thái
+    // Trạng thái (of documents created in the selected period)
     public int DocsPending { get; set; }
     public int DocsProcessing { get; set; }
     public int DocsIndexed { get; set; }
     public int DocsFailed { get; set; }
 
-    // Token
-    public long TotalEmbeddingTokens { get; set; } 
-    public long TotalChatTokens { get; set; }    
-    public long TotalTokensUsed => TotalEmbeddingTokens + TotalChatTokens;
+    // Real LLM token usage, summed from provider-reported usage on
+    // ChatMessages in the selected period. Never estimated.
+    public long TotalPromptTokens { get; set; }
+    public long TotalCompletionTokens { get; set; }
+    public long TotalLlmTokens { get; set; }
+
+    /// <summary>Messages in the period that predate token tracking or had no provider usage.</summary>
+    public int MessagesWithoutUsage { get; set; }
+
+    /// <summary>
+    /// Sum of DocumentChunk.TokenEstimate for chunks created in the period.
+    /// This is a CONTENT-SIZE ESTIMATE, not real provider usage — it is shown
+    /// separately and never added to the real LLM token numbers.
+    /// </summary>
+    public long ChunkTokenEstimate { get; set; }
 
     public List<CourseActivityReportDto> CourseReports { get; set; } = new();
+
+    /// <summary>Real token usage per account, sorted by TotalTokens descending.</summary>
+    public List<UserTokenUsageDto> UserTokenReports { get; set; } = new();
+
+    /// <summary>Years that actually contain data (for the filter dropdown).</summary>
+    public List<int> AvailableYears { get; set; } = new();
 }
 
 public class CourseActivityReportDto
@@ -32,4 +52,8 @@ public class CourseActivityReportDto
     public int DocumentCount { get; set; }
     public int ChunkCount { get; set; }
     public int ChatSessionCount { get; set; }
+    public int ChatMessageCount { get; set; }
+
+    /// <summary>Real LLM tokens used by chats in this course during the period.</summary>
+    public long TotalTokens { get; set; }
 }

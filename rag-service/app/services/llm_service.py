@@ -266,6 +266,9 @@ def _mock_answer(question: str, contexts: list[dict[str, Any]]) -> str:
     This mock mode does not call any external LLM, so it does not truly
     paraphrase like ChatGPT/Gemini. It only extracts the most relevant
     sentences/clauses from the retrieved document chunk.
+
+    Like the real provider, the mock cites the chunk it actually used:
+    it always answers from contexts[0], which carries citation ID C1.
     """
     if not contexts:
         return INSUFFICIENT_CONTEXT_REPLY
@@ -288,7 +291,7 @@ def _mock_answer(question: str, contexts: list[dict[str, Any]]) -> str:
         max_sentences=2,
     )
 
-    return f"Theo tài liệu {file_name}{page_label}, {relevant_text}"
+    return f"Theo tài liệu {file_name}{page_label}, {relevant_text} [C1]"
 
 
 # ---------------------------------------------------------------------------
@@ -306,6 +309,10 @@ def build_gemini_prompt(question: str, contexts: list[dict[str, Any]]) -> str:
       * Each chunk's text is truncated to MAX_CHUNK_CHARS characters.
       * Only the chunk text + its (fileName, pageNumber, chunkIndex) metadata
         are included — never embeddings, never file paths, never raw files.
+      * Each block carries a per-request citation ID ([C1], [C2], ...) so
+        the model can mark exactly which chunks its answer relies on. The
+        IDs match the order of `contexts`, which is the same order
+        rag_service uses when it assigns citation IDs to sources.
 
     `contexts` is exactly what rag_service passes into generate_answer(); we
     do not load, chunk, or read any document here.
@@ -331,7 +338,7 @@ def build_gemini_prompt(question: str, contexts: list[dict[str, Any]]) -> str:
             text = text[: MAX_CHUNK_CHARS - 1].rstrip() + "…"
 
         blocks.append(
-            f"[{i}]\n"
+            f"[C{i}]\n"
             f"Source: {file_name}\n"
             f"Page: {page_label}\n"
             f"Chunk: {chunk_label}\n"
@@ -346,6 +353,12 @@ def build_gemini_prompt(question: str, contexts: list[dict[str, Any]]) -> str:
         "Instructions:\n"
         "- Answer in Vietnamese.\n"
         "- Use only the context above.\n"
+        "- Each context block starts with a citation ID such as [C1] or [C2]. "
+        "Immediately after each piece of information in your answer, insert "
+        "the citation ID of the block it came from, e.g. \"... [C1]\".\n"
+        "- Only use citation IDs that appear in the context above. Never "
+        "invent new citation IDs.\n"
+        "- Do not cite a block that does not directly support your answer.\n"
         "- Keep the answer concise (about 4-6 sentences unless the user asks "
         "for more detail).\n"
         "- If context is insufficient, say exactly:\n"
@@ -372,12 +385,47 @@ def _extract_gemini_text(data: dict[str, Any]) -> str:
     return text
 
 
-def _call_gemini(question: str, contexts: list[dict[str, Any]]) -> str:
+def _extract_gemini_usage(data: dict[str, Any]) -> dict[str, int | None] | None:
+    """
+    Pull the REAL token usage out of a Gemini generateContent response.
+
+    Gemini reports usage in `usageMetadata`:
+      * promptTokenCount     -> tokens billed for the request (prompt)
+      * candidatesTokenCount -> tokens generated in the answer (completion)
+      * totalTokenCount      -> provider's official total (may exceed
+        prompt + completion when the model spends "thoughts" tokens)
+
+    Returns None when the provider did not report usage. We never estimate
+    tokens ourselves (no len/4, no word counts) — a missing value stays None
+    so the .NET side stores NULL instead of a fabricated number.
+    """
+    meta = data.get("usageMetadata") or {}
+    if not isinstance(meta, dict) or not meta:
+        return None
+
+    prompt_tokens = meta.get("promptTokenCount")
+    completion_tokens = meta.get("candidatesTokenCount")
+    total_tokens = meta.get("totalTokenCount")
+
+    if prompt_tokens is None and completion_tokens is None and total_tokens is None:
+        return None
+
+    return {
+        "promptTokens": prompt_tokens,
+        "completionTokens": completion_tokens,
+        "totalTokens": total_tokens,
+    }
+
+
+def _call_gemini(question: str, contexts: list[dict[str, Any]]) -> tuple[str, dict[str, int | None] | None]:
     """
     Call the Gemini REST API for the GENERATION step.
 
     Reads LLM_API_KEY and LLM_MODEL_NAME from settings (never hard-coded).
     The API key is passed as a query parameter and is never logged.
+
+    Returns (answer_text, usage) where `usage` is the provider-reported
+    token usage dict (see _extract_gemini_usage) or None.
     """
     api_key = (settings.LLM_API_KEY or "").strip()
     if not api_key:
@@ -443,12 +491,19 @@ def _call_gemini(question: str, contexts: list[dict[str, Any]]) -> str:
     except ValueError as exc:
         raise LLMProviderError("Gemini returned a non-JSON response.") from exc
 
-    return _extract_gemini_text(data)
+    return _extract_gemini_text(data), _extract_gemini_usage(data)
 
 
-def generate_answer(question: str, contexts: list[dict[str, Any]]) -> str:
+def generate_answer_with_usage(
+    question: str, contexts: list[dict[str, Any]]
+) -> dict[str, Any]:
     """
     Public entry point used by rag_service.
+
+    Returns {"answer": str, "usage": dict | None} where `usage` is the
+    provider-reported token usage ({promptTokens, completionTokens,
+    totalTokens}) or None when no real provider was called (mock mode)
+    or the provider did not report usage. Usage is NEVER estimated.
 
     Parameters
     ----------
@@ -458,23 +513,17 @@ def generate_answer(question: str, contexts: list[dict[str, Any]]) -> str:
         Retrieved chunks. Each must have at least `text` and `metadata`.
     """
     if not contexts:
-        return INSUFFICIENT_CONTEXT_REPLY
+        return {"answer": INSUFFICIENT_CONTEXT_REPLY, "usage": None}
 
     if settings.MOCK_LLM:
-        return _mock_answer(question, contexts)
+        return {"answer": _mock_answer(question, contexts), "usage": None}
 
     provider = (settings.LLM_PROVIDER or "").lower().strip()
 
     logger.info("Calling LLM provider: %s", provider or "<none>")
 
-    user_prompt = (
-        f"Question:\n{question.strip()}\n\n"
-        f"Context:\n{_format_contexts_for_prompt(contexts)}\n\n"
-        "Answer:"
-    )
-
     if provider in {"", "mock"}:
-        return _mock_answer(question, contexts)
+        return {"answer": _mock_answer(question, contexts), "usage": None}
 
     if provider == "openai":
         # TODO: implement OpenAI Chat Completions here using
@@ -486,7 +535,8 @@ def generate_answer(question: str, contexts: list[dict[str, Any]]) -> str:
         )
 
     if provider == "gemini":
-        return _call_gemini(question, contexts)
+        answer, usage = _call_gemini(question, contexts)
+        return {"answer": answer, "usage": usage}
 
     if provider == "ollama":
         # TODO: implement Ollama local call via httpx.
@@ -495,3 +545,8 @@ def generate_answer(question: str, contexts: list[dict[str, Any]]) -> str:
         )
 
     raise NotImplementedError(f"Unknown LLM_PROVIDER: {provider!r}")
+
+
+def generate_answer(question: str, contexts: list[dict[str, Any]]) -> str:
+    """Answer-only wrapper around generate_answer_with_usage()."""
+    return generate_answer_with_usage(question, contexts)["answer"]
