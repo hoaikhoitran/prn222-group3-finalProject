@@ -1,11 +1,5 @@
 # HoaiKhoi_SE1950_A02 — Academic Document RAG (Razor Pages, PRN222 A02)
 
-A separate ASP.NET Core 8 **Razor Pages** presentation layer for the Academic
-Document RAG System, built for PRN222 Assignment 02. It **reuses** the existing
-`Services` and `DataAccess` layers (3-layer architecture + Repository pattern)
-and the **same SQL Server database** as the MVC app under
-`../../dotnet-mvc/HoaiKhoi_SE1950_A01`. The MVC solution is left untouched.
-
 ```
 HoaiKhoi_SE1950_A02.sln
 ├── AcademicDocumentRagSystem.RazorPages   (presentation — Razor Pages + SignalR)
@@ -31,11 +25,11 @@ Then open `https://localhost:7150/` — the **Login page is the default start pa
 Sign in with the existing accounts in the shared database, or the configured admin
 account (`appsettings.json → AdminAccount`). Role-based landing pages:
 
-| Role    | Lands on            | Can do                                            |
-|---------|---------------------|---------------------------------------------------|
-| Admin   | `/Admin/Index`      | Course CRUD + search, Account CRUD + search       |
-| Teacher | `/Teacher/Index`    | View live course catalogue (auto-updates)         |
-| Student | `/Student/Index`    | Welcome page                                      |
+| Role    | Lands on         | Can do                                      |
+| ------- | ---------------- | ------------------------------------------- |
+| Admin   | `/Admin/Index`   | Course CRUD + search, Account CRUD + search |
+| Teacher | `/Teacher/Index` | View live course catalogue (auto-updates)   |
+| Student | `/Student/Index` | Welcome page                                |
 
 ## Configuration (`appsettings.json`)
 
@@ -52,13 +46,13 @@ dotnet user-secrets set "Smtp:Password" "your-app-password"
 dotnet user-secrets set "Smtp:FromEmail" "you@gmail.com"
 ```
 
-| Section            | Purpose                                                       |
-|--------------------|---------------------------------------------------------------|
-| `ConnectionStrings`| SQL Server connection (same DB as MVC)                        |
-| `AdminAccount`     | Config-based admin login                                      |
-| `RagService`       | Existing Python RAG service base URL                          |
-| `App:LoginUrl`     | Login link included in the lecturer onboarding email          |
-| `Smtp`             | SMTP host/credentials for outgoing email (placeholders)       |
+| Section             | Purpose                                                 |
+| ------------------- | ------------------------------------------------------- |
+| `ConnectionStrings` | SQL Server connection (same DB as MVC)                  |
+| `AdminAccount`      | Config-based admin login                                |
+| `RagService`        | Existing Python RAG service base URL                    |
+| `App:LoginUrl`      | Login link included in the lecturer onboarding email    |
+| `Smtp`              | SMTP host/credentials for outgoing email (placeholders) |
 
 ## SMTP email (lecturer onboarding)
 

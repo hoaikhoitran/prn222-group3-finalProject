@@ -4,6 +4,14 @@ namespace AcademicDocumentRagSystem.Services.DTOs.Rag;
 
 public class RagSourceDto
 {
+    /// <summary>
+    /// Per-request citation ID (C1, C2, ...) assigned by the RAG service in
+    /// retrieval order. The answer text references chunks by these IDs.
+    /// Empty for chat history saved before citation tracking existed.
+    /// </summary>
+    [JsonPropertyName("citationId")]
+    public string CitationId { get; set; } = string.Empty;
+
     [JsonPropertyName("documentId")]
     public string DocumentId { get; set; } = string.Empty;
 

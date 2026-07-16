@@ -35,18 +35,27 @@ and reusable; this file is the conductor of the orchestra.
 from __future__ import annotations
 
 import logging
+import re
 from typing import Any
 
 from app.core.config import settings
 from app.services.chunking_service import chunk_pages
 from app.services.document_loader import load_document
 from app.services.embedding_service import embedding_service
-from app.services.llm_service import INSUFFICIENT_CONTEXT_REPLY, generate_answer
+from app.services.llm_service import (
+    INSUFFICIENT_CONTEXT_REPLY,
+    generate_answer_with_usage,
+)
 from app.services.vector_store_service import vector_store_service
 from app.utils.file_utils import file_exists, get_file_extension, is_supported_file
 from app.utils.text_utils import preview
 
 logger = logging.getLogger(__name__)
+
+# Matches bracketed citation groups the LLM emits: "[C1]", "[C1, C3]",
+# "[C1,C2]". Individual IDs inside a group are pulled out separately.
+_CITATION_GROUP_RE = re.compile(r"\[\s*C\d+(?:\s*,\s*C?\d+)*\s*\]", re.IGNORECASE)
+_CITATION_ID_RE = re.compile(r"C?(\d+)", re.IGNORECASE)
 
 
 # ---------------------------------------------------------------------------
@@ -203,19 +212,31 @@ def ask(
             settings.RAG_MIN_RELEVANT_CHUNKS,
             contextual_question[:80],
         )
-        return {"answer": INSUFFICIENT_CONTEXT_REPLY, "sources": []}
+        return {
+            "answer": INSUFFICIENT_CONTEXT_REPLY,
+            "sources": [],
+            "retrievedSources": [],
+            "usedCitationIds": [],
+            "usage": None,
+        }
 
-    # 5. Augmentation + Generation.
-    answer = generate_answer(contextual_question, hits)
+    # 5. Augmentation + Generation. Each retrieved chunk gets a stable
+    # per-request citation ID (C1, C2, ... in retrieval order); the prompt
+    # builder labels the context blocks with the same IDs, so the model's
+    # "[C2]" marker maps back to hits[1] unambiguously.
+    generation = generate_answer_with_usage(contextual_question, hits)
+    answer = generation["answer"]
+    usage = generation["usage"]
 
-    # 6. Build the `sources` array. `distance` is included for debugging /
-    # threshold tuning; it stays None if Chroma didn't return one.
-    sources: list[dict[str, Any]] = []
-    for hit in hits:
+    # 6. Build the full retrieved-sources array. `distance` is included
+    # for debugging / threshold tuning; None if Chroma didn't return one.
+    retrieved_sources: list[dict[str, Any]] = []
+    for position, hit in enumerate(hits, start=1):
         meta = hit.get("metadata") or {}
         page = meta.get("pageNumber", -1)
-        sources.append(
+        retrieved_sources.append(
             {
+                "citationId": f"C{position}",
                 "documentId": meta.get("documentId", document_id),
                 "fileName": meta.get("fileName", ""),
                 "pageNumber": int(page) if page and page != -1 else None,
@@ -225,7 +246,59 @@ def ask(
             }
         )
 
-    return {"answer": answer, "sources": sources}
+    # 7. Keep only the sources the model actually cited. Invalid /
+    # hallucinated IDs are dropped by extract_used_citation_ids; if the
+    # model answered without citing anything we fall back to the full
+    # retrieval (legacy behaviour) rather than showing no provenance.
+    valid_ids = [source["citationId"] for source in retrieved_sources]
+    used_ids = extract_used_citation_ids(answer, valid_ids)
+
+    if used_ids:
+        used_sources = [s for s in retrieved_sources if s["citationId"] in used_ids]
+    elif INSUFFICIENT_CONTEXT_REPLY in answer:
+        used_sources = []
+    else:
+        logger.warning(
+            "Answer contained no valid citation IDs; falling back to all "
+            "%d retrieved sources for question %r",
+            len(retrieved_sources),
+            question[:80],
+        )
+        used_sources = list(retrieved_sources)
+
+    return {
+        "answer": answer,
+        "sources": used_sources,
+        "retrievedSources": retrieved_sources,
+        "usedCitationIds": [s["citationId"] for s in used_sources],
+        "usage": usage,
+    }
+
+
+def extract_used_citation_ids(answer: str, valid_ids: list[str]) -> list[str]:
+    """
+    Pull the citation IDs the model actually used out of its answer.
+
+    Rules:
+      * Only bracketed IDs count: "[C1]", "[C1, C3]", "[c2]".
+      * IDs that don't exist in `valid_ids` (hallucinated) are dropped.
+      * Duplicates collapse to one entry.
+      * The returned order follows `valid_ids` (C1 before C2, ...), so the
+        citation chips render in retrieval order.
+    """
+    if not answer:
+        return []
+
+    valid_set = {v.upper() for v in valid_ids}
+    found: set[str] = set()
+
+    for group in _CITATION_GROUP_RE.findall(answer):
+        for match in _CITATION_ID_RE.finditer(group):
+            candidate = f"C{match.group(1)}"
+            if candidate in valid_set:
+                found.add(candidate)
+
+    return [v for v in valid_ids if v.upper() in found]
 
 
 def _build_contextual_question(

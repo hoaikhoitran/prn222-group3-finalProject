@@ -112,8 +112,8 @@ def test_prompt_builder_caps_chunk_count() -> None:
     # Only the first MAX_GEMINI_CHUNKS chunks should appear.
     assert "chunk number 4" in prompt
     assert "chunk number 5" not in prompt
-    assert f"[{llm_service.MAX_GEMINI_CHUNKS}]" in prompt
-    assert f"[{llm_service.MAX_GEMINI_CHUNKS + 1}]" not in prompt
+    assert f"[C{llm_service.MAX_GEMINI_CHUNKS}]" in prompt
+    assert f"[C{llm_service.MAX_GEMINI_CHUNKS + 1}]" not in prompt
 
 
 def test_prompt_builder_truncates_long_chunk_text() -> None:

@@ -30,6 +30,13 @@ class IndexDocumentResponse(BaseModel):
 class SourceItem(BaseModel):
     """A single retrieved chunk that supports an answer."""
 
+    citationId: str = Field(
+        default="",
+        description=(
+            "Per-request citation ID (C1, C2, ...) assigned in retrieval "
+            "order. The answer text references chunks by these IDs."
+        ),
+    )
     documentId: str
     fileName: str
     pageNumber: int | None = Field(
@@ -46,11 +53,45 @@ class SourceItem(BaseModel):
     )
 
 
+class UsageInfo(BaseModel):
+    """
+    REAL token usage reported by the LLM provider for one /rag/ask call.
+
+    Values come straight from the provider's usage metadata (for Gemini:
+    usageMetadata.promptTokenCount / candidatesTokenCount / totalTokenCount).
+    They are NEVER estimated from character or word counts. All fields are
+    None when the provider was not called (mock mode / relevance-gate
+    fallback) or did not report usage.
+    """
+
+    promptTokens: int | None = Field(
+        default=None, description="Tokens consumed by the prompt (provider-reported)."
+    )
+    completionTokens: int | None = Field(
+        default=None, description="Tokens generated in the answer (provider-reported)."
+    )
+    totalTokens: int | None = Field(
+        default=None,
+        description=(
+            "Provider's official total. May exceed prompt + completion when "
+            "the model spends internal reasoning tokens."
+        ),
+    )
+
+
 class AskResponse(BaseModel):
     """Response for POST /rag/ask."""
 
     answer: str
+    # Only the chunks the model actually cited in the answer.
     sources: list[SourceItem] = Field(default_factory=list)
+    # Every chunk retrieval returned (superset of `sources`), for debugging.
+    retrievedSources: list[SourceItem] = Field(default_factory=list)
+    usedCitationIds: list[str] = Field(default_factory=list)
+    usage: UsageInfo | None = Field(
+        default=None,
+        description="Real provider token usage; null when unavailable.",
+    )
 
 
 class DocumentStatusResponse(BaseModel):
