@@ -5,9 +5,17 @@
     Layout = "_LayoutDashboard";
 }
 <div class="edurag-page" style="max-width:52rem;">
-    <p class="page-pretitle">Giảng viên</p>
-    <h1 class="font-display fs-2 fw-bold mb-1">Upload tài liệu</h1>
-    <p class="text-muted-edurag mb-4">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <span class="section-chip mb-2">
+                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "13"; }
+                @await Html.PartialAsync("_Icons")
+                Giảng viên · Upload
+            </span>
+            <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Upload tài liệu</h1>
+            <p class="text-muted-edurag mb-0">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
+        </div>
+    </div>
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
     @if (!Model.Input.AvailableCourses.Any())
     {

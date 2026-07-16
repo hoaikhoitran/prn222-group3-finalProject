@@ -1445,6 +1445,76 @@ html.sidebar-collapsed .student-sidebar .session-item.active .session-item__dot 
   border-radius: var(--edurag-radius-sm);
 }
 
+/* Shared confirmation dialog */
+body.confirm-dialog-open { overflow: hidden; }
+.edurag-confirm {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  opacity: 0;
+  transition: opacity .18s ease;
+}
+.edurag-confirm.is-open { opacity: 1; }
+.edurag-confirm__backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(28, 25, 23, .48);
+  backdrop-filter: blur(2px);
+}
+.edurag-confirm__panel {
+  position: relative;
+  width: min(100%, 28rem);
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: 1rem;
+  padding: 1.25rem;
+  border: 1px solid var(--edurag-border);
+  border-radius: 8px;
+  background: var(--edurag-card);
+  box-shadow: 0 24px 64px -24px rgba(28, 25, 23, .55);
+  transform: translateY(8px) scale(.985);
+  transition: transform .18s ease;
+}
+.edurag-confirm.is-open .edurag-confirm__panel { transform: translateY(0) scale(1); }
+.edurag-confirm__panel:focus { outline: none; }
+.edurag-confirm__icon {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #fff1e8;
+  color: var(--edurag-primary);
+}
+.edurag-confirm__content { min-width: 0; }
+.edurag-confirm__actions {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: flex-end;
+  gap: .5rem;
+  padding-top: .25rem;
+}
+.edurag-confirm__actions .btn { min-width: 6rem; }
+
+@media (max-width: 575.98px) {
+  .edurag-confirm__panel {
+    grid-template-columns: 2.5rem minmax(0, 1fr);
+    padding: 1rem;
+  }
+  .edurag-confirm__icon { width: 2.5rem; height: 2.5rem; }
+  .edurag-confirm__actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .edurag-confirm__actions .btn { min-width: 0; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .edurag-confirm,
+  .edurag-confirm__panel { transition: none; }
+}
+
 @media (max-width: 991.98px) {
   .chat-grid,
   .chat-grid--wide {

@@ -54,14 +54,6 @@
     setCollapsed(isCollapsed(), false);
 
     document.addEventListener("click", function (event) {
-        var logout = event.target.closest && event.target.closest("[data-logout-confirm]");
-        if (logout) {
-            if (!window.confirm("Bạn có chắc muốn đăng xuất?")) {
-                event.preventDefault();
-            }
-            return;
-        }
-
         var btn = event.target.closest && event.target.closest("[data-sidebar-toggle]");
         if (!btn) { return; }
         event.preventDefault();

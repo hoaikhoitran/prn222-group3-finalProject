@@ -101,9 +101,11 @@
             </div>
         </div>
     </div>
+    @await Html.PartialAsync("_ConfirmDialog")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

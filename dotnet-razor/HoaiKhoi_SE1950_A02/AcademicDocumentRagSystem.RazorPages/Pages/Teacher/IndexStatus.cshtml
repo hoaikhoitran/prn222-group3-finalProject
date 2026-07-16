@@ -12,23 +12,21 @@
     var highlightedDetailsUrl = highlightedDocument == null ? null : Url.Page("/Documents/Details", new { id = highlightedDocument.DocumentId });
 }
 <div class="edurag-page" data-index-status data-statuses-url="@statusesUrl" data-highlight-document-id="@highlightId" data-highlight-details-url="@highlightedDetailsUrl">
-    <div class="page-hero">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-            <div>
-                <span class="section-chip mb-2">
-                    @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "13"; }
-                    @await Html.PartialAsync("_Icons")
-                    Giảng viên · Pipeline
-                </span>
-                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Trạng thái index</h1>
-                <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
-            </div>
-            <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
-                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <span class="section-chip mb-2">
+                @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "13"; }
                 @await Html.PartialAsync("_Icons")
-                Upload
-            </a>
+                Giảng viên · Pipeline
+            </span>
+            <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Trạng thái index</h1>
+            <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
         </div>
+        <a asp-page="/Teacher/Upload" class="btn btn-sm btn-edurag-warm d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Upload
+        </a>
     </div>
     @if (highlightedDocument != null)
     {
