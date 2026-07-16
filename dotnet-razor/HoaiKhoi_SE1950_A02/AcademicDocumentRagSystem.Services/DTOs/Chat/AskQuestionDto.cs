@@ -6,8 +6,9 @@ public class AskQuestionDto
 {
     public int? ChatSessionId { get; set; }
 
-    [Required]
-    public int DocumentId { get; set; }
+    public int? DocumentId { get; set; }
+
+    public string? CourseCode { get; set; }
 
     [Required]
     public string Question { get; set; } = string.Empty;

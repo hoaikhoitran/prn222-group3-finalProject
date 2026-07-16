@@ -83,11 +83,21 @@ class _FakeEmbeddingService:
 
 
 class _FakeVectorStore:
-    def __init__(self, hits: list[dict[str, Any]]) -> None:
+    def __init__(
+        self,
+        hits: list[dict[str, Any]],
+        course_chunks: list[dict[str, Any]] | None = None,
+    ) -> None:
         self._hits = hits
+        self._course_chunks = course_chunks
 
     def search(self, **kwargs: Any) -> list[dict[str, Any]]:
         return self._hits
+
+    def get_course_chunks(self, **kwargs: Any) -> list[dict[str, Any]]:
+        if self._course_chunks is None:
+            raise AttributeError("course chunks not configured")
+        return self._course_chunks
 
 
 def _five_hits() -> list[dict[str, Any]]:
@@ -110,6 +120,19 @@ def _five_hits() -> list[dict[str, Any]]:
 def _patch_retrieval(monkeypatch, hits: list[dict[str, Any]]) -> None:
     monkeypatch.setattr(rag_service, "embedding_service", _FakeEmbeddingService())
     monkeypatch.setattr(rag_service, "vector_store_service", _FakeVectorStore(hits))
+
+
+def _patch_retrieval_with_course_chunks(
+    monkeypatch,
+    hits: list[dict[str, Any]],
+    course_chunks: list[dict[str, Any]],
+) -> None:
+    monkeypatch.setattr(rag_service, "embedding_service", _FakeEmbeddingService())
+    monkeypatch.setattr(
+        rag_service,
+        "vector_store_service",
+        _FakeVectorStore(hits, course_chunks),
+    )
 
 
 def test_ask_returns_only_cited_sources(monkeypatch) -> None:
@@ -174,7 +197,7 @@ def test_ask_duplicate_citations_yield_one_source(monkeypatch) -> None:
     assert [s["citationId"] for s in result["sources"]] == ["C2"]
 
 
-def test_ask_no_citations_falls_back_to_full_retrieval(monkeypatch) -> None:
+def test_ask_no_citations_returns_no_visible_sources(monkeypatch) -> None:
     _patch_retrieval(monkeypatch, _five_hits())
 
     monkeypatch.setattr(
@@ -184,8 +207,113 @@ def test_ask_no_citations_falls_back_to_full_retrieval(monkeypatch) -> None:
     )
 
     result = rag_service.ask(question="q?", document_id="doc_1", course_code="PRN222")
-    # Legacy behaviour: without citation markers we keep full provenance.
-    assert len(result["sources"]) == 5
+    assert result["sources"] == []
+    assert result["usedCitationIds"] == []
+
+
+def test_ask_exact_answer_uses_explicit_single_source(monkeypatch) -> None:
+    _patch_retrieval(monkeypatch, _five_hits())
+
+    monkeypatch.setattr(
+        rag_service,
+        "generate_answer_with_usage",
+        lambda question, contexts: {
+            "answer": "Exact text without visible citation.",
+            "usage": None,
+            "sourceCitationIds": ["C1"],
+        },
+    )
+
+    result = rag_service.ask(question="q?", document_id="doc_1", course_code="PRN222")
+    assert result["answer"] == "Exact text without visible citation."
+    assert result["usedCitationIds"] == ["C1"]
+    assert [s["citationId"] for s in result["sources"]] == ["C1"]
+
+
+def test_ask_exact_prescan_beats_wrong_vector_hit(monkeypatch) -> None:
+    wrong_vector_hit = {
+        "id": "doc_1::chunk::10",
+        "text": (
+            "QUESTION: Phân vùng tương đương làm gì? "
+            "ANSWER_EXACT: Chia dữ liệu đầu vào thành các nhóm hợp lệ và không hợp lệ, "
+            "chỉ cần chọn một đại diện trong mỗi nhóm để test."
+        ),
+        "metadata": {
+            "documentId": "doc_1",
+            "courseCode": "SWE301",
+            "fileName": "SWE301_KiemThuPhanMem.docx",
+            "pageNumber": 10,
+            "chunkIndex": 10,
+        },
+        "distance": 0.1,
+    }
+    exact_course_chunks = [
+        wrong_vector_hit,
+        {
+            "id": "doc_1::chunk::11",
+            "text": (
+                "QUESTION: Vì sao cần phân tích giá trị biên? "
+                "ANSWER_EXACT: Vì biên là nơi lập trình viên dễ viết sai logic nhất."
+            ),
+            "metadata": {
+                "documentId": "doc_1",
+                "courseCode": "SWE301",
+                "fileName": "SWE301_KiemThuPhanMem.docx",
+                "pageNumber": 11,
+                "chunkIndex": 11,
+            },
+            "distance": None,
+        },
+    ]
+    _patch_retrieval_with_course_chunks(
+        monkeypatch,
+        hits=[wrong_vector_hit],
+        course_chunks=exact_course_chunks,
+    )
+
+    result = rag_service.ask(
+        question="Vì sao cần phân tích giá trị biên?",
+        document_id="",
+        course_code="SWE301",
+    )
+
+    assert result["answer"] == "Vì biên là nơi lập trình viên dễ viết sai logic nhất."
+    assert result["usedCitationIds"] == ["C1"]
+    assert result["sources"][0]["chunkIndex"] == 11
+
+
+def test_ask_exact_prescan_rejects_near_question(monkeypatch) -> None:
+    exact_chunk = {
+        "id": "doc_1::chunk::10",
+        "text": (
+            "QUESTION: Phân vùng tương đương (Equivalence Partitioning) làm gì? "
+            "ANSWER_EXACT: Chia dữ liệu đầu vào thành các nhóm hợp lệ và không hợp lệ, "
+            "chỉ cần chọn một đại diện trong mỗi nhóm để test."
+        ),
+        "metadata": {
+            "documentId": "doc_1",
+            "courseCode": "SWE301",
+            "fileName": "SWE301_KiemThuPhanMem.docx",
+            "pageNumber": 10,
+            "chunkIndex": 10,
+        },
+        "distance": 0.1,
+    }
+    _patch_retrieval_with_course_chunks(
+        monkeypatch,
+        hits=[exact_chunk],
+        course_chunks=[exact_chunk],
+    )
+
+    result = rag_service.ask(
+        question='"Phân vùng tương đương" trong tiếng Anh là gì?',
+        document_id="",
+        course_code="SWE301",
+    )
+
+    assert result["answer"] == INSUFFICIENT_CONTEXT_REPLY
+    assert result["sources"] == []
+    assert result["usedCitationIds"] == []
 
 
 def test_ask_insufficient_answer_has_no_sources(monkeypatch) -> None:

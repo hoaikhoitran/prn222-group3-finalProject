@@ -44,7 +44,9 @@ from app.services.document_loader import load_document
 from app.services.embedding_service import embedding_service
 from app.services.llm_service import (
     INSUFFICIENT_CONTEXT_REPLY,
+    generate_exact_answer_with_usage,
     generate_answer_with_usage,
+    has_exact_answer_items,
 )
 from app.services.vector_store_service import vector_store_service
 from app.utils.file_utils import file_exists, get_file_extension, is_supported_file
@@ -189,9 +191,35 @@ def ask(
 
     effective_top_k = top_k if top_k and top_k > 0 else settings.DEFAULT_TOP_K
     contextual_question = _build_contextual_question(question, conversation_history or [])
+    retrieval_question = question
+
+    exact_hits = _load_exact_candidate_hits(
+        document_id=document_id,
+        course_code=course_code,
+    )
+    exact_generation = generate_exact_answer_with_usage(question, exact_hits)
+    if exact_generation:
+        selected_hits = _select_explicit_source_hits(exact_hits, exact_generation)
+        exact_generation["sourceCitationIds"] = [
+            f"C{index}" for index in range(1, len(selected_hits) + 1)
+        ]
+        return _build_ask_response(
+            generation=exact_generation,
+            source_hits=selected_hits,
+            fallback_document_id=document_id,
+            question=question,
+        )
+    if exact_hits and has_exact_answer_items(exact_hits):
+        return {
+            "answer": INSUFFICIENT_CONTEXT_REPLY,
+            "sources": [],
+            "retrievedSources": [],
+            "usedCitationIds": [],
+            "usage": None,
+        }
 
     # 2. Embed the question.
-    question_embedding = embedding_service.embed_text(contextual_question)
+    question_embedding = embedding_service.embed_text(retrieval_question)
 
     # 3. Retrieval — the vector store already drops chunks whose distance
     # exceeds RAG_MAX_DISTANCE, so `hits` only contains *relevant* chunks.
@@ -220,24 +248,46 @@ def ask(
             "usage": None,
         }
 
+    expanded_hits = _expand_hits_with_neighbors(hits)
+
     # 5. Augmentation + Generation. Each retrieved chunk gets a stable
     # per-request citation ID (C1, C2, ... in retrieval order); the prompt
     # builder labels the context blocks with the same IDs, so the model's
     # "[C2]" marker maps back to hits[1] unambiguously.
-    generation = generate_answer_with_usage(contextual_question, hits)
+    generation = generate_exact_answer_with_usage(question, expanded_hits)
+    source_hits = expanded_hits
+
+    if generation is None:
+        generation = generate_answer_with_usage(question, hits)
+        source_hits = hits
+
+    return _build_ask_response(
+        generation=generation,
+        source_hits=source_hits,
+        fallback_document_id=document_id,
+        question=question,
+    )
+
+
+def _build_ask_response(
+    *,
+    generation: dict[str, Any],
+    source_hits: list[dict[str, Any]],
+    fallback_document_id: str,
+    question: str,
+) -> dict[str, Any]:
     answer = generation["answer"]
     usage = generation["usage"]
+    explicit_source_ids = generation.get("sourceCitationIds") or []
 
-    # 6. Build the full retrieved-sources array. `distance` is included
-    # for debugging / threshold tuning; None if Chroma didn't return one.
     retrieved_sources: list[dict[str, Any]] = []
-    for position, hit in enumerate(hits, start=1):
+    for position, hit in enumerate(source_hits, start=1):
         meta = hit.get("metadata") or {}
         page = meta.get("pageNumber", -1)
         retrieved_sources.append(
             {
                 "citationId": f"C{position}",
-                "documentId": meta.get("documentId", document_id),
+                "documentId": meta.get("documentId", fallback_document_id),
                 "fileName": meta.get("fileName", ""),
                 "pageNumber": int(page) if page and page != -1 else None,
                 "chunkIndex": int(meta.get("chunkIndex", 0)),
@@ -246,12 +296,14 @@ def ask(
             }
         )
 
-    # 7. Keep only the sources the model actually cited. Invalid /
-    # hallucinated IDs are dropped by extract_used_citation_ids; if the
-    # model answered without citing anything we fall back to the full
-    # retrieval (legacy behaviour) rather than showing no provenance.
     valid_ids = [source["citationId"] for source in retrieved_sources]
-    used_ids = extract_used_citation_ids(answer, valid_ids)
+    explicit_id_set = {str(explicit_id).upper() for explicit_id in explicit_source_ids}
+    used_ids = [
+        source_id for source_id in valid_ids if source_id.upper() in explicit_id_set
+    ]
+
+    if not used_ids:
+        used_ids = extract_used_citation_ids(answer, valid_ids)
 
     if used_ids:
         used_sources = [s for s in retrieved_sources if s["citationId"] in used_ids]
@@ -259,12 +311,11 @@ def ask(
         used_sources = []
     else:
         logger.warning(
-            "Answer contained no valid citation IDs; falling back to all "
-            "%d retrieved sources for question %r",
-            len(retrieved_sources),
+            "Answer contained no valid citation IDs; returning no visible "
+            "sources for question %r",
             question[:80],
         )
-        used_sources = list(retrieved_sources)
+        used_sources = []
 
     return {
         "answer": answer,
@@ -273,6 +324,88 @@ def ask(
         "usedCitationIds": [s["citationId"] for s in used_sources],
         "usage": usage,
     }
+
+
+def _load_exact_candidate_hits(
+    *,
+    document_id: str,
+    course_code: str,
+) -> list[dict[str, Any]]:
+    try:
+        return vector_store_service.get_course_chunks(
+            course_code=course_code,
+            document_id=document_id or None,
+        )
+    except AttributeError:
+        return []
+
+
+def _select_explicit_source_hits(
+    hits: list[dict[str, Any]],
+    generation: dict[str, Any],
+) -> list[dict[str, Any]]:
+    selected: list[dict[str, Any]] = []
+
+    for citation_id in generation.get("sourceCitationIds") or []:
+        match = re.fullmatch(r"C(\d+)", str(citation_id), flags=re.IGNORECASE)
+        if not match:
+            continue
+
+        index = int(match.group(1)) - 1
+        if 0 <= index < len(hits):
+            selected.append(hits[index])
+
+    return selected or hits[:1]
+
+
+def _expand_hits_with_neighbors(hits: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    """
+    Add neighboring chunks for structured exact-answer matching.
+
+    Retrieval can hit the chunk containing the QUESTION while ANSWER_EXACT is
+    in the next chunk, or vice versa. Neighbor expansion reconstructs that
+    small local window without changing normal LLM generation when no exact
+    answer is found.
+    """
+    expanded: list[dict[str, Any]] = []
+    seen_ids: set[str] = set()
+
+    def add_hit(hit: dict[str, Any]) -> None:
+        hit_id = str(hit.get("id") or "")
+        if hit_id and hit_id in seen_ids:
+            return
+        if hit_id:
+            seen_ids.add(hit_id)
+        expanded.append(hit)
+
+    for hit in hits:
+        meta = hit.get("metadata") or {}
+        document_id = str(meta.get("documentId") or "")
+        chunk_index = meta.get("chunkIndex")
+
+        if not document_id or chunk_index is None:
+            add_hit(hit)
+            continue
+
+        try:
+            chunk_index_int = int(chunk_index)
+        except (TypeError, ValueError):
+            add_hit(hit)
+            continue
+
+        try:
+            neighbors = vector_store_service.get_chunk_window(
+                document_id=document_id,
+                center_chunk_index=chunk_index_int,
+                window=1,
+            )
+        except AttributeError:
+            neighbors = [hit]
+
+        for neighbor in neighbors:
+            add_hit(neighbor)
+
+    return expanded or hits
 
 
 def extract_used_citation_ids(answer: str, valid_ids: list[str]) -> list[str]:

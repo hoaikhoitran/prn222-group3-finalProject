@@ -6,6 +6,8 @@ public class ChatWorkspaceDto
 
     public List<IndexedDocumentDto> Documents { get; set; } = new();
 
+    public List<string> CourseCodes { get; set; } = new();
+
     public ChatSessionDetailsDto? ActiveSession { get; set; }
 
     public IndexedDocumentDto? ActiveDocument { get; set; }
@@ -13,6 +15,8 @@ public class ChatWorkspaceDto
     public int? SelectedDocumentId { get; set; }
 
     public int? SelectedSessionId { get; set; }
+
+    public string? SelectedCourseCode { get; set; }
 
     public AskQuestionDto AskForm { get; set; } = new();
 

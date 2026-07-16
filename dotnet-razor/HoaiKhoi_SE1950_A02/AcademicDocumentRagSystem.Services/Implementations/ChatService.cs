@@ -79,11 +79,17 @@ public class ChatService : IChatService
 
     public async Task<ChatAnswerDto> AskAsync(AskQuestionDto dto, int accountId)
     {
-        var document = await _documentRepository.GetByIdAsync(dto.DocumentId);
+        var isCourseScoped = !dto.DocumentId.HasValue && !string.IsNullOrWhiteSpace(dto.CourseCode);
+        var document = isCourseScoped
+            ? (await _documentRepository.GetIndexedDocumentsAsync())
+                .FirstOrDefault(d => string.Equals(d.CourseCode, dto.CourseCode, StringComparison.OrdinalIgnoreCase))
+            : await _documentRepository.GetByIdAsync(dto.DocumentId ?? 0);
 
         if (document == null)
         {
-            throw new Exception("Document not found.");
+            throw new Exception(isCourseScoped
+                ? "No indexed document found for this course."
+                : "Document not found.");
         }
 
         if (document.IndexStatus != "Indexed")
@@ -99,7 +105,7 @@ public class ChatService : IChatService
         // "Who uploaded this document?" is provenance metadata, not document content.
         // Answer it directly from SQL instead of letting the grounded RAG flow handle it
         // (which would correctly say the answer is not in the document).
-        if (IsUploaderQuestion(dto.Question))
+        if (!isCourseScoped && IsUploaderQuestion(dto.Question))
         {
             var uploaderAnswer = BuildUploaderAnswer(document, uploaderFullName, uploaderEmail);
             return await SaveAndBuildAnswerAsync(session, accountId, document, dto.Question,
@@ -113,16 +119,16 @@ public class ChatService : IChatService
             SessionId = session.ChatSessionId.ToString(),
             UserId = accountId.ToString(),
             CourseCode = document.CourseCode,
-            DocumentId = document.DocumentId.ToString(),
+            DocumentId = isCourseScoped ? string.Empty : document.DocumentId.ToString(),
             Question = dto.Question,
-            TopK = 5,
+            TopK = isCourseScoped ? 8 : 5,
             ConversationHistory = history
         });
 
         // Enrich each citation with uploader provenance from SQL. All retrieved chunks
         // belong to the single selected document, so they share its uploader.
         // Uploader data coming from Python is never trusted; SQL is the authority.
-        foreach (var source in ragResponse.Sources)
+        foreach (var source in isCourseScoped ? new List<RagSourceDto>() : ragResponse.Sources)
         {
             source.UploadedByFullName = uploaderFullName;
             source.UploadedByEmail = uploaderEmail;
@@ -164,6 +170,7 @@ public class ChatService : IChatService
         {
             ChatSessionId = session.ChatSessionId,
             DocumentId = document.DocumentId,
+            CourseCode = document.CourseCode,
             Question = question,
             Answer = answer,
             Sources = sources
@@ -213,7 +220,9 @@ public class ChatService : IChatService
 
             if (existingSession == null ||
                 existingSession.AccountId != accountId ||
-                existingSession.DocumentId != document.DocumentId)
+                (!string.IsNullOrWhiteSpace(dto.CourseCode)
+                    ? !string.Equals(existingSession.Course.Code, dto.CourseCode, StringComparison.OrdinalIgnoreCase)
+                    : existingSession.DocumentId != document.DocumentId))
             {
                 throw new Exception("Chat session not found.");
             }
@@ -262,6 +271,7 @@ public class ChatService : IChatService
         {
             workspace.ActiveDocument = documents.FirstOrDefault(d => d.DocumentId == documentId.Value);
             workspace.AskForm.DocumentId = documentId.Value;
+            workspace.AskForm.CourseCode = workspace.ActiveDocument?.CourseCode;
             workspace.AskForm.ChatSessionId = sessionId;
         }
 
@@ -271,6 +281,7 @@ public class ChatService : IChatService
             if (workspace.ActiveSession != null)
             {
                 workspace.AskForm.DocumentId = workspace.ActiveSession.DocumentId;
+                workspace.AskForm.CourseCode = workspace.ActiveSession.CourseCode;
                 workspace.AskForm.ChatSessionId = workspace.ActiveSession.ChatSessionId;
                 workspace.ActiveDocument = documents.FirstOrDefault(d =>
                     d.DocumentId == workspace.ActiveSession.DocumentId);
