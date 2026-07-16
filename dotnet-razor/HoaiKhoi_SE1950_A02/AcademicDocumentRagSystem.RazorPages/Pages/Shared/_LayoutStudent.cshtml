@@ -16,6 +16,7 @@
     <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
+    <script>document.documentElement.classList.add('student-reveal-ready');</script>
     <script>
         (function () {
             try {
@@ -26,14 +27,14 @@
         })();
     </script>
 </head>
-<body class="edurag-body">
+<body class="edurag-body student-area">
     <div class="page">
         <div class="dashboard-shell">
             <aside class="student-sidebar" data-edurag-sidebar aria-label="Điều hướng sinh viên">
                 <div class="student-sidebar__head">
                     <div class="sidebar-brand-row mb-3">
                         <div class="sidebar-brand-slot">
-                            <a asp-page="/Home/Index" class="sidebar-brand-link d-flex align-items-center gap-2 text-decoration-none text-dark min-width-0">
+                            <a asp-page="/Home/Index" class="sidebar-brand-link text-decoration-none text-dark min-width-0">
                                 <span class="edurag-logo-mark bg-gradient-warm text-white d-inline-flex align-items-center justify-content-center flex-shrink-0">
                                     @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "20"; }
                                     @await Html.PartialAsync("_Icons")
@@ -49,7 +50,7 @@
                             </button>
                         </div>
                     </div>
-                    <a asp-page="/Student/Chat" class="btn btn-edurag-warm btn-sm w-100 d-flex align-items-center justify-content-center gap-2" title="Cuộc trò chuyện mới">
+                    <a asp-page="/Student/Chat" class="btn btn-edurag-warm btn-sm w-100" title="Cuộc trò chuyện mới">
                         @{ ViewData["Icon"] = "pen"; ViewData["IconSize"] = "14"; }
                         @await Html.PartialAsync("_Icons")
                         <span class="sidebar-label">Cuộc trò chuyện mới</span>
@@ -101,9 +102,12 @@
             </div>
         </div>
     </div>
+    @await Html.PartialAsync("_ConfirmDialog")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
+    <script src="~/js/student-reveal.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

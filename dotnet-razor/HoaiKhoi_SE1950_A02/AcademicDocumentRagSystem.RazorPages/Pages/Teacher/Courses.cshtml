@@ -7,25 +7,18 @@
     var cards = Model.Cards;
 }
 <div class="edurag-page">
-    <div class="page-hero">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-            <div>
-                <span class="section-chip mb-2">
-                    @{ ViewData["Icon"] = "graduation"; ViewData["IconSize"] = "13"; }
-                    @await Html.PartialAsync("_Icons")
-                    Giảng viên · Môn học
-                </span>
-                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Môn học của bạn</h1>
-                <p class="text-muted-edurag mb-0">
-                    @cards.Count môn được phân công · @cards.Sum(c => c.DocumentCount) tài liệu · @cards.Sum(c => c.TotalChunks).ToString("N0") chunks
-                    <span id="live-indicator" class="live-indicator ms-1">live</span>
-                </p>
-            </div>
-            <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
-                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <span class="section-chip mb-2">
+                @{ ViewData["Icon"] = "graduation"; ViewData["IconSize"] = "13"; }
                 @await Html.PartialAsync("_Icons")
-                Upload tài liệu
-            </a>
+                Giảng viên · Môn học
+            </span>
+            <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Môn học của bạn</h1>
+            <p class="text-muted-edurag mb-0">
+                @cards.Count môn được phân công · @cards.Sum(c => c.DocumentCount) tài liệu · @cards.Sum(c => c.TotalChunks).ToString("N0") chunks
+                <span id="live-indicator" class="live-indicator ms-1">live</span>
+            </p>
         </div>
     </div>
     <div id="course-list" data-refresh-url="@Url.Page("/Teacher/Courses", "Table")">

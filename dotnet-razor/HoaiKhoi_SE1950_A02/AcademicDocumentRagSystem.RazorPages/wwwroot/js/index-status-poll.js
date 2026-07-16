@@ -10,6 +10,9 @@
 
     var INTERVAL_MS = 2500;
     var timer = null;
+    var redirectTimer = null;
+    var highlightedId = root.getAttribute("data-highlight-document-id");
+    var highlightedDetailsUrl = root.getAttribute("data-highlight-details-url");
 
     function statusMeta(status) {
         if (status === "Indexed") {
@@ -72,6 +75,44 @@
         }
 
         row.setAttribute("data-index-status", doc.indexStatus || "");
+
+        if (highlightedId && String(doc.documentId) === String(highlightedId)) {
+            updateHighlightedResult(doc);
+        }
+    }
+
+    function updateHighlightedResult(doc) {
+        var result = root.querySelector("[data-index-result]");
+        if (!result) { return; }
+
+        var title = result.querySelector("[data-result-title]");
+        var message = result.querySelector("[data-result-message]");
+        result.setAttribute("data-result-status", doc.indexStatus || "");
+        result.classList.remove("index-result--success", "index-result--failed", "index-result--processing");
+
+        if (doc.indexStatus === "Indexed") {
+            result.classList.add("index-result--success");
+            if (title) { title.textContent = "Index thành công"; }
+            if (message) { message.textContent = "Tài liệu đã sẵn sàng với " + (doc.totalChunks || 0) + " chunks. Đang mở chi tiết chunking…"; }
+            scheduleDetailsRedirect("success");
+        } else if (doc.indexStatus === "Failed") {
+            result.classList.add("index-result--failed");
+            if (title) { title.textContent = "Index thất bại"; }
+            if (message) { message.textContent = (doc.indexError || "Không thể hoàn tất index tài liệu.") + " Đang mở chi tiết và log xử lý…"; }
+            scheduleDetailsRedirect("failed");
+        } else {
+            result.classList.add("index-result--processing");
+            if (title) { title.textContent = "Đang index tài liệu"; }
+            if (message) { message.textContent = "Hệ thống đang chunk, tạo embedding và lưu chỉ mục. Trạng thái sẽ tự cập nhật."; }
+        }
+    }
+
+    function scheduleDetailsRedirect(result) {
+        if (!highlightedDetailsUrl || redirectTimer) { return; }
+        redirectTimer = window.setTimeout(function () {
+            var separator = highlightedDetailsUrl.indexOf("?") >= 0 ? "&" : "?";
+            window.location.assign(highlightedDetailsUrl + separator + "indexResult=" + result + "#chunk-preview");
+        }, 1800);
     }
 
     function stop() {
@@ -111,5 +152,14 @@
 
     if (hasProcessing(currentRows())) {
         start();
+    }
+
+    if (highlightedId) {
+        var highlightedRow = root.querySelector('[data-document-id="' + highlightedId + '"]');
+        if (highlightedRow && highlightedRow.getAttribute("data-index-status") === "Indexed") {
+            scheduleDetailsRedirect("success");
+        } else if (highlightedRow && highlightedRow.getAttribute("data-index-status") === "Failed") {
+            scheduleDetailsRedirect("failed");
+        }
     }
 })();

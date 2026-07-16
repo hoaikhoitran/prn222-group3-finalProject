@@ -8,27 +8,58 @@
     var indexed = items.Count(d => d.IndexStatus == "Indexed");
     var processing = items.Count(d => d.IndexStatus != "Indexed" && d.IndexStatus != "Failed");
     var statusesUrl = Url.Page("/Teacher/IndexStatus", "Statuses");
+    var highlightedDocument = highlightId.HasValue ? items.FirstOrDefault(d => d.DocumentId == highlightId.Value) : null;
+    var highlightedDetailsUrl = highlightedDocument == null ? null : Url.Page("/Documents/Details", new { id = highlightedDocument.DocumentId });
 }
-<div class="edurag-page" data-index-status data-statuses-url="@statusesUrl">
-    <div class="page-hero">
-        <div class="d-flex flex-wrap justify-content-between align-items-start gap-3">
-            <div>
-                <span class="section-chip mb-2">
-                    @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "13"; }
-                    @await Html.PartialAsync("_Icons")
-                    Giảng viên · Pipeline
-                </span>
-                <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Trạng thái index</h1>
-                <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
-            </div>
-            <a asp-page="/Teacher/Upload" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
-                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+<div class="edurag-page" data-index-status data-statuses-url="@statusesUrl" data-highlight-document-id="@highlightId" data-highlight-details-url="@highlightedDetailsUrl">
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <span class="section-chip mb-2">
+                @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "13"; }
                 @await Html.PartialAsync("_Icons")
-                Upload
-            </a>
+                Giảng viên · Pipeline
+            </span>
+            <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Trạng thái index</h1>
+            <p class="text-muted-edurag mb-0">Theo dõi pipeline chunk &amp; embedding của tài liệu</p>
         </div>
+        <a asp-page="/Teacher/Upload" class="btn btn-sm btn-edurag-warm d-inline-flex align-items-center gap-1">
+            @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "14"; }
+            @await Html.PartialAsync("_Icons")
+            Upload
+        </a>
     </div>
-    @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+    @if (highlightedDocument != null)
+    {
+        var resultClass = highlightedDocument.IndexStatus == "Indexed" ? "index-result--success" : highlightedDocument.IndexStatus == "Failed" ? "index-result--failed" : "index-result--processing";
+        <section class="index-result @resultClass mb-4" data-index-result data-result-status="@highlightedDocument.IndexStatus">
+            <span class="index-result__icon" aria-hidden="true">
+                @{ ViewData["Icon"] = highlightedDocument.IndexStatus == "Indexed" ? "check-circle" : highlightedDocument.IndexStatus == "Failed" ? "shield-alert" : "refresh"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </span>
+            <div class="index-result__content">
+                <p class="page-pretitle mb-1" data-result-eyebrow>Kết quả pipeline</p>
+                <h2 class="font-display fs-5 fw-bold mb-1" data-result-title>
+                    @(highlightedDocument.IndexStatus == "Indexed" ? "Index thành công" : highlightedDocument.IndexStatus == "Failed" ? "Index thất bại" : "Đang index tài liệu")
+                </h2>
+                <p class="small mb-0" data-result-message>
+                    @if (highlightedDocument.IndexStatus == "Indexed")
+                    {
+                        <text>@highlightedDocument.Title đã sẵn sàng với @highlightedDocument.TotalChunks chunks. Đang mở chi tiết chunking…</text>
+                    }
+                    else if (highlightedDocument.IndexStatus == "Failed")
+                    {
+                        <text>@(string.IsNullOrWhiteSpace(highlightedDocument.IndexError) ? "Không thể hoàn tất index tài liệu." : highlightedDocument.IndexError) Đang mở chi tiết và log xử lý…</text>
+                    }
+                    else
+                    {
+                        <text>Hệ thống đang chunk, tạo embedding và lưu chỉ mục. Trạng thái sẽ tự cập nhật.</text>
+                    }
+                </p>
+            </div>
+            <a href="@highlightedDetailsUrl" class="btn btn-sm btn-edurag-outline" data-result-details>Xem chi tiết</a>
+        </section>
+    }
+    else if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
     @if (TempData["Error"] != null) { <div class="alert alert-danger">@TempData["Error"]</div> }
     <div class="row g-3 mb-4">
         <div class="col-md-3 col-6">

@@ -1,0 +1,23 @@
+<div class="edurag-confirm" data-confirm-dialog hidden>
+    <div class="edurag-confirm__backdrop" data-confirm-cancel></div>
+    <section class="edurag-confirm__panel"
+             role="alertdialog"
+             aria-modal="true"
+             aria-labelledby="edurag-confirm-title"
+             aria-describedby="edurag-confirm-message"
+             tabindex="-1">
+        <div class="edurag-confirm__icon" aria-hidden="true">
+            @{ ViewData["Icon"] = "logout"; ViewData["IconSize"] = "20"; }
+            @await Html.PartialAsync("_Icons")
+        </div>
+        <div class="edurag-confirm__content">
+            <p class="page-pretitle mb-1">Xác nhận thao tác</p>
+            <h2 id="edurag-confirm-title" class="font-display fs-5 fw-bold mb-2" data-confirm-title>Xác nhận đăng xuất</h2>
+            <p id="edurag-confirm-message" class="text-muted-edurag mb-0" data-confirm-message>Bạn có chắc muốn đăng xuất khỏi EduRAG?</p>
+        </div>
+        <div class="edurag-confirm__actions">
+            <button type="button" class="btn btn-edurag-outline" data-confirm-cancel>Hủy</button>
+            <button type="button" class="btn btn-edurag-warm" data-confirm-accept>Đăng xuất</button>
+        </div>
+    </section>
+</div>

@@ -3,46 +3,121 @@
     ViewData["Title"] = "Liên hệ";
     Layout = "_LayoutPublic";
 }
+<script>document.documentElement.classList.add('home-reveal-ready');</script>
 @await Html.PartialAsync("_SiteHeader")
-<div class="edurag-container py-5">
-    <span class="section-chip">Hỗ trợ</span>
-    <h1 class="font-display display-6 fw-bold mb-2 mt-3">Liên hệ</h1>
-    <p class="text-muted-edurag mb-4" style="max-width:36rem;">Chúng tôi sẵn sàng hỗ trợ bạn về EduRAG.</p>
-    <div class="row g-3 mb-4">
-        @foreach (var c in new[] {
-            ("mail", "Email", "edurag@university.edu.vn"),
-            ("phone", "Hotline", "+84 24 3869 4242"),
-            ("map-pin", "Địa chỉ", "Phòng A2-301, Đại học Bách Khoa, Hà Nội"),
-            ("message-circle", "Zalo", "@edurag_official") })
-        {
-            <div class="col-md-3">
-                <div class="stat-card h-100">
-                    <span class="stat-card__icon stat-card__icon--warm mb-2">
-                        @{ ViewData["Icon"] = c.Item1; ViewData["IconSize"] = "18"; }
-                        @await Html.PartialAsync("_Icons")
-                    </span>
-                    <div class="fw-semibold mb-1">@c.Item2</div>
-                    <div class="small text-muted-edurag">@c.Item3</div>
+
+<main class="contact-page position-relative overflow-hidden">
+    <div class="grid-bg position-absolute top-0 start-0 w-100 h-100"></div>
+    <section class="contact-hero position-relative">
+        <div class="edurag-container position-relative text-center" data-home-stagger>
+            <span class="section-chip" data-home-reveal>
+                @{ ViewData["Icon"] = "message-circle"; ViewData["IconSize"] = "13"; }
+                @await Html.PartialAsync("_Icons")
+                Hỗ trợ EduRAG
+            </span>
+            <h1 class="font-display display-5 fw-bold mt-3 mb-3" data-home-reveal>Chúng tôi sẵn sàng lắng nghe.</h1>
+            <p class="fs-5 text-muted-edurag mx-auto mb-0" style="max-width:39rem;line-height:1.65;" data-home-reveal>
+                Trao đổi về tài khoản, môn học, tài liệu hoặc trải nghiệm sử dụng EduRAG qua kênh phù hợp với bạn.
+            </p>
+        </div>
+    </section>
+
+    <section class="edurag-container contact-content position-relative pb-5">
+        <div class="row g-4 g-lg-5 align-items-stretch">
+            <div class="col-lg-5" data-home-reveal>
+                <div class="contact-details h-100">
+                    <div class="mb-4">
+                        <div class="page-pretitle">Thông tin liên hệ</div>
+                        <h2 class="font-display fw-bold fs-2 mb-2">Kết nối với EduRAG</h2>
+                        <p class="text-muted-edurag mb-0">Chọn kênh thuận tiện nhất để đội ngũ có thể hỗ trợ đúng vấn đề của bạn.</p>
+                    </div>
+
+                    <div class="contact-methods">
+                        <a class="contact-method" href="mailto:edurag@university.edu.vn">
+                            <span class="stat-card__icon stat-card__icon--warm">
+                                @{ ViewData["Icon"] = "mail"; ViewData["IconSize"] = "18"; }
+                                @await Html.PartialAsync("_Icons")
+                            </span>
+                            <span class="min-width-0">
+                                <span class="contact-method__label">Email</span>
+                                <span class="contact-method__value">edurag@university.edu.vn</span>
+                            </span>
+                        </a>
+                        <a class="contact-method" href="tel:+842438694242">
+                            <span class="stat-card__icon stat-card__icon--warm">
+                                @{ ViewData["Icon"] = "phone"; ViewData["IconSize"] = "18"; }
+                                @await Html.PartialAsync("_Icons")
+                            </span>
+                            <span class="min-width-0">
+                                <span class="contact-method__label">Hotline</span>
+                                <span class="contact-method__value">+84 24 3869 4242</span>
+                            </span>
+                        </a>
+                        <div class="contact-method">
+                            <span class="stat-card__icon stat-card__icon--warm">
+                                @{ ViewData["Icon"] = "map-pin"; ViewData["IconSize"] = "18"; }
+                                @await Html.PartialAsync("_Icons")
+                            </span>
+                            <span class="min-width-0">
+                                <span class="contact-method__label">Địa chỉ</span>
+                                <span class="contact-method__value">Phòng A2-301, Đại học Bách Khoa, Hà Nội</span>
+                            </span>
+                        </div>
+                        <div class="contact-method">
+                            <span class="stat-card__icon stat-card__icon--warm">
+                                @{ ViewData["Icon"] = "message-circle"; ViewData["IconSize"] = "18"; }
+                                @await Html.PartialAsync("_Icons")
+                            </span>
+                            <span class="min-width-0">
+                                <span class="contact-method__label">Zalo</span>
+                                <span class="contact-method__value">@@edurag_official</span>
+                            </span>
+                        </div>
+                    </div>
                 </div>
             </div>
-        }
-    </div>
-    <div class="row">
-        <div class="col-lg-8">
-            <div class="card edurag-card">
-                <div class="card-body p-4">
-                    <form class="vstack gap-3">
+
+            <div class="col-lg-7" data-home-reveal>
+                <div class="edurag-card contact-form-card h-100">
+                    <div class="mb-4">
+                        <div class="page-pretitle">Yêu cầu hỗ trợ</div>
+                        <h2 class="font-display fw-bold fs-2 mb-2">Bạn cần hỗ trợ điều gì?</h2>
+                        <p class="text-muted-edurag mb-0">Điền thông tin để soạn nội dung gửi tới đội ngũ EduRAG.</p>
+                    </div>
+                    <form class="vstack gap-3" data-contact-form>
                         <div class="row g-3">
-                            <div class="col-md-6"><label class="form-label">Họ tên</label><input class="form-control" type="text" /></div>
-                            <div class="col-md-6"><label class="form-label">Email</label><input class="form-control" type="email" /></div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="contactName">Họ và tên</label>
+                                <input class="form-control" id="contactName" name="name" type="text" autocomplete="name" required />
+                            </div>
+                            <div class="col-md-6">
+                                <label class="form-label" for="contactEmail">Email</label>
+                                <input class="form-control" id="contactEmail" name="email" type="email" autocomplete="email" required />
+                            </div>
                         </div>
-                        <div><label class="form-label">Chủ đề</label><input class="form-control" type="text" /></div>
-                        <div><label class="form-label">Nội dung</label><textarea class="form-control" rows="5"></textarea></div>
-                        <button type="button" class="btn btn-edurag-warm align-self-start">Gửi tin nhắn</button>
+                        <div>
+                            <label class="form-label" for="contactSubject">Chủ đề</label>
+                            <input class="form-control" id="contactSubject" name="subject" type="text" required />
+                        </div>
+                        <div>
+                            <label class="form-label" for="contactMessage">Nội dung</label>
+                            <textarea class="form-control" id="contactMessage" name="message" rows="6" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-edurag-warm align-self-start d-inline-flex align-items-center gap-2 px-4">
+                            @{ ViewData["Icon"] = "send"; ViewData["IconSize"] = "16"; }
+                            @await Html.PartialAsync("_Icons")
+                            Soạn email
+                        </button>
                     </form>
                 </div>
             </div>
         </div>
-    </div>
-</div>
+    </section>
+</main>
+
 @await Html.PartialAsync("_SiteFooter")
+
+@section Scripts {
+    <script src="~/js/home-reveal.js" asp-append-version="true"></script>
+    <script src="~/js/contact.js" asp-append-version="true"></script>
+}

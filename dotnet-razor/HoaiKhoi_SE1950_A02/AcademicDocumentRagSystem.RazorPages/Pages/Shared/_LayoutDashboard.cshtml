@@ -1,4 +1,9 @@
-﻿<!DOCTYPE html>
+﻿@{
+    var dashboardRole = Context.Session.GetString("RoleName");
+    var enableTeacherReveal = dashboardRole == "Teacher";
+    var enableAdminReveal = dashboardRole == "Admin";
+}
+<!DOCTYPE html>
 <html lang="vi">
 <head>
     <meta charset="utf-8" />
@@ -8,6 +13,14 @@
     <link rel="stylesheet" href="~/css/tabler.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/tabler-vendors.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/edurag-theme.css" asp-append-version="true" />
+    @if (enableTeacherReveal)
+    {
+        <script>document.documentElement.classList.add('teacher-reveal-ready');</script>
+    }
+    @if (enableAdminReveal)
+    {
+        <script>document.documentElement.classList.add('admin-reveal-ready');</script>
+    }
     <script>
         (function () {
             try {
@@ -18,7 +31,7 @@
         })();
     </script>
 </head>
-<body class="edurag-body">
+<body class="edurag-body @(enableTeacherReveal ? "teacher-area" : enableAdminReveal ? "admin-area" : "")">
     <div class="page">
         <div class="dashboard-shell">
             @await Html.PartialAsync("_RoleSidebar")
@@ -29,9 +42,19 @@
             </div>
         </div>
     </div>
+    @await Html.PartialAsync("_ConfirmDialog")
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/js/tabler.min.js" asp-append-version="true"></script>
     <script src="~/js/sidebar-toggle.js" asp-append-version="true"></script>
+    <script src="~/js/confirm-dialog.js" asp-append-version="true"></script>
+    @if (enableTeacherReveal)
+    {
+        <script src="~/js/teacher-reveal.js" asp-append-version="true"></script>
+    }
+    @if (enableAdminReveal)
+    {
+        <script src="~/js/admin-reveal.js" asp-append-version="true"></script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

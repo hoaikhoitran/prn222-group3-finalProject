@@ -5,9 +5,17 @@
     Layout = "_LayoutDashboard";
 }
 <div class="edurag-page" style="max-width:52rem;">
-    <p class="page-pretitle">Giảng viên</p>
-    <h1 class="font-display fs-2 fw-bold mb-1">Upload tài liệu</h1>
-    <p class="text-muted-edurag mb-4">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
+    <div class="d-flex flex-wrap justify-content-between align-items-start gap-3 mb-4">
+        <div>
+            <span class="section-chip mb-2">
+                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "13"; }
+                @await Html.PartialAsync("_Icons")
+                Giảng viên · Upload
+            </span>
+            <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Upload tài liệu</h1>
+            <p class="text-muted-edurag mb-0">Hỗ trợ PDF, DOCX, PPTX, TXT · tự động chunk và index RAG</p>
+        </div>
+    </div>
     @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
     @if (!Model.Input.AvailableCourses.Any())
     {
@@ -18,52 +26,70 @@
     }
     else
     {
-    <form method="post" enctype="multipart/form-data" data-upload-form>
+    <form method="post" enctype="multipart/form-data" class="upload-workflow" data-upload-form aria-busy="false">
         <script type="application/json" id="upload-existing-keys">@Html.Raw(Model.ExistingTitleChapterJson)</script>
-        <div asp-validation-summary="All" class="text-danger mb-3"></div>
-        <label class="upload-zone mb-4">
-            <span class="stat-icon-box bg-gradient-warm text-white mb-3">
-                @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "20"; }
-                @await Html.PartialAsync("_Icons")
-            </span>
-            <div class="font-display fw-bold fs-5 mb-1">Chọn file để upload</div>
-            <div class="small text-muted-edurag mb-3">Hỗ trợ PDF, DOCX, PPTX, TXT · tối đa 50MB</div>
-            <input asp-for="Input.File" type="file" class="form-control mx-auto" style="max-width:22rem;" accept=".pdf,.docx,.pptx,.txt" />
-            <span asp-validation-for="Input.File" class="text-danger small d-block mt-2"></span>
-        </label>
-        <div class="edurag-card p-4">
-            <h2 class="font-display fs-6 fw-bold mb-3">Thông tin tài liệu</h2>
-            <div class="row g-3 mb-3">
-                <div class="col-md-6">
-                    <label asp-for="Input.CourseId" class="form-label small fw-semibold">Môn học</label>
-                    <select asp-for="Input.CourseId" class="form-select" data-upload-course>
-                        @foreach (var c in Model.Input.AvailableCourses)
-                        {
-                            <option value="@c.CourseId">@c.Code — @c.Name</option>
-                        }
-                    </select>
-                    <div class="form-text">Bạn chỉ được upload tài liệu cho môn được phân công.</div>
-                    <span asp-validation-for="Input.CourseId" class="text-danger small"></span>
+        <div class="upload-workflow__content" data-upload-content>
+            <div asp-validation-summary="All" class="text-danger mb-3" data-upload-errors></div>
+            <label class="upload-zone mb-4">
+                <span class="stat-icon-box bg-gradient-warm text-white mb-3">
+                    @{ ViewData["Icon"] = "upload"; ViewData["IconSize"] = "20"; }
+                    @await Html.PartialAsync("_Icons")
+                </span>
+                <div class="font-display fw-bold fs-5 mb-1">Chọn file để upload</div>
+                <div class="small text-muted-edurag mb-3">Hỗ trợ PDF, DOCX, PPTX, TXT · tối đa 50MB</div>
+                <input asp-for="Input.File" type="file" class="form-control mx-auto" style="max-width:22rem;" accept=".pdf,.docx,.pptx,.txt" />
+                <span asp-validation-for="Input.File" class="text-danger small d-block mt-2"></span>
+            </label>
+            <div class="edurag-card p-4">
+                <h2 class="font-display fs-6 fw-bold mb-3">Thông tin tài liệu</h2>
+                <div class="row g-3 mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.CourseId" class="form-label small fw-semibold">Môn học</label>
+                        <select asp-for="Input.CourseId" class="form-select" data-upload-course>
+                            @foreach (var c in Model.Input.AvailableCourses)
+                            {
+                                <option value="@c.CourseId">@c.Code — @c.Name</option>
+                            }
+                        </select>
+                        <div class="form-text">Bạn chỉ được upload tài liệu cho môn được phân công.</div>
+                        <span asp-validation-for="Input.CourseId" class="text-danger small"></span>
+                    </div>
+                    <div class="col-md-6">
+                        <label asp-for="Input.Chapter" class="form-label small fw-semibold">Chương</label>
+                        <input asp-for="Input.Chapter" class="form-control" placeholder="Chương 1" data-upload-chapter />
+                        <span asp-validation-for="Input.Chapter" class="text-danger small"></span>
+                        <span class="text-danger small d-block" data-upload-chapter-error></span>
+                    </div>
                 </div>
-                <div class="col-md-6">
-                    <label asp-for="Input.Chapter" class="form-label small fw-semibold">Chương</label>
-                    <input asp-for="Input.Chapter" class="form-control" placeholder="Chương 1" data-upload-chapter />
-                    <span asp-validation-for="Input.Chapter" class="text-danger small"></span>
-                    <span class="text-danger small d-block" data-upload-chapter-error></span>
+                <div class="mb-3">
+                    <label asp-for="Input.Title" class="form-label small fw-semibold">Tiêu đề</label>
+                    <input asp-for="Input.Title" class="form-control" placeholder="VD: Chương 1 - Giới thiệu" data-upload-title />
+                    <span asp-validation-for="Input.Title" class="text-danger small"></span>
+                    <span class="text-danger small d-block" data-upload-title-error></span>
                 </div>
+                <div class="mb-4">
+                    <label asp-for="Input.Description" class="form-label small fw-semibold">Mô tả (tuỳ chọn)</label>
+                    <textarea asp-for="Input.Description" class="form-control" rows="2"></textarea>
+                </div>
+                <button type="submit" class="btn btn-edurag-warm" data-upload-submit data-default-label="Upload và Index">Upload và Index</button>
+                <a asp-page="/Teacher/IndexStatus" class="btn btn-edurag-outline ms-2">Trạng thái index</a>
             </div>
-            <div class="mb-3">
-                <label asp-for="Input.Title" class="form-label small fw-semibold">Tiêu đề</label>
-                <input asp-for="Input.Title" class="form-control" placeholder="VD: Chương 1 - Giới thiệu" data-upload-title />
-                <span asp-validation-for="Input.Title" class="text-danger small"></span>
-                <span class="text-danger small d-block" data-upload-title-error></span>
+        </div>
+
+        <div class="upload-processing" data-upload-processing role="status" aria-live="polite" aria-hidden="true">
+            <div class="upload-processing__panel">
+                <div class="upload-processing__spinner" data-processing-indicator aria-hidden="true"></div>
+                <p class="page-pretitle mb-2">Pipeline tài liệu</p>
+                <h2 class="font-display fs-5 fw-bold mb-1" data-processing-title>Đang xử lý tài liệu</h2>
+                <p class="small text-muted-edurag mb-4" data-upload-file-name>Vui lòng giữ trang này mở.</p>
+                <div class="upload-progress mb-4" aria-hidden="true"><div></div></div>
+                <ol class="upload-steps">
+                    <li class="is-active" data-upload-step="upload"><span>1</span><div><strong>Upload file</strong><small>Đang gửi và kiểm tra tài liệu</small></div></li>
+                    <li data-upload-step="chunk"><span>2</span><div><strong>Chunking</strong><small>Tách nội dung thành các đoạn truy xuất</small></div></li>
+                    <li data-upload-step="index"><span>3</span><div><strong>Embedding &amp; index</strong><small>Tạo vector và lưu vào kho tìm kiếm</small></div></li>
+                </ol>
+                <p class="upload-processing__note mb-0" data-processing-note>Thời gian xử lý phụ thuộc kích thước và định dạng file.</p>
             </div>
-            <div class="mb-4">
-                <label asp-for="Input.Description" class="form-label small fw-semibold">Mô tả (tuỳ chọn)</label>
-                <textarea asp-for="Input.Description" class="form-control" rows="2"></textarea>
-            </div>
-            <button type="submit" class="btn btn-edurag-warm" data-upload-submit data-default-label="Upload và Index">Upload và Index</button>
-            <a asp-page="/Teacher/IndexStatus" class="btn btn-edurag-outline ms-2">Trạng thái index</a>
         </div>
     </form>
     }
