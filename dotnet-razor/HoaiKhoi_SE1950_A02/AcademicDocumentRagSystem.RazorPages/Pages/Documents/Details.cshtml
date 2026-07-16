@@ -6,6 +6,7 @@
     var doc = Model.Details;
     var roleName = Model.RoleName;
     var previewChunkCount = doc.Chunks.Count;
+    var indexResult = Request.Query["indexResult"].ToString();
 }
 <div class="edurag-page">
     <div class="d-flex flex-wrap gap-2 mb-4">
@@ -23,13 +24,42 @@
         }
     </div>
 
-    @if (TempData["Success"] != null)
+    @if (string.IsNullOrEmpty(indexResult) && TempData["Success"] != null)
     {
         <div class="alert alert-success mb-3">@TempData["Success"]</div>
     }
-    @if (TempData["Error"] != null)
+    @if (string.IsNullOrEmpty(indexResult) && TempData["Error"] != null)
     {
         <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+    }
+
+    @if (indexResult == "success")
+    {
+        <div class="index-result index-result--success mb-4" role="status">
+            <span class="index-result__icon" aria-hidden="true">
+                @{ ViewData["Icon"] = "check-circle"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </span>
+            <div class="index-result__content">
+                <p class="page-pretitle mb-1">Index hoàn tất</p>
+                <h2 class="font-display fs-5 fw-bold mb-1">Tài liệu đã sẵn sàng</h2>
+                <p class="small mb-0">RAG service đã tạo @doc.TotalChunks chunks. Bên dưới là nội dung chunk preview và lịch sử pipeline.</p>
+            </div>
+        </div>
+    }
+    else if (indexResult == "failed")
+    {
+        <div class="index-result index-result--failed mb-4" role="alert">
+            <span class="index-result__icon" aria-hidden="true">
+                @{ ViewData["Icon"] = "shield-alert"; ViewData["IconSize"] = "22"; }
+                @await Html.PartialAsync("_Icons")
+            </span>
+            <div class="index-result__content">
+                <p class="page-pretitle mb-1">Index không hoàn tất</p>
+                <h2 class="font-display fs-5 fw-bold mb-1">Cần kiểm tra lại tài liệu</h2>
+                <p class="small mb-0">@(string.IsNullOrWhiteSpace(doc.IndexError) ? "Không thể tạo chỉ mục cho tài liệu này." : doc.IndexError) Xem lịch sử pipeline bên dưới hoặc thử re-index.</p>
+            </div>
+        </div>
     }
 
     <h1 class="font-display fs-3 fw-bold mb-2">@doc.Title</h1>
@@ -81,7 +111,7 @@
         <div class="alert alert-warning mt-4 mb-0">@doc.PreviewMessage</div>
     }
 
-    <div class="row g-4 mt-2">
+    <div class="row g-4 mt-2" id="chunk-preview">
         <div class="col-lg-8">
             <div class="edurag-card p-4">
                 <h2 class="fs-6 fw-semibold mb-1">Chunk preview (@previewChunkCount)</h2>
