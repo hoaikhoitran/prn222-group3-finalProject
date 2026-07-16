@@ -69,7 +69,7 @@ public class ChatModel : PageModel
         {
             Workspace = await _chatService.GetWorkspaceAsync(
                 accountId.Value, AskForm.DocumentId, AskForm.ChatSessionId);
-            ApplyCourseSelection(null, AskForm.DocumentId, AskForm.ChatSessionId);
+            ApplyCourseSelection(AskForm.CourseCode, AskForm.DocumentId, AskForm.ChatSessionId);
             Workspace.AskForm = AskForm;
             Workspace.ErrorMessage = "Vui lòng nhập câu hỏi.";
             ViewData["RecentSessions"] = Workspace.Sessions;
@@ -80,12 +80,12 @@ public class ChatModel : PageModel
         try
         {
             var result = await _chatService.AskAsync(AskForm, accountId.Value);
-            return RedirectToPage(new { documentId = result.DocumentId, sessionId = result.ChatSessionId });
+            return RedirectToPage(new { courseCode = result.CourseCode, sessionId = result.ChatSessionId });
         }
         catch (Exception ex)
         {
             TempData["Error"] = ex.Message;
-            return RedirectToPage(new { documentId = AskForm.DocumentId, sessionId = AskForm.ChatSessionId });
+            return RedirectToPage(new { courseCode = AskForm.CourseCode, sessionId = AskForm.ChatSessionId });
         }
     }
 
@@ -112,12 +112,14 @@ public class ChatModel : PageModel
         }
 
         Workspace.SelectedCourseCode = selectedCourseCode;
+        Workspace.AskForm.CourseCode = selectedCourseCode;
 
-        if (!string.IsNullOrWhiteSpace(selectedCourseCode) && !documentId.HasValue && !sessionId.HasValue)
+        if (!string.IsNullOrWhiteSpace(selectedCourseCode))
         {
             Workspace.Documents = allDocuments
                 .Where(d => string.Equals(d.CourseCode, selectedCourseCode, StringComparison.OrdinalIgnoreCase))
                 .ToList();
+            Workspace.ActiveDocument ??= Workspace.Documents.FirstOrDefault();
         }
     }
 }

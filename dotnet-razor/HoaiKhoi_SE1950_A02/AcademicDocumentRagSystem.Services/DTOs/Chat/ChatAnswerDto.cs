@@ -8,6 +8,8 @@ public class ChatAnswerDto
 
     public int DocumentId { get; set; }
 
+    public string CourseCode { get; set; } = string.Empty;
+
     public string Question { get; set; } = string.Empty;
 
     public string Answer { get; set; } = string.Empty;

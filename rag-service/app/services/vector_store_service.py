@@ -167,6 +167,103 @@ class VectorStoreService:
             "totalChunks": len(ids),
         }
 
+    def get_chunk_window(
+        self,
+        *,
+        document_id: str,
+        center_chunk_index: int,
+        window: int = 1,
+    ) -> list[dict[str, Any]]:
+        """
+        Return chunks around `center_chunk_index` in the same document.
+
+        This supports exact-answer demo docs when QUESTION and ANSWER_EXACT
+        happen to be split across adjacent chunks.
+        """
+        result = self._collection.get(
+            where={"documentId": document_id},
+            include=["documents", "metadatas"],
+        )
+
+        ids_list = result.get("ids", []) or []
+        documents_list = result.get("documents", []) or []
+        metadatas_list = result.get("metadatas", []) or []
+
+        lower = center_chunk_index - window
+        upper = center_chunk_index + window
+        hits: list[dict[str, Any]] = []
+
+        for index, item_id in enumerate(ids_list):
+            metadata = metadatas_list[index] if index < len(metadatas_list) else {}
+            chunk_index = metadata.get("chunkIndex") if metadata else None
+
+            try:
+                chunk_index_int = int(chunk_index)
+            except (TypeError, ValueError):
+                continue
+
+            if lower <= chunk_index_int <= upper:
+                hits.append(
+                    {
+                        "id": item_id,
+                        "text": documents_list[index] if index < len(documents_list) else "",
+                        "metadata": metadata,
+                        "distance": None,
+                    }
+                )
+
+        hits.sort(key=lambda item: int((item.get("metadata") or {}).get("chunkIndex", 0)))
+        return hits
+
+    def get_course_chunks(
+        self,
+        *,
+        course_code: str,
+        document_id: str | None = None,
+    ) -> list[dict[str, Any]]:
+        """Return indexed chunks in a course, ordered for exact QA scanning."""
+        if document_id:
+            where_clause: dict[str, Any] = {
+                "$and": [
+                    {"documentId": {"$eq": document_id}},
+                    {"courseCode": {"$eq": course_code}},
+                ]
+            }
+        else:
+            where_clause = {"courseCode": {"$eq": course_code}}
+
+        result = self._collection.get(
+            where=where_clause,
+            include=["documents", "metadatas"],
+        )
+
+        ids_list = result.get("ids", []) or []
+        documents_list = result.get("documents", []) or []
+        metadatas_list = result.get("metadatas", []) or []
+
+        hits: list[dict[str, Any]] = []
+        for index, item_id in enumerate(ids_list):
+            metadata = metadatas_list[index] if index < len(metadatas_list) else {}
+            hits.append(
+                {
+                    "id": item_id,
+                    "text": documents_list[index] if index < len(documents_list) else "",
+                    "metadata": metadata,
+                    "distance": None,
+                }
+            )
+
+        def sort_key(item: dict[str, Any]) -> tuple[str, int]:
+            metadata = item.get("metadata") or {}
+            item_document_id = str(metadata.get("documentId") or "")
+            try:
+                chunk_index = int(metadata.get("chunkIndex", 0))
+            except (TypeError, ValueError):
+                chunk_index = 0
+            return item_document_id, chunk_index
+
+        return sorted(hits, key=sort_key)
+
     def search(
         self,
         *,
@@ -178,7 +275,7 @@ class VectorStoreService:
     ) -> list[dict[str, Any]]:
         """
         Find the `top_k` chunks closest to `question_embedding`, filtered
-        to one document inside one course AND to chunks whose cosine
+        to one course, optionally one document, AND to chunks whose cosine
         distance is no greater than `max_distance` (relevance filter).
 
         Why a distance filter?
@@ -200,12 +297,16 @@ class VectorStoreService:
             max_distance if max_distance is not None else settings.RAG_MAX_DISTANCE
         )
 
-        where_clause: dict[str, Any] = {
-            "$and": [
-                {"documentId": {"$eq": document_id}},
-                {"courseCode": {"$eq": course_code}},
-            ]
-        }
+        where_clause: dict[str, Any]
+        if document_id:
+            where_clause = {
+                "$and": [
+                    {"documentId": {"$eq": document_id}},
+                    {"courseCode": {"$eq": course_code}},
+                ]
+            }
+        else:
+            where_clause = {"courseCode": {"$eq": course_code}}
 
         result = self._collection.query(
             query_embeddings=[question_embedding],

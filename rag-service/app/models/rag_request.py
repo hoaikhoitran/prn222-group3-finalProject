@@ -94,8 +94,8 @@ class AskRequest(BaseModel):
         examples=["PRN222"],
     )
     documentId: str = Field(
-        ...,
-        description="Document ID to restrict the search to.",
+        default="",
+        description="Optional document ID to restrict the search to. Empty means search the whole course.",
         examples=["doc_001"],
     )
     question: str = Field(

@@ -38,6 +38,7 @@ from __future__ import annotations
 
 import logging
 import re
+import unicodedata
 from typing import Any
 
 import httpx
@@ -299,7 +300,45 @@ def _mock_answer(question: str, contexts: list[dict[str, Any]]) -> str:
 # ---------------------------------------------------------------------------
 
 
-def _extract_answer_exact(text: str) -> str | None:
+_ANSWER_EXACT_ITEM_RE = re.compile(
+    r"QUESTION:\s*(?P<question>.*?)(?=\s*ANSWER_EXACT:)"
+    r"\s*ANSWER_EXACT:\s*(?P<answer>.*?)"
+    r"(?=\s*(?:SOURCE_DOCUMENT:|COURSE_TOPIC:|CITATION_ANCHOR:|QUESTION:|ANSWER_EXACT:|END_OF_TEST_ITEM\b)|\Z)",
+    flags=re.DOTALL | re.IGNORECASE,
+)
+
+
+def _canonical_exact_question(value: str) -> str:
+    """
+    Normalize only formatting noise for exact demo-question matching.
+
+    This intentionally does NOT remove accents, punctuation, or parenthetical
+    text. A question like '"Phan vung tuong duong" trong tieng Anh la gi?'
+    must not match 'Phan vung tuong duong (Equivalence Partitioning) lam gi?'.
+    """
+    value = unicodedata.normalize("NFKC", value or "")
+    value = value.translate(
+        str.maketrans(
+            {
+                "“": '"',
+                "”": '"',
+                "„": '"',
+                "‟": '"',
+                "‘": "'",
+                "’": "'",
+                "‚": "'",
+                "‛": "'",
+            }
+        )
+    )
+    return re.sub(r"\s+", " ", value).strip().casefold()
+
+
+def _clean_exact_answer(value: str) -> str:
+    return " ".join((value or "").split()).strip()
+
+
+def _extract_answer_exact(question: str, text: str) -> str | None:
     """
     Return a verbatim ANSWER_EXACT block from structured evaluation docs.
 
@@ -319,17 +358,88 @@ def _extract_answer_exact(text: str) -> str | None:
     if not text:
         return None
 
-    match = re.search(
-        r"ANSWER_EXACT:\s*(.*?)(?:\n\s*SOURCE_DOCUMENT:|\n\s*COURSE_TOPIC:|\n\s*END_OF_TEST_ITEM|\n\s*CITATION_ANCHOR:|\Z)",
-        text,
-        flags=re.DOTALL | re.IGNORECASE,
-    )
+    canonical_question = _canonical_exact_question(question)
 
-    if not match:
+    for match in _ANSWER_EXACT_ITEM_RE.finditer(text):
+        candidate_question = match.group("question")
+        answer = _clean_exact_answer(match.group("answer"))
+
+        if not answer:
+            continue
+
+        if _canonical_exact_question(candidate_question) == canonical_question:
+            logger.info(
+                "Strict-matched ANSWER_EXACT question %r",
+                preview(candidate_question, 120),
+            )
+            return answer
+
+    return None
+
+
+def has_exact_answer_items(contexts: list[dict[str, Any]]) -> bool:
+    """Return true when contexts contain structured exact-answer blocks."""
+    combined_text = "\n".join(ctx.get("text", "") for ctx in contexts)
+    return bool(_ANSWER_EXACT_ITEM_RE.search(combined_text)) or "ANSWER_EXACT:" in combined_text.upper()
+
+
+def _text_contains_answer(text: str, answer: str) -> bool:
+    text_normalized = " ".join((text or "").split())
+    answer_normalized = " ".join((answer or "").split())
+
+    if not text_normalized or not answer_normalized:
+        return False
+
+    if answer_normalized in text_normalized:
+        return True
+
+    # If the answer itself is split across chunks, a meaningful prefix is
+    # enough to point citation at the chunk where ANSWER_EXACT starts.
+    answer_prefix = answer_normalized[:80].strip()
+    return bool(answer_prefix and answer_prefix in text_normalized)
+
+
+def generate_exact_answer_with_usage(
+    question: str, contexts: list[dict[str, Any]]
+) -> dict[str, Any] | None:
+    """
+    Try to answer from structured QUESTION/ANSWER_EXACT blocks only.
+
+    The same test item can be split across neighboring chunks, e.g. QUESTION
+    at the end of chunk N and ANSWER_EXACT at the start of chunk N+1. For that
+    case we scan small consecutive windows in the retrieved/expanded contexts
+    before falling back to the normal LLM path.
+    """
+    if not contexts:
         return None
 
-    answer = " ".join(match.group(1).split()).strip()
-    return answer or None
+    max_window_size = min(3, len(contexts))
+
+    for window_size in range(1, max_window_size + 1):
+        for start in range(0, len(contexts) - window_size + 1):
+            window = contexts[start : start + window_size]
+            combined_text = "\n".join(ctx.get("text", "") for ctx in window)
+            exact_answer = _extract_answer_exact(question, combined_text)
+
+            if not exact_answer:
+                continue
+
+            source_index = start
+            for offset, ctx in enumerate(window):
+                ctx_text = ctx.get("text", "")
+                if _text_contains_answer(ctx_text, exact_answer):
+                    source_index = start + offset
+                    break
+                if "ANSWER_EXACT" in ctx_text.upper():
+                    source_index = start + offset
+
+            return {
+                "answer": exact_answer,
+                "usage": None,
+                "sourceCitationIds": [f"C{source_index + 1}"],
+            }
+
+    return None
 
 
 def build_gemini_prompt(question: str, contexts: list[dict[str, Any]]) -> str:
@@ -548,9 +658,9 @@ def generate_answer_with_usage(
     if not contexts:
         return {"answer": INSUFFICIENT_CONTEXT_REPLY, "usage": None}
 
-    exact_answer = _extract_answer_exact(contexts[0].get("text", ""))
-    if exact_answer:
-        return {"answer": exact_answer, "usage": None}
+    exact_generation = generate_exact_answer_with_usage(question, contexts)
+    if exact_generation:
+        return exact_generation
 
     if settings.MOCK_LLM:
         return {"answer": _mock_answer(question, contexts), "usage": None}

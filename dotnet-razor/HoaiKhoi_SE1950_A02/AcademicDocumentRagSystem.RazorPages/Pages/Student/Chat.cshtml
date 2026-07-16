@@ -25,7 +25,7 @@
             <div>
                 <p class="page-pretitle mb-1">Hỏi đáp</p>
                 <h1 class="font-display fs-2 fw-bold mb-1">Chọn môn học</h1>
-                <p class="text-muted-edurag mb-0">Chọn môn trước, sau đó chọn tài liệu đã index để bắt đầu hỏi đáp.</p>
+                <p class="text-muted-edurag mb-0">Chọn môn để hỏi đáp trên toàn bộ tài liệu giảng viên đã index trong môn đó.</p>
             </div>
         </div>
         <div class="row g-3">
@@ -52,84 +52,7 @@
         </div>
     </div>
 }
-else if (workspace.ActiveDocument == null && !string.IsNullOrWhiteSpace(workspace.SelectedCourseCode) && workspace.Documents.Any())
-{
-    <div class="edurag-page">
-        @if (!string.IsNullOrEmpty(workspace.SuccessMessage))
-        {
-            <div class="alert alert-success mb-3 py-2 small">@workspace.SuccessMessage</div>
-        }
-        @if (!string.IsNullOrEmpty(workspace.ErrorMessage))
-        {
-            <div class="alert alert-danger mb-3 py-2 small">@workspace.ErrorMessage</div>
-        }
-        <div class="d-flex flex-wrap align-items-start gap-3 mb-4">
-            <div class="chat-avatar flex-shrink-0" style="width:3rem;height:3rem;">
-                @{ ViewData["Icon"] = "book"; ViewData["IconSize"] = "22"; }
-                @await Html.PartialAsync("_Icons")
-            </div>
-            <div>
-                <p class="page-pretitle mb-1">Hỏi đáp</p>
-                <h1 class="font-display fs-2 fw-bold mb-1">Chọn tài liệu môn @workspace.SelectedCourseCode</h1>
-                <p class="text-muted-edurag mb-0">Chọn một tài liệu đã index trong môn này để trợ lý trả lời dựa trên nội dung.</p>
-            </div>
-            <a asp-page="/Student/Chat" class="btn btn-sm btn-edurag-outline ms-auto align-self-center">Đổi môn</a>
-        </div>
-        <div class="card edurag-card overflow-hidden">
-            <div class="table-responsive">
-                <table class="table-edurag">
-                    <thead>
-                        <tr>
-                            <th>ID</th>
-                            <th>Tiêu đề</th>
-                            <th>Môn</th>
-                            <th>Chương</th>
-                            <th>File</th>
-                            <th></th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var document in workspace.Documents)
-                        {
-                            var ext = (System.IO.Path.GetExtension(document.OriginalFileName ?? "") ?? "").TrimStart('.').ToLowerInvariant();
-                            var typeClass = ext switch { "pdf" => "file-type-pdf", "pptx" or "ppt" => "file-type-pptx", _ => "file-type-docx" };
-                            <tr>
-                                <td class="text-muted-edurag" style="font-size:0.8rem;">#@document.DocumentId</td>
-                                <td>
-                                    <div class="d-flex align-items-center gap-2 min-width-0">
-                                        <span class="file-type-icon @typeClass flex-shrink-0" style="width:2rem;height:2rem;font-size:0.55rem;">@(string.IsNullOrEmpty(ext) ? "doc" : ext)</span>
-                                        <span class="fw-semibold text-truncate" title="@document.Title">@document.Title</span>
-                                    </div>
-                                </td>
-                                <td><span class="role-badge-teacher">@document.CourseCode</span></td>
-                                <td>
-                                    @if (!string.IsNullOrEmpty(document.Chapter))
-                                    {
-                                        <span class="small fw-semibold">@document.Chapter</span>
-                                    }
-                                    else
-                                    {
-                                        <span class="text-muted-edurag">&mdash;</span>
-                                    }
-                                </td>
-                                <td class="text-muted-edurag text-truncate" style="max-width:12rem;" title="@document.OriginalFileName">@document.OriginalFileName</td>
-                                <td class="text-end">
-                                    <a asp-page="/Student/Chat" asp-route-documentId="@document.DocumentId" class="btn btn-sm btn-edurag-warm d-inline-flex align-items-center gap-1">
-                                        @{ ViewData["Icon"] = "message"; ViewData["IconSize"] = "14"; }
-                                        @await Html.PartialAsync("_Icons")
-                                        Hỏi đáp
-                                    </a>
-                                </td>
-                            </tr>
-                        }
-                    </tbody>
-                </table>
-            </div>
-        </div>
-        <p class="small text-muted-edurag text-center mt-3 mb-0">@workspace.Documents.Count tài liệu sẵn sàng cho hỏi đáp RAG</p>
-    </div>
-}
-else if (workspace.ActiveDocument != null)
+else if (!string.IsNullOrWhiteSpace(workspace.SelectedCourseCode) && workspace.Documents.Any())
 {
     <div class="chat-grid chat-grid--single">
         <div class="chat-main">
@@ -143,10 +66,11 @@ else if (workspace.ActiveDocument != null)
             }
             <div class="chat-main__header">
                 <div class="flex-grow-1 min-width-0">
-                    <div class="font-display fw-bold text-truncate">@(workspace.ActiveSession?.Title ?? workspace.ActiveDocument.Title)</div>
-                    <div class="small text-muted-edurag">Môn @workspace.ActiveDocument.CourseCode · @workspace.ActiveDocument.OriginalFileName</div>
+                    <div class="font-display fw-bold text-truncate">@(workspace.ActiveSession?.Title ?? $"Hỏi đáp môn {workspace.SelectedCourseCode}")</div>
+                    <div class="small text-muted-edurag">Môn @workspace.SelectedCourseCode · @workspace.Documents.Count tài liệu đã index</div>
                 </div>
-                <a asp-page="/Student/Chat" asp-page-handler="NewChat" asp-route-documentId="@workspace.ActiveDocument.DocumentId" class="btn btn-sm btn-edurag-outline">+ Mới</a>
+                <a asp-page="/Student/Chat" asp-route-courseCode="@workspace.SelectedCourseCode" class="btn btn-sm btn-edurag-outline">+ Mới</a>
+                <a asp-page="/Student/Chat" class="btn btn-sm btn-edurag-outline">Đổi môn</a>
             </div>
             <div class="chat-main__messages">
                 <div class="chat-main__thread">
@@ -171,17 +95,17 @@ else if (workspace.ActiveDocument != null)
                     }
                     else
                     {
-                        <p class="text-muted-edurag text-center py-5 mb-0" style="line-height:1.7;">Đặt câu hỏi đầu tiên về tài liệu này.</p>
+                        <p class="text-muted-edurag text-center py-5 mb-0" style="line-height:1.7;">Đặt câu hỏi đầu tiên về môn @workspace.SelectedCourseCode.</p>
                     }
                 </div>
             </div>
             <div class="chat-main__inputbar">
                 <form asp-page-handler="Ask" method="post" data-chat-ask>
                     @Html.AntiForgeryToken()
-                    <input type="hidden" asp-for="AskForm.DocumentId" />
+                    <input type="hidden" asp-for="AskForm.CourseCode" />
                     <input type="hidden" asp-for="AskForm.ChatSessionId" />
                     <div class="chat-input-card">
-                        <input type="text" asp-for="AskForm.Question" placeholder="Hỏi về tài liệu môn @workspace.ActiveDocument.CourseCode..." required autocomplete="off" />
+                        <input type="text" asp-for="AskForm.Question" placeholder="Hỏi về môn @workspace.SelectedCourseCode..." required autocomplete="off" />
                         <button type="submit" class="btn btn-edurag-warm rounded-3 d-inline-flex align-items-center justify-content-center" style="width:42px;height:42px;padding:0;">
                             @{ ViewData["Icon"] = "send"; ViewData["IconSize"] = "16"; }
                             @await Html.PartialAsync("_Icons")
