@@ -5,12 +5,16 @@
     Layout = "_LayoutDashboard";
 }
 
+<!-- Nhúng thư viện Chart.js qua CDN -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
 <div class="p-4 p-md-5">
     <div class="mb-4">
         <h1 class="font-display fs-2 fw-bold mb-1">Hệ thống Báo cáo & Thống kê</h1>
-        <p class="text-muted-edurag mb-0">Tổng quan vận hành cơ sở dữ liệu học thuật và hiệu năng phân đoạn dữ liệu.</p>
+        <p class="text-muted-edurag mb-0">Tổng quan vận hành cơ sở dữ liệu học thuật và hiệu năng phân đoạn dữ liệu (RAG).</p>
     </div>
 
+    <!-- Thanh thống kê -->
     <div class="row g-3 mb-4 row-cols-1 row-cols-sm-2 row-cols-md-3 row-cols-lg-5">
         <div class="col">
             <div class="edurag-card p-3 h-100 style-card-stat" style="background-color: #f4f7fe;">
@@ -45,54 +49,88 @@
     </div>
 
     <div class="row g-4">
-        <div class="col-12 col-lg-4 d-flex flex-column gap-4">
+        <!-- CỘT TRÁI: Trạng thái Indexing và Báo cáo Token -->
+        <div class="col-12 col-lg-5 d-flex flex-column gap-4">
+
+            <!-- Khối 1: Trạng thái RAG Indexing + Chart bánh Donut -->
             <div class="edurag-card p-4">
                 <h3 class="font-display fs-5 fw-bold mb-1">Trạng thái RAG Indexing</h3>
-                <p class="text-muted-edurag small mb-4">Trạng thái xử lý và lưu trữ tài liệu trên hệ thống.</p>
+                <p class="text-muted-edurag small mb-4">Giám sát tiến trình xử lý cấu trúc và lưu trữ tài liệu học thuật.</p>
 
-                <div class="d-flex flex-column gap-3">
-                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #f8f9fa;">
-                        <span class="text-secondary fw-medium"><span class="me-2"></span>Đang chờ (Pending)</span>
-                        <span class="status-badge-pending px-3 py-1.5 fs-6">@Model.Statistics.DocsPending</span>
+                <div class="row align-items-center">
+                    <div class="col-6 flex-column d-flex gap-2">
+                        <!-- Thêm class màu động dựa vào số lượng dữ liệu thực tế -->
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3" style="background-color: #f8f9fa;">
+                            <span class="text-secondary small fw-medium">
+                                <span class="dot-indicator me-1" style="background-color: @(Model.Statistics.DocsPending > 0 ? "#6c757d" : "#d1d5db")"></span>
+                                Đang chờ
+                            </span>
+                            <span class="badge @(Model.Statistics.DocsPending > 0 ? "bg-secondary" : "bg-light text-muted border")">@Model.Statistics.DocsPending</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3" style="background-color: #e8f4fd;">
+                            <span class="text-primary small fw-medium">
+                                <span class="dot-indicator me-1" style="background-color: @(Model.Statistics.DocsProcessing > 0 ? "#0d6efd" : "#d1d5db")"></span>
+                                Đang xử lý
+                            </span>
+                            <span class="badge @(Model.Statistics.DocsProcessing > 0 ? "bg-primary" : "bg-light text-muted border")">@Model.Statistics.DocsProcessing</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3" style="background-color: #eafaf1;">
+                            <span class="text-success small fw-medium">
+                                <span class="dot-indicator me-1" style="background-color: @(Model.Statistics.DocsIndexed > 0 ? "#198754" : "#d1d5db")"></span>
+                                Thành công
+                            </span>
+                            <span class="badge @(Model.Statistics.DocsIndexed > 0 ? "bg-success" : "bg-light text-muted border")">@Model.Statistics.DocsIndexed</span>
+                        </div>
+                        <div class="d-flex justify-content-between align-items-center p-2 rounded-3" style="background-color: #fdf2f2;">
+                            <span class="text-danger small fw-medium">
+                                <span class="dot-indicator me-1" style="background-color: @(Model.Statistics.DocsFailed > 0 ? "#dc3545" : "#d1d5db")"></span>
+                                Thất bại
+                            </span>
+                            <span class="badge @(Model.Statistics.DocsFailed > 0 ? "bg-danger" : "bg-light text-muted border")">@Model.Statistics.DocsFailed</span>
+                        </div>
                     </div>
-                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #e8f4fd;">
-                        <span class="text-primary fw-medium"><span class="me-2"></span>Đang xử lý</span>
-                        <span class="status-badge-processing px-3 py-1.5 fs-6">@Model.Statistics.DocsProcessing</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #eafaf1;">
-                        <span class="text-success fw-medium"><span class="me-2"></span>Thành công (Indexed)</span>
-                        <span class="status-badge-indexed px-3 py-1.5 fs-6">@Model.Statistics.DocsIndexed</span>
-                    </div>
-                    <div class="d-flex justify-content-between align-items-center p-3 rounded-3" style="background-color: #fdf2f2;">
-                        <span class="text-danger fw-medium"><span class="me-2"></span>Thất bại (Failed)</span>
-                        <span class="status-badge-failed px-3 py-1.5 fs-6">@Model.Statistics.DocsFailed</span>
+                    <div class="col-6 d-flex justify-content-center">
+                        <div style="height: 140px; width: 140px; position: relative;">
+                            <canvas id="indexingChart"></canvas>
+                        </div>
                     </div>
                 </div>
             </div>
 
+            <!-- Khối 2: Báo cáo tiêu tốn Token + Chart Cột dọc -->
             <div class="edurag-card p-4">
                 <h3 class="font-display fs-5 fw-bold mb-1">Báo cáo tiêu tốn Token</h3>
-                <p class="text-muted-edurag small mb-4">Giám sát số Token tiêu thụ</p>
+                <p class="text-muted-edurag small mb-3">Giám sát số lượng Token tiêu thụ qua các tác vụ hệ thống.</p>
 
-                <div class="d-flex flex-column gap-3">
-                    <div class="p-3 rounded-3" style="background-color: #f4f7fe;">
-                        <div class="text-muted-edurag small fw-semibold text-uppercase">Embedding (Chunking)</div>
-                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalEmbeddingTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                <div class="row g-3 mb-3">
+                    <div class="col-6">
+                        <div class="p-2.5 rounded-3 h-100" style="background-color: #f4f7fe;">
+                            <div class="text-muted-edurag text-uppercase" style="font-size: 11px; font-weight: 600;">Embedding</div>
+                            <div class="fs-5 fw-bold text-dark mt-1">@Model.Statistics.TotalEmbeddingTokens.ToString("N0")</div>
+                        </div>
                     </div>
-                    <div class="p-3 rounded-3" style="background-color: #fbf2ff;">
-                        <div class="text-muted-edurag small fw-semibold text-uppercase">Chatbot Tương tác</div>
-                        <div class="fs-4 fw-bold text-dark mt-1">@Model.Statistics.TotalChatTokens.ToString("N0") <span class="fs-7 text-secondary fw-normal">tokens</span></div>
+                    <div class="col-6">
+                        <div class="p-2.5 rounded-3 h-100" style="background-color: #fbf2ff;">
+                            <div class="text-muted-edurag text-uppercase" style="font-size: 11px; font-weight: 600;">Chatbot</div>
+                            <div class="fs-5 fw-bold text-dark mt-1">@Model.Statistics.TotalChatTokens.ToString("N0")</div>
+                        </div>
                     </div>
-                    <div class="p-3 rounded-3 border border-dashed" style="background-color: #fffde7; border-color: #fdedad !important;">
-                        <div class="text-warning-dark small fw-bold text-uppercase" style="color: #856404;">TỔNG CỘNG TIÊU THỤ</div>
-                        <div class="fs-3 fw-bold mt-1" style="color: #856404;">@Model.Statistics.TotalTokensUsed.ToString("N0") <span class="fs-6 fw-normal">tokens</span></div>
-                    </div>
+                </div>
+
+                <div class="mb-3" style="height: 130px; position: relative;">
+                    <canvas id="tokenChart"></canvas>
+                </div>
+
+                <div class="p-2.5 rounded-3 border border-dashed text-center" style="background-color: #fffde7; border-color: #fdedad !important;">
+                    <span class="text-warning-dark small fw-bold text-uppercase" style="color: #856404; font-size: 12px;">TỔNG TIÊU THỤ: </span>
+                    <span class="fs-5 fw-bold ms-1" style="color: #856404;">@Model.Statistics.TotalTokensUsed.ToString("N0") <span class="fs-7 fw-normal">tokens</span></span>
                 </div>
             </div>
 
         </div>
 
-        <div class="col-12 col-lg-8">
+        <!-- CỘT PHẢI: Báo cáo hoạt động theo môn học -->
+        <div class="col-12 col-lg-7">
             <div class="edurag-card p-4 h-100 overflow-hidden">
                 <h3 class="font-display fs-5 fw-bold mb-1">Báo cáo hoạt động theo Môn học</h3>
                 <p class="text-muted-edurag small mb-4">Top các môn học có lượng dữ liệu học thuật lớn và tần suất tương tác Chatbot cao nhất.</p>
@@ -152,17 +190,113 @@
             transform: translateY(-2px);
         }
 
-    .status-badge-pending {
-        background-color: #f3f4f6;
-        color: #4b5563;
-        border-radius: 6px;
-        font-weight: 600;
-    }
-
-    .status-badge-processing {
-        background-color: #e0f2fe;
-        color: #0369a1;
-        border-radius: 6px;
-        font-weight: 600;
+    /* Đảm bảo chấm tròn hiển thị mượt mà */
+    .dot-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        vertical-align: middle;
     }
 </style>
+
+<!-- SCRIPT VẼ CHART REAL-TIME TỪ DỮ LIỆU MODEL -->
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        // Lấy dữ liệu thực tế từ Model
+        const pending = @Model.Statistics.DocsPending;
+        const processing = @Model.Statistics.DocsProcessing;
+        const indexed = @Model.Statistics.DocsIndexed;
+        const failed = @Model.Statistics.DocsFailed;
+
+        const totalDocs = pending + processing + indexed + failed;
+
+        // Xử lý loại bỏ lỗi vệt sọc của các phần tử có giá trị 0
+        const indexData = [pending, processing, indexed, failed];
+        const indexColors = ['#6c757d', '#0d6efd', '#198754', '#dc3545'];
+
+        // Tạo mảng màu và độ dày viền thích ứng thực tế để triệt tiêu các lát cắt rỗng
+        const finalBgColors = indexData.map((val, idx) => val > 0 ? indexColors[idx] : 'transparent');
+        const finalBorderWidths = indexData.map(val => val > 0 ? 2 : 0);
+
+        // 1. Khởi tạo Biểu đồ Trạng thái RAG Indexing (Doughnut)
+        const ctxIndex = document.getElementById('indexingChart').getContext('2d');
+        new Chart(ctxIndex, {
+            type: 'doughnut',
+            data: {
+                labels: ['Đang chờ', 'Đang xử lý', 'Thành công', 'Thất bại'],
+                datasets: [{
+                    data: indexData,
+                    backgroundColor: finalBgColors,
+                    borderColor: '#ffffff',
+                    borderWidth: finalBorderWidths
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                    plugins: {
+        legend: { display: false }, // Ẩn chú thích mặc định
+        tooltip: {
+            // Cấu hình tăng kích thước hộp đen của tooltip rộng rãi hẳn ra
+            padding: 12,           // Tăng khoảng đệm từ viền đen đến chữ bên trong
+            caretPadding: 8,       // Khoảng cách từ mũi tên tooltip đến biểu đồ
+            cornerRadius: 6,       // Bo góc tooltip cho đẹp mượt
+            bodySpacing: 6,        // Khoảng cách giữa các dòng chữ bên trong
+
+            callbacks: {
+                // Định dạng tiêu đề (Dòng chữ đậm phía trên, ví dụ: "Thành công")
+                title: function(context) {
+                    return '  ' + context[0].label; // Thêm khoảng trắng đầu dòng để kéo giãn
+                },
+                // Định dạng nội dung (Dòng chữ phía dưới có icon vuông màu xanh)
+                label: function (context) {
+                    const value = context.raw;
+                    if (totalDocs === 0) return '  0 (0%)';
+
+                    // Tính toán phần trăm chính xác
+                    const rawPercentage = (value / totalDocs) * 100;
+
+                    // Định dạng không lấy số thập phân nếu là số nguyên
+                    const percentage = rawPercentage % 1 === 0
+                        ? rawPercentage.toFixed(0)
+                        : rawPercentage.toFixed(1);
+
+                    // TRICK: Thêm khoảng trắng '  ' ở đầu và cuối dòng để ép thanh đen giãn rộng ra hai bên
+                    return '  Số lượng: ' + value.toLocaleString() + ' (' + percentage + '%)  ';
+                }
+            }
+        }
+    }
+            }
+        });
+
+        // 2. Khởi tạo Biểu đồ Tiêu tốn Token (Bar Chart dáng ngang)
+        const ctxToken = document.getElementById('tokenChart').getContext('2d');
+        new Chart(ctxToken, {
+            type: 'bar',
+            data: {
+                labels: ['Embedding (Chunking)', 'Chatbot Tương tác'],
+                datasets: [{
+                    label: 'Số tokens tiêu thụ',
+                    data: [@Model.Statistics.TotalEmbeddingTokens, @Model.Statistics.TotalChatTokens],
+                    backgroundColor: ['#4e73df', '#cc5de8'],
+                    borderRadius: 6,
+                    barThickness: 20
+                }]
+            },
+            options: {
+                indexAxis: 'y', // Xoay ngang biểu đồ cột lại cho mượt layout dọc
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    x: { grid: { display: false }, ticks: { display: true } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    });
+</script>
