@@ -180,3 +180,47 @@ def test_answer_exact_reconstructs_item_split_across_chunks() -> None:
         "trong chương trình."
     )
     assert result["sourceCitationIds"] == ["C2"]
+
+
+def test_answer_exact_prefers_wide_window_when_answer_is_split() -> None:
+    contexts = [
+        {
+            "id": "doc_050::chunk::1",
+            "text": (
+                "QUESTION: Chuẩn hóa cơ sở dữ liệu (Normalization) là gì? "
+                "ANSWER_EXACT: Là kỹ thuật thiết"
+            ),
+            "metadata": {
+                "documentId": "doc_050",
+                "fileName": "DBI202_ThietKeCoSoDuLieu.docx",
+                "pageNumber": 1,
+                "chunkIndex": 1,
+            },
+        },
+        {
+            "id": "doc_050::chunk::2",
+            "text": (
+                "kế cơ sở dữ liệu quan hệ nhằm giảm thiểu dư thừa dữ liệu "
+                "và tránh các dị thường (anomalies) khi thêm, sửa, xóa dữ liệu. "
+                "COURSE_TOPIC: DBI202 - Chuẩn hóa SOURCE_DOCUMENT: "
+                "DBI202_ThietKeCoSoDuLieu.docx END_OF_TEST_ITEM"
+            ),
+            "metadata": {
+                "documentId": "doc_050",
+                "fileName": "DBI202_ThietKeCoSoDuLieu.docx",
+                "pageNumber": 1,
+                "chunkIndex": 2,
+            },
+        },
+    ]
+
+    result = generate_exact_answer_with_usage(
+        "Chuẩn hóa cơ sở dữ liệu (Normalization) là gì?",
+        contexts,
+    )
+
+    assert result is not None
+    assert result["answer"] == (
+        "Là kỹ thuật thiết kế cơ sở dữ liệu quan hệ nhằm giảm thiểu dư thừa "
+        "dữ liệu và tránh các dị thường (anomalies) khi thêm, sửa, xóa dữ liệu."
+    )

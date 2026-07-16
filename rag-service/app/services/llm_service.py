@@ -413,25 +413,48 @@ def generate_exact_answer_with_usage(
     if not contexts:
         return None
 
-    max_window_size = min(3, len(contexts))
+    grouped_contexts: dict[str, list[tuple[int, dict[str, Any]]]] = {}
+    for global_index, ctx in enumerate(contexts):
+        meta = ctx.get("metadata") or {}
+        document_key = str(meta.get("documentId") or ctx.get("id") or global_index)
+        grouped_contexts.setdefault(document_key, []).append((global_index, ctx))
 
-    for window_size in range(1, max_window_size + 1):
-        for start in range(0, len(contexts) - window_size + 1):
-            window = contexts[start : start + window_size]
-            combined_text = "\n".join(ctx.get("text", "") for ctx in window)
-            exact_answer = _extract_answer_exact(question, combined_text)
+    for group in grouped_contexts.values():
+        group.sort(
+            key=lambda item: int((item[1].get("metadata") or {}).get("chunkIndex", 0))
+        )
 
+        parts: list[str] = []
+        spans: list[tuple[int, int, int]] = []
+        cursor = 0
+        for global_index, ctx in group:
+            if parts:
+                parts.append("\n")
+                cursor += 1
+
+            text = ctx.get("text", "") or ""
+            start = cursor
+            parts.append(text)
+            cursor += len(text)
+            spans.append((start, cursor, global_index))
+
+        combined_text = "".join(parts)
+        canonical_question = _canonical_exact_question(question)
+
+        for match in _ANSWER_EXACT_ITEM_RE.finditer(combined_text):
+            if _canonical_exact_question(match.group("question")) != canonical_question:
+                continue
+
+            exact_answer = _clean_exact_answer(match.group("answer"))
             if not exact_answer:
                 continue
 
-            source_index = start
-            for offset, ctx in enumerate(window):
-                ctx_text = ctx.get("text", "")
-                if _text_contains_answer(ctx_text, exact_answer):
-                    source_index = start + offset
+            answer_start = match.start("answer")
+            source_index = group[0][0]
+            for start, end, global_index in spans:
+                if start <= answer_start <= end:
+                    source_index = global_index
                     break
-                if "ANSWER_EXACT" in ctx_text.upper():
-                    source_index = start + offset
 
             return {
                 "answer": exact_answer,
