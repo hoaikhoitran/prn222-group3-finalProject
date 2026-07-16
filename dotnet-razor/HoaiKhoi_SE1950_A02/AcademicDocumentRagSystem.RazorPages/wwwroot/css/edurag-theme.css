@@ -864,19 +864,19 @@ html.sidebar-collapsed .sidebar-user:hover .avatar-initial,
 html.sidebar-collapsed .sidebar-user:focus-within .avatar-initial {
   opacity: 0;
 }
-html.sidebar-collapsed .session-item {
+html.sidebar-collapsed .student-sidebar .session-item {
   display: flex;
   align-items: center;
   justify-content: center;
   width: 2.25rem;
   padding: 0.65rem 0;
 }
-html.sidebar-collapsed .session-item__dot {
+html.sidebar-collapsed .student-sidebar .session-item__dot {
   width: 0.45rem;
   height: 0.45rem;
   opacity: .45;
 }
-html.sidebar-collapsed .session-item.active .session-item__dot {
+html.sidebar-collapsed .student-sidebar .session-item.active .session-item__dot {
   opacity: 1;
   background: #fff;
 }
