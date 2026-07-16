@@ -286,7 +286,7 @@ ChromaDB
 ## Repo structure
 
 ```text
-PRN222-group3-asg2/
+prn222-group3-finalProject/
 ├── README.md
 ├── dotnet-razor/
 │   └── HoaiKhoi_SE1950_A02/
