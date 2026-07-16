@@ -1,15 +1,10 @@
-
 # Academic Document RAG System
 
 Dự án hỗ trợ quản lý môn học, tài khoản, tài liệu học tập và cho phép sinh viên đặt câu hỏi dựa trên nội dung tài liệu đã được upload. Câu trả lời được tạo dựa trên dữ liệu truy xuất từ tài liệu, giúp hạn chế trả lời sai ngữ cảnh và hỗ trợ truy vết nguồn.
 
 ## Diagram
 
-
 <img width="8300" height="9523" alt="Blank diagram - RazorPage (1)" src="https://github.com/user-attachments/assets/873358c3-3282-486a-a41c-432bf3df9328" />
-
-
-
 
 ## Razor Pages
 
@@ -18,6 +13,135 @@ Assignment 2 sử dụng ASP.NET Core Razor Pages làm presentation layer. Proje
 ## Features
 
 Đăng nhập và phân quyền người dùng theo vai trò Admin, Teacher, Student. Admin quản lý tài khoản và môn học. Admin tạo và chỉnh sửa tài khoản giảng viên, mỗi môn học chỉ được gán cho một giảng viên phụ trách và mỗi giảng viên chỉ phụ trách một môn học. Teacher upload tài liệu học tập theo môn học được phân công. Hệ thống hỗ trợ tài liệu PDF, DOCX, PPTX và TXT. Student đặt câu hỏi dựa trên nội dung tài liệu đã upload và đã index. Câu trả lời kèm nguồn tham chiếu từ tài liệu. Hệ thống lưu lịch sử phiên hỏi đáp, quản lý trạng thái upload, trạng thái index và log xử lý tài liệu. Danh sách môn học của giảng viên được cập nhật realtime bằng SignalR khi Admin thay đổi dữ liệu môn học.
+
+Admin Dashboard cung cấp các số liệu tổng quan về tài khoản, môn học, tài liệu, phiên hỏi đáp, tin nhắn và số lượng chunk trong hệ thống. Dashboard hỗ trợ lọc dữ liệu theo tháng và năm, theo dõi trạng thái RAG Indexing, thống kê token Gemini thực tế, token nội dung chunk ước lượng, hoạt động theo môn học và mức sử dụng token theo từng người dùng.
+
+Hệ thống hỗ trợ theo dõi bốn trạng thái xử lý tài liệu gồm Pending, Processing, Indexed và Failed. Các trạng thái được hiển thị bằng số lượng và biểu đồ trực quan để Admin dễ dàng theo dõi tình trạng index tài liệu.
+
+Token Gemini được lấy trực tiếp từ `usageMetadata` trong response của Gemini API, bao gồm token đầu vào, token câu trả lời và tổng token Gemini. Hệ thống không tự ước lượng các số liệu token Gemini này.
+
+Token nội dung chunk được tính riêng dựa trên kích thước nội dung các chunk được tạo local. Token chunk được gán cho tài khoản đã upload tài liệu, trong khi token Gemini được gán cho tài khoản đã đặt câu hỏi.
+
+Dashboard hiển thị tổng token hệ thống theo công thức:
+
+```text
+Tổng token hệ thống
+=
+Tổng token Gemini
++
+Token nội dung chunk ước lượng
+```
+
+Hai loại token vẫn được hiển thị riêng để phân biệt giữa token thực tế do Gemini trả về và token nội dung được ước lượng trong quá trình chunk tài liệu.
+
+## Admin Dashboard
+
+Admin Dashboard cung cấp các nhóm thống kê chính sau:
+
+### Tổng quan hệ thống
+
+- Tổng số tài khoản
+- Tổng số môn học
+- Tổng số tài liệu
+- Tổng số phiên hỏi đáp
+- Tổng số tin nhắn
+- Tổng số chunk nội dung
+
+### Trạng thái RAG Indexing
+
+Theo dõi số lượng tài liệu theo các trạng thái:
+
+- Pending
+- Processing
+- Indexed
+- Failed
+
+Dữ liệu được hiển thị bằng số lượng và biểu đồ trực quan.
+
+### Token dùng để trả lời câu hỏi
+
+Các số liệu token Gemini thực tế gồm:
+
+- Token đầu vào
+- Token câu trả lời
+- Tổng token Gemini
+
+Token được lấy trực tiếp từ Gemini API và lưu vào bảng `ChatMessages`.
+
+### Token nội dung tài liệu
+
+Các số liệu về nội dung chunk gồm:
+
+- Số chunk đã tạo
+- Token nội dung chunk ước lượng
+
+Token chunk là số liệu ước lượng local, không phải token usage do Gemini trả về.
+
+### Tổng token hệ thống
+
+Dashboard cộng tổng token Gemini và token nội dung chunk ước lượng để thể hiện tổng quy mô token được hệ thống xử lý.
+
+```text
+TotalSystemTokens
+=
+TotalLlmTokens
++
+ChunkTokenEstimate
+```
+
+### Thống kê token theo người dùng
+
+Mỗi người dùng có thể được thống kê theo hai loại hoạt động:
+
+- Token Gemini từ các câu hỏi do tài khoản đó gửi
+- Token chunk từ các tài liệu do tài khoản đó upload
+
+Các thông tin hiển thị gồm:
+
+- Người dùng
+- Vai trò
+- Số câu hỏi
+- Token đầu vào
+- Token câu trả lời
+- Tổng token Gemini
+- Số chunk
+- Token chunk ước lượng
+- Tổng token hệ thống
+
+Token Gemini được xác định theo:
+
+```text
+ChatMessage.AccountId
+```
+
+Token chunk được xác định theo:
+
+```text
+Document.SubmittedByAccountId
+```
+
+Một người chỉ upload tài liệu nhưng chưa đặt câu hỏi vẫn có thể xuất hiện trong báo cáo token. Tương tự, một người chỉ đặt câu hỏi mà không upload tài liệu vẫn được thống kê token Gemini.
+
+### Báo cáo hoạt động theo môn học
+
+Dashboard tổng hợp hoạt động của từng môn học, bao gồm:
+
+- Số tài liệu
+- Số chunk
+- Số phiên hỏi đáp
+- Số tin nhắn
+- Tổng token Gemini
+
+### Bộ lọc thời gian
+
+Dashboard hỗ trợ lọc dữ liệu theo tháng và năm.
+
+Khi áp dụng bộ lọc:
+
+- Tin nhắn được lọc theo `ChatMessage.CreatedAt`
+- Chunk được lọc theo `DocumentChunk.CreatedAt`
+- Tài liệu được lọc theo `Document.CreatedAt`
+- Phiên hỏi đáp được lọc theo `ChatSession.CreatedAt`
 
 ## Hướng dẫn sử dụng ngắn
 
@@ -58,6 +182,13 @@ Các script bổ sung nằm trong:
 dotnet-razor/HoaiKhoi_SE1950_A02/AcademicDocumentRagSystem.DataAccess/DatabaseScripts/
 ```
 
+Các script cần được chạy để bổ sung cấu hình chunk và dữ liệu token:
+
+```text
+2026_AddDocumentChunkConfigs.sql
+2026_AddChatMessageTokenUsage.sql
+```
+
 ### 3. Chạy ứng dụng Razor Pages
 
 ```powershell
@@ -76,6 +207,8 @@ https://localhost:7150/
 
 Đăng nhập bằng tài khoản Admin được cấu hình trong `appsettings.json` hoặc tài khoản có sẵn trong database. Admin quản lý môn học và tài khoản. Teacher upload tài liệu cho môn học được phân công. Hệ thống tự động tạo chunk preview và gửi tài liệu sang RAG service để index. Student chọn tài liệu đã index và đặt câu hỏi. Hệ thống trả lời dựa trên nội dung tài liệu và hiển thị nguồn tham chiếu.
 
+Admin có thể truy cập Dashboard để theo dõi số liệu hệ thống, trạng thái index tài liệu, hoạt động theo môn học, token Gemini, token chunk và tổng token của từng người dùng.
+
 ## Công nghệ sử dụng
 
 ### Backend Razor Pages
@@ -86,6 +219,7 @@ https://localhost:7150/
 - SQL Server
 - SignalR
 - Bootstrap
+- Chart.js
 
 ### RAG Service
 
@@ -105,6 +239,7 @@ Các bảng chính:
 - Courses
 - Documents
 - DocumentChunks
+- DocumentChunkConfigs
 - DocumentIndexLogs
 - ChatSessions
 - ChatMessages
@@ -122,6 +257,9 @@ ASP.NET Core Razor Pages
    |-- Upload tài liệu
    |-- Hỏi đáp tài liệu
    |-- Lưu lịch sử chat
+   |-- Dashboard thống kê
+   |-- Báo cáo token theo người dùng
+   |-- Theo dõi trạng thái RAG Indexing
    |
    v
 Services Layer
@@ -231,6 +369,67 @@ Lưu vector và metadata vào ChromaDB
         |
         v
 Cập nhật trạng thái index về hệ thống
+```
+
+## Luồng xử lý câu hỏi
+
+```text
+Student hoặc Teacher đặt câu hỏi
+        |
+        v
+Razor Pages kiểm tra phiên chat và quyền truy cập tài liệu
+        |
+        v
+Gửi câu hỏi, mã môn học và mã tài liệu sang RAG service
+        |
+        v
+Tạo embedding cho câu hỏi
+        |
+        v
+Tìm kiếm các chunk liên quan trong ChromaDB
+        |
+        v
+Lọc chunk theo relevance threshold
+        |
+        v
+Gửi câu hỏi và các chunk phù hợp sang Gemini
+        |
+        v
+Gemini tạo câu trả lời và trả usageMetadata
+        |
+        v
+Lưu câu hỏi, câu trả lời, nguồn và token usage vào SQL Server
+        |
+        v
+Hiển thị câu trả lời cùng nguồn tài liệu
+```
+
+## Luồng thống kê token
+
+```text
+ChatMessage.AccountId
+        |
+        v
+Tổng hợp token Gemini của người đặt câu hỏi
+        |
+        |-- PromptTokens
+        |-- CompletionTokens
+        |-- TotalTokens
+        |
+        v
+Document.SubmittedByAccountId
+        |
+        v
+Tổng hợp token chunk của người upload tài liệu
+        |
+        |-- ChunkCount
+        |-- ChunkTokenEstimate
+        |
+        v
+Tổng token hệ thống theo người dùng
+        |
+        v
+TotalTokens + ChunkTokenEstimate
 ```
 
 ## Yêu cầu môi trường
