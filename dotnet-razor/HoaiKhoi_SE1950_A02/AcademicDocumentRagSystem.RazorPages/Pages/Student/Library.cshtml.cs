@@ -24,8 +24,6 @@ public class LibraryModel : PageModel
 
     public List<string> AllCourseCodes { get; private set; } = new();
 
-    public string? CourseCode { get; private set; }
-
     public async Task<IActionResult> OnGetAsync(string? course, string? q)
     {
         var accountId = HttpContext.Session.GetInt32(SessionKeys.AccountId);
@@ -36,16 +34,11 @@ public class LibraryModel : PageModel
 
         ViewData["RecentSessions"] = await _chatService.GetSessionsAsync(accountId.Value);
 
+        // Students are never assigned to courses: the library always shows
+        // every indexed document, optionally narrowed by the course filter.
         var all = await _chatService.GetIndexedDocumentsAsync();
-        var courseId = HttpContext.Session.GetInt32(SessionKeys.CourseId);
-        CourseCode = HttpContext.Session.GetString(SessionKeys.CourseCode);
 
         var docs = all.AsEnumerable();
-        if (courseId.HasValue)
-        {
-            docs = docs.Where(d => string.Equals(d.CourseCode, CourseCode, StringComparison.OrdinalIgnoreCase)
-                || (course != null && string.Equals(d.CourseCode, course, StringComparison.OrdinalIgnoreCase)));
-        }
 
         FilterCourse = course;
         SearchQuery = q;

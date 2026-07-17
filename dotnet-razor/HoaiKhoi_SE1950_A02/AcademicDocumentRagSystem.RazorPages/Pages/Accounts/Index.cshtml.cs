@@ -1,9 +1,11 @@
+using AcademicDocumentRagSystem.RazorPages.Hubs;
 using AcademicDocumentRagSystem.RazorPages.Infrastructure;
 using AcademicDocumentRagSystem.Services.DTOs.Accounts;
+using AcademicDocumentRagSystem.Services.DTOs.Courses;
 using AcademicDocumentRagSystem.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
+using Microsoft.AspNetCore.SignalR;
 
 namespace AcademicDocumentRagSystem.RazorPages.Pages.Accounts
 {
@@ -12,15 +14,24 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Accounts
     {
         private readonly IAccountService _accountService;
         private readonly ICourseService _courseService;
+        private readonly IHubContext<CourseHub> _courseHub;
 
-        public IndexModel(IAccountService accountService, ICourseService courseService)
+        public IndexModel(
+            IAccountService accountService,
+            ICourseService courseService,
+            IHubContext<CourseHub> courseHub)
         {
             _accountService = accountService;
             _courseService = courseService;
+            _courseHub = courseHub;
         }
 
         public List<AccountListItemDto> Accounts { get; private set; } = new();
-        public List<SelectListItem> Courses { get; private set; } = new();
+
+        /// <summary>Courses without a teacher — the only candidates for the
+        /// "Gán thêm môn" flow (transferring an owned course is a separate,
+        /// explicit action on the Courses page).</summary>
+        public List<CourseSummaryDto> UnassignedCourses { get; private set; } = new();
 
         [BindProperty(SupportsGet = true)]
         public string? SearchTerm { get; set; }
@@ -60,7 +71,7 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Accounts
             try
             {
                 await _accountService.UpdateAsync(EditInput);
-                TempData["Success"] = $"Account '{EditInput.Email}' was updated.";
+                TempData["Success"] = $"Đã cập nhật tài khoản '{EditInput.Email}'.";
                 return RedirectToPage(new { SearchTerm, Role, Status });
             }
             catch (Exception ex)
@@ -77,7 +88,74 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Accounts
             try
             {
                 await _accountService.DeleteAsync(id);
-                TempData["Success"] = "Account was deleted.";
+                TempData["Success"] = "Đã xóa tài khoản.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToPage(new { SearchTerm, Role, Status });
+        }
+
+        /// <summary>
+        /// Assign one or more (currently unassigned) courses to a teacher.
+        /// The teacher's existing courses are always kept.
+        /// </summary>
+        public async Task<IActionResult> OnPostAssignCoursesAsync(int teacherAccountId, List<int> courseIds)
+        {
+            if (courseIds == null || courseIds.Count == 0)
+            {
+                TempData["Error"] = "Vui lòng chọn ít nhất một môn học để gán.";
+                return RedirectToPage(new { SearchTerm, Role, Status });
+            }
+
+            try
+            {
+                await _courseService.AssignCoursesToTeacherAsync(teacherAccountId, courseIds);
+
+                var teacher = await _accountService.GetForEditAsync(teacherAccountId);
+                var assigned = await _courseService.GetByTeacherAsync(teacherAccountId);
+                foreach (var courseId in courseIds.Distinct())
+                {
+                    var course = assigned.FirstOrDefault(c => c.CourseId == courseId);
+                    await _courseHub.Clients.All.SendAsync(CourseHub.CourseTeacherAssigned, new
+                    {
+                        courseId,
+                        courseCode = course?.Code ?? string.Empty,
+                        teacherAccountId,
+                        teacherName = teacher?.FullName ?? string.Empty
+                    });
+                }
+                await _courseHub.Clients.All.SendAsync(CourseHub.CoursesChanged);
+
+                TempData["Success"] = $"Đã gán {courseIds.Distinct().Count()} môn học cho giảng viên.";
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = ex.Message;
+            }
+
+            return RedirectToPage(new { SearchTerm, Role, Status });
+        }
+
+        /// <summary>Remove one course from a teacher (documents/chats stay untouched).</summary>
+        public async Task<IActionResult> OnPostUnassignCourseAsync(int courseId)
+        {
+            try
+            {
+                var course = await _courseService.GetByIdAsync(courseId);
+
+                await _courseService.UnassignCourseAsync(courseId);
+
+                await _courseHub.Clients.All.SendAsync(CourseHub.CourseTeacherUnassigned, new
+                {
+                    courseId,
+                    courseCode = course?.Code ?? string.Empty
+                });
+                await _courseHub.Clients.All.SendAsync(CourseHub.CoursesChanged);
+
+                TempData["Success"] = $"Đã bỏ giảng viên khỏi môn '{course?.Code}'.";
             }
             catch (Exception ex)
             {
@@ -90,15 +168,8 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Accounts
         private async Task LoadAsync()
         {
             Accounts = await _accountService.GetAllAsync(SearchTerm, Role, Status);
-
-            var courses = await _courseService.GetAllAsync();
-            Courses = courses
+            UnassignedCourses = (await _courseService.GetUnassignedAsync())
                 .Where(c => c.Status)
-                .Select(c => new SelectListItem
-                {
-                    Value = c.CourseId.ToString(),
-                    Text = $"{c.Code} - {c.Name}"
-                })
                 .ToList();
         }
     }

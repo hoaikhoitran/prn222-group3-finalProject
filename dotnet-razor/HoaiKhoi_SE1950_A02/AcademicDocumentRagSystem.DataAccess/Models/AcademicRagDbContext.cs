@@ -35,8 +35,6 @@ public partial class AcademicRagDbContext : DbContext
 
             entity.HasIndex(e => e.Email, "IX_Accounts_Email");
 
-            entity.HasIndex(e => e.CourseId, "IX_Accounts_CourseId");
-
             entity.HasIndex(e => e.Email, "UQ_Accounts_Email").IsUnique();
 
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
@@ -44,10 +42,6 @@ public partial class AcademicRagDbContext : DbContext
             entity.Property(e => e.FullName).HasMaxLength(150);
             entity.Property(e => e.Password).HasMaxLength(255);
             entity.Property(e => e.Status).HasDefaultValue(true);
-
-            entity.HasOne(d => d.Course).WithMany(p => p.Accounts)
-                .HasForeignKey(d => d.CourseId)
-                .HasConstraintName("FK_Accounts_Courses");
         });
 
         modelBuilder.Entity<ChatMessage>(entity =>
@@ -114,11 +108,20 @@ public partial class AcademicRagDbContext : DbContext
 
             entity.HasIndex(e => e.Code, "UQ_Courses_Code").IsUnique();
 
+            // NOT unique on purpose: one teacher may own many courses. A course
+            // can only reference one teacher because this is a plain FK column.
+            entity.HasIndex(e => e.TeacherAccountId, "IX_Courses_TeacherAccountId");
+
             entity.Property(e => e.Code).HasMaxLength(50);
             entity.Property(e => e.CreatedAt).HasDefaultValueSql("(sysutcdatetime())");
             entity.Property(e => e.Description).HasMaxLength(1000);
             entity.Property(e => e.Name).HasMaxLength(200);
             entity.Property(e => e.Status).HasDefaultValue(true);
+
+            entity.HasOne(e => e.TeacherAccount).WithMany(a => a.TeachingCourses)
+                .HasForeignKey(e => e.TeacherAccountId)
+                .OnDelete(DeleteBehavior.SetNull)
+                .HasConstraintName("FK_Courses_TeacherAccount");
         });
 
         modelBuilder.Entity<Document>(entity =>

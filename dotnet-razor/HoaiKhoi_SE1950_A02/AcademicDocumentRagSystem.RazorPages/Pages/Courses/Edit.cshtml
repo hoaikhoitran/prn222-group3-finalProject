@@ -1,44 +1,58 @@
-﻿@page
-@model AcademicDocumentRagSystem.Services.DTOs.Courses.UpdateCourseDto
+@page "{id:int?}"
+@model AcademicDocumentRagSystem.RazorPages.Pages.Courses.EditModel
 @{
     ViewData["Title"] = "Sửa môn học";
     Layout = "_LayoutDashboard";
-    var course = Model ?? new AcademicDocumentRagSystem.Services.DTOs.Courses.UpdateCourseDto();
 }
 
 <div class="edurag-page">
     <div class="mb-4">
         <a asp-page="/Courses/Index" class="btn btn-sm btn-edurag-ghost mb-3">← Quay lại</a>
         <h1 class="font-display fs-2 fw-bold mb-1">Sửa môn học</h1>
-        <p class="text-muted-edurag mb-0">Cập nhật thông tin môn học.</p>
+        <p class="text-muted-edurag mb-0">Cập nhật thông tin môn học và giảng viên phụ trách.</p>
     </div>
 
     <div class="edurag-card p-4 p-md-5" style="max-width:680px;">
-        <form asp-page="/Courses/Index" asp-page-handler="Edit" method="post" class="vstack gap-3">
-            <input type="hidden" name="EditInput.CourseId" value="@course.CourseId" />
+        <form method="post" class="vstack gap-3">
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+            <input type="hidden" asp-for="Input.CourseId" />
 
             <div>
-                <label class="form-label fw-semibold" for="EditInput_Code">Mã môn</label>
-                <input name="EditInput.Code" id="EditInput_Code" class="form-control" value="@course.Code" />
+                <label asp-for="Input.Code" class="form-label fw-semibold">Mã môn</label>
+                <input asp-for="Input.Code" class="form-control" />
+                <span asp-validation-for="Input.Code" class="text-danger small"></span>
             </div>
 
             <div>
-                <label class="form-label fw-semibold" for="EditInput_Name">Tên môn</label>
-                <input name="EditInput.Name" id="EditInput_Name" class="form-control" value="@course.Name" />
+                <label asp-for="Input.Name" class="form-label fw-semibold">Tên môn</label>
+                <input asp-for="Input.Name" class="form-control" />
+                <span asp-validation-for="Input.Name" class="text-danger small"></span>
             </div>
 
             <div>
-                <label class="form-label fw-semibold" for="EditInput_Description">Mô tả</label>
-                <textarea name="EditInput.Description" id="EditInput_Description" class="form-control" rows="3">@course.Description</textarea>
+                <label asp-for="Input.Description" class="form-label fw-semibold">Mô tả</label>
+                <textarea asp-for="Input.Description" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.TeacherAccountId" class="form-label fw-semibold">Giảng viên phụ trách</label>
+                <select asp-for="Input.TeacherAccountId" asp-items="Model.Teachers" class="form-select">
+                    <option value="">— Chưa gán —</option>
+                </select>
+                <div class="form-text text-muted-edurag">
+                    Một giảng viên có thể phụ trách nhiều môn. Chọn "Chưa gán" để bỏ giảng viên hiện tại (tài liệu không bị xóa).
+                </div>
+                <span asp-validation-for="Input.TeacherAccountId" class="text-danger small"></span>
             </div>
 
             <div class="form-check">
-                <input name="EditInput.Status" id="EditInput_Status" type="checkbox" class="form-check-input" value="true" @(course.Status ? "checked" : null) />
-                <label class="form-check-label" for="EditInput_Status">Môn học đang hoạt động</label>
+                <input asp-for="Input.Status" class="form-check-input" />
+                <label asp-for="Input.Status" class="form-check-label">Môn học hoạt động</label>
             </div>
 
             <div class="d-flex gap-2 pt-2">
-                <button type="submit" class="btn btn-edurag-warm">Cập nhật</button>
+                <button type="submit" class="btn btn-edurag-warm">Lưu</button>
                 <a asp-page="/Courses/Index" class="btn btn-edurag-outline">Huỷ</a>
             </div>
         </form>

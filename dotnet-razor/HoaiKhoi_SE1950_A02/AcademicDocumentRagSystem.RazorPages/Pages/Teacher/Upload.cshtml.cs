@@ -32,18 +32,18 @@ public class UploadModel : PageModel
     public async Task<IActionResult> OnGetAsync()
     {
         var accountId = HttpContext.Session.GetInt32(SessionKeys.AccountId);
-        var courseId = HttpContext.Session.GetInt32(SessionKeys.CourseId);
-        var courseCode = HttpContext.Session.GetString(SessionKeys.CourseCode);
 
-        if (accountId == null || courseId == null || string.IsNullOrWhiteSpace(courseCode))
+        if (accountId == null)
         {
             return RedirectToPage("/Auth/AccessDenied");
         }
 
-        Input.CourseId = courseId.Value;
-        Input.CourseCode = courseCode;
+        // Upload targets come from the teacher's CURRENT course assignments in
+        // the database (a teacher can own many courses). The page shows its
+        // own empty state when the teacher has no active course yet.
         Input.AvailableCourses = await _documentService.GetUploadCoursesForTeacherAsync(accountId.Value);
-        if (Input.AvailableCourses.Count == 1)
+
+        if (Input.AvailableCourses.Count > 0)
         {
             Input.CourseId = Input.AvailableCourses[0].CourseId;
             Input.CourseCode = Input.AvailableCourses[0].Code;

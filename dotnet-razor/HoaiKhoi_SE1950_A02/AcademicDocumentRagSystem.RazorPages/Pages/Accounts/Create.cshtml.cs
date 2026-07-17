@@ -1,9 +1,9 @@
 using AcademicDocumentRagSystem.RazorPages.Infrastructure;
 using AcademicDocumentRagSystem.Services.DTOs.Accounts;
+using AcademicDocumentRagSystem.Services.DTOs.Courses;
 using AcademicDocumentRagSystem.Services.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.AspNetCore.Mvc.Rendering;
 
 namespace AcademicDocumentRagSystem.RazorPages.Pages.Accounts;
 
@@ -22,7 +22,12 @@ public class CreateModel : PageModel
     [BindProperty]
     public CreateAccountDto Input { get; set; } = new();
 
-    public List<SelectListItem> Courses { get; private set; } = new();
+    /// <summary>
+    /// Active courses that have no teacher yet. Creating a teacher may assign
+    /// several of them at once; courses owned by another teacher must go
+    /// through the explicit "Chuyển giảng viên" flow instead.
+    /// </summary>
+    public List<CourseSummaryDto> UnassignedCourses { get; private set; } = new();
 
     public async Task OnGetAsync()
     {
@@ -77,17 +82,11 @@ public class CreateModel : PageModel
             case "This email is reserved for the system admin account.":
                 ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.Email)}", "Email này được dành riêng cho tài khoản quản trị hệ thống.");
                 break;
-            case "Teacher accounts must be assigned to a course.":
-                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.CourseId)}", "Giảng viên phải được gán một môn học.");
-                break;
             case "Student accounts must not be assigned to a course.":
-                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.CourseId)}", "Sinh viên không được gán môn học.");
+                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.CourseIds)}", "Sinh viên không được gán môn học.");
                 break;
             case "Assigned course was not found.":
-                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.CourseId)}", "Môn học được chọn không tồn tại.");
-                break;
-            case "This course already has an assigned teacher.":
-                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.CourseId)}", "Môn học này đã có giảng viên được gán.");
+                ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.CourseIds)}", "Một trong các môn học được chọn không tồn tại.");
                 break;
             case "Role must be Student or Teacher.":
                 ModelState.AddModelError($"{nameof(Input)}.{nameof(Input.Role)}", "Vai trò phải là Student hoặc Teacher.");
@@ -100,20 +99,8 @@ public class CreateModel : PageModel
 
     private async Task LoadCoursesAsync()
     {
-        var courses = await _courseService.GetAllAsync();
-        var teachers = await _accountService.GetAllAsync(null, CreateAccountDto.TeacherRole, null);
-        var assignedCourseIds = teachers
-            .Where(t => t.CourseId.HasValue)
-            .Select(t => t.CourseId!.Value)
-            .ToHashSet();
-
-        Courses = courses
-            .Where(c => c.Status && !assignedCourseIds.Contains(c.CourseId))
-            .Select(c => new SelectListItem
-            {
-                Value = c.CourseId.ToString(),
-                Text = $"{c.Code} - {c.Name}"
-            })
+        UnassignedCourses = (await _courseService.GetUnassignedAsync())
+            .Where(c => c.Status)
             .ToList();
     }
 }

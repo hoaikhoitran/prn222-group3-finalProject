@@ -1,4 +1,4 @@
-﻿@page
+@page
 @using AcademicDocumentRagSystem.Services.DTOs.Accounts
 @model AcademicDocumentRagSystem.RazorPages.Pages.Accounts.CreateModel
 @{
@@ -14,7 +14,7 @@
             Quay lại
         </a>
         <h1 class="font-display fs-2 fw-bold mb-1">Thêm tài khoản</h1>
-        <p class="text-muted-edurag mb-0">Tạo tài khoản sinh viên hoặc giảng viên. Giảng viên phải được gán một môn học.</p>
+        <p class="text-muted-edurag mb-0">Tạo tài khoản sinh viên hoặc giảng viên. Giảng viên có thể được gán nhiều môn ngay khi tạo, hoặc gán sau.</p>
     </div>
 
     <div class="card edurag-card" style="max-width:720px;">
@@ -50,18 +50,32 @@
             </div>
 
             <div id="courseField">
-                <label asp-for="Input.CourseId" class="form-label fw-semibold">Môn học gán</label>
-                <select asp-for="Input.CourseId" asp-items="Model.Courses" class="form-select" id="accountCourse">
-                    <option value="">-- Chọn môn học --</option>
-                </select>
-                <div class="form-text text-muted-edurag" id="courseHelpTeacher">
-                    Bắt buộc với Teacher. Chỉ hiện môn chưa có giảng viên đảm nhiệm.
-                </div>
-                <div class="form-text text-danger d-none" id="courseHelpEmpty">
-                    Hiện không còn môn học nào chưa có giảng viên. Hãy tạo môn mới hoặc bỏ gán môn của giảng viên hiện có.
-                </div>
+                <label class="form-label fw-semibold">Môn học phụ trách</label>
+                @if (!Model.UnassignedCourses.Any())
+                {
+                    <div class="form-text text-muted-edurag">
+                        Hiện không còn môn học nào chưa có giảng viên. Có thể tạo tài khoản trước rồi gán môn sau
+                        (hoặc dùng "Chuyển giảng viên" ở trang Môn học).
+                    </div>
+                }
+                else
+                {
+                    <div class="vstack gap-1 border rounded p-2" style="max-height:200px;overflow-y:auto;" id="courseCheckboxList">
+                        @foreach (var course in Model.UnassignedCourses)
+                        {
+                            <label class="form-check d-flex align-items-center gap-2 m-0">
+                                <input type="checkbox" name="Input.CourseIds" value="@course.CourseId" class="form-check-input m-0 course-checkbox"
+                                       checked="@Model.Input.CourseIds.Contains(course.CourseId)" />
+                                <span class="small">@course.Code — @course.Name</span>
+                            </label>
+                        }
+                    </div>
+                    <div class="form-text text-muted-edurag" id="courseHelpTeacher">
+                        Tuỳ chọn — có thể chọn nhiều môn. Chỉ hiện các môn chưa có giảng viên; giảng viên có thể được gán thêm môn bất kỳ lúc nào sau khi tạo.
+                    </div>
+                }
                 <div class="form-text text-muted-edurag d-none" id="courseHelpStudent">Student không được gán môn học.</div>
-                <span asp-validation-for="Input.CourseId" class="text-danger small"></span>
+                <span asp-validation-for="Input.CourseIds" class="text-danger small"></span>
             </div>
 
             <div class="form-check">
@@ -84,24 +98,20 @@
     <script>
         (function () {
             const roleSelect = document.getElementById('accountRole');
-            const courseSelect = document.getElementById('accountCourse');
+            const courseList = document.getElementById('courseCheckboxList');
             const courseHelpTeacher = document.getElementById('courseHelpTeacher');
             const courseHelpStudent = document.getElementById('courseHelpStudent');
-            const courseHelpEmpty = document.getElementById('courseHelpEmpty');
             const teacherRole = '@CreateAccountDto.TeacherRole';
-            const availableCourseCount = @Model.Courses.Count;
 
             function syncCourseField() {
                 const isTeacher = roleSelect.value === teacherRole;
-                const noCourses = isTeacher && availableCourseCount === 0;
-                courseSelect.disabled = !isTeacher || noCourses;
-                courseSelect.required = isTeacher && !noCourses;
-                courseHelpTeacher.classList.toggle('d-none', !isTeacher || noCourses);
-                courseHelpEmpty.classList.toggle('d-none', !noCourses);
+                document.querySelectorAll('.course-checkbox').forEach(function (checkbox) {
+                    checkbox.disabled = !isTeacher;
+                    if (!isTeacher) { checkbox.checked = false; }
+                });
+                if (courseList) { courseList.classList.toggle('opacity-50', !isTeacher); }
+                if (courseHelpTeacher) { courseHelpTeacher.classList.toggle('d-none', !isTeacher); }
                 courseHelpStudent.classList.toggle('d-none', isTeacher);
-                if (!isTeacher) {
-                    courseSelect.value = '';
-                }
             }
 
             roleSelect.addEventListener('change', syncCourseField);

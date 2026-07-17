@@ -1,4 +1,4 @@
-﻿using AcademicDocumentRagSystem.DataAccess.Models;
+using AcademicDocumentRagSystem.DataAccess.Models;
 using AcademicDocumentRagSystem.DataAccess.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -28,12 +28,16 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Implementations
 
         public async Task<List<Course>> GetAllAsync()
         {
-            return await _context.Courses.ToListAsync();
+            return await _context.Courses
+                .Include(c => c.TeacherAccount)
+                .ToListAsync();
         }
 
         public async Task<List<Course>> SearchAsync(string? searchTerm)
         {
-            var query = _context.Courses.AsQueryable();
+            var query = _context.Courses
+                .Include(c => c.TeacherAccount)
+                .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
@@ -48,12 +52,38 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Implementations
 
         public async Task<Course?> GetByCodeAsync(string code)
         {
-            return await _context.Courses.FirstOrDefaultAsync(c => c.Code == code);
+            return await _context.Courses
+                .Include(c => c.TeacherAccount)
+                .FirstOrDefaultAsync(c => c.Code == code);
         }
 
         public async Task<Course?> GetByIdAsync(int id)
         {
-            return await _context.Courses.FirstOrDefaultAsync(c => c.CourseId == id);
+            return await _context.Courses
+                .Include(c => c.TeacherAccount)
+                .FirstOrDefaultAsync(c => c.CourseId == id);
+        }
+
+        public async Task<List<Course>> GetByTeacherAsync(int teacherAccountId)
+        {
+            return await _context.Courses
+                .Where(c => c.TeacherAccountId == teacherAccountId)
+                .OrderBy(c => c.Code)
+                .ToListAsync();
+        }
+
+        public async Task<List<Course>> GetUnassignedAsync()
+        {
+            return await _context.Courses
+                .Where(c => c.TeacherAccountId == null)
+                .OrderBy(c => c.Code)
+                .ToListAsync();
+        }
+
+        public async Task<bool> IsAssignedToTeacherAsync(int courseId, int teacherAccountId)
+        {
+            return await _context.Courses.AnyAsync(c =>
+                c.CourseId == courseId && c.TeacherAccountId == teacherAccountId);
         }
 
         public async Task SaveChangesAsync()
@@ -63,7 +93,7 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Implementations
 
         public void Update(Course course)
         {
-            _context.Courses.Update(course);    
+            _context.Courses.Update(course);
         }
     }
 }

@@ -15,5 +15,12 @@ namespace AcademicDocumentRagSystem.RazorPages.Hubs
         public const string CourseUpdated = "CourseUpdated";
         public const string CourseDeleted = "CourseDeleted";
         public const string CoursesChanged = "CoursesChanged";
+
+        // Teacher-course assignment events. Payloads carry only public data
+        // (courseId, courseCode, teacherAccountId, teacherName) — no emails,
+        // passwords or other sensitive fields.
+        public const string CourseTeacherAssigned = "CourseTeacherAssigned";
+        public const string CourseTeacherUnassigned = "CourseTeacherUnassigned";
+        public const string CourseTeacherChanged = "CourseTeacherChanged";
     }
 }

@@ -1,3 +1,5 @@
+using AcademicDocumentRagSystem.Services.DTOs.Courses;
+
 namespace AcademicDocumentRagSystem.Services.DTOs.Accounts;
 
 public class AccountListItemDto
@@ -12,11 +14,11 @@ public class AccountListItemDto
 
     public string RoleName { get; set; } = string.Empty;
 
-    public int? CourseId { get; set; }
-
-    public string? CourseCode { get; set; }
-
-    public string? CourseName { get; set; }
-
     public bool Status { get; set; }
+
+    /// <summary>Number of courses this teacher is responsible for (0 for students).</summary>
+    public int AssignedCourseCount => AssignedCourses.Count;
+
+    /// <summary>Courses assigned to this teacher, ordered by code.</summary>
+    public List<CourseSummaryDto> AssignedCourses { get; set; } = new();
 }
