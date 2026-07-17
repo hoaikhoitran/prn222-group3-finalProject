@@ -2,6 +2,7 @@ using AcademicDocumentRagSystem.DataAccess.Models;
 using AcademicDocumentRagSystem.DataAccess.Repositories.Interfaces;
 using AcademicDocumentRagSystem.Services.DTOs.Accounts;
 using AcademicDocumentRagSystem.Services.DTOs.Auth;
+using AcademicDocumentRagSystem.Services.DTOs.Courses;
 using AcademicDocumentRagSystem.Services.Email;
 using AcademicDocumentRagSystem.Services.Email.Models;
 using AcademicDocumentRagSystem.Services.Interfaces;
@@ -72,9 +73,9 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 FullName = account.FullName,
                 Role = account.Role,
                 RoleName = GetRoleName(account.Role),
-                CourseId = account.CourseId,
-                CourseCode = account.Course?.Code,
-                CourseName = account.Course?.Name
+                // Informational only: permissions are re-checked per request
+                // against Courses.TeacherAccountId, never against the session.
+                AssignedCourses = MapAssignedCourses(account)
             };
         }
 
@@ -89,10 +90,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 FullName = a.FullName,
                 Role = a.Role,
                 RoleName = GetRoleName(a.Role),
-                CourseId = a.CourseId,
-                CourseCode = a.Course?.Code,
-                CourseName = a.Course?.Name,
-                Status = a.Status
+                Status = a.Status,
+                AssignedCourses = MapAssignedCourses(a)
             }).ToList();
         }
 
@@ -111,14 +110,42 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 Email = account.Email,
                 FullName = account.FullName,
                 Role = account.Role,
-                CourseId = account.CourseId,
                 Status = account.Status
             };
         }
 
         public async Task<CreateAccountResult> CreateAsync(CreateAccountDto dto)
         {
-            await ValidateAccountAsync(dto.Email, dto.Role, dto.CourseId, null);
+            await ValidateAccountAsync(dto.Email, dto.Role, null);
+
+            var courseIds = dto.CourseIds.Distinct().ToList();
+
+            if (dto.Role == CreateAccountDto.StudentRole && courseIds.Count > 0)
+            {
+                throw new ArgumentException("Student accounts must not be assigned to a course.");
+            }
+
+            // Validate every requested course BEFORE creating anything so a bad
+            // selection can never leave a half-created assignment batch.
+            var coursesToAssign = new List<Course>();
+            foreach (var courseId in courseIds)
+            {
+                var course = await _courseRepository.GetByIdAsync(courseId);
+
+                if (course == null)
+                {
+                    throw new ArgumentException("Assigned course was not found.");
+                }
+
+                if (course.TeacherAccountId.HasValue)
+                {
+                    throw new ArgumentException(
+                        $"Môn {course.Code} đang do giảng viên khác phụ trách. "
+                        + "Hãy dùng chức năng \"Chuyển giảng viên\" nếu muốn chuyển môn này.");
+                }
+
+                coursesToAssign.Add(course);
+            }
 
             var account = new Account
             {
@@ -126,10 +153,18 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 Password = dto.Password,
                 FullName = dto.FullName.Trim(),
                 Role = dto.Role,
-                CourseId = dto.Role == 2 ? dto.CourseId : null,
                 Status = dto.Status,
                 CreatedAt = DateTime.UtcNow
             };
+
+            // Wire the assignments through the navigation property so EF saves
+            // the new account AND its course assignments in ONE transaction.
+            foreach (var course in coursesToAssign)
+            {
+                course.TeacherAccount = account;
+                course.UpdatedAt = DateTime.UtcNow;
+                _courseRepository.Update(course);
+            }
 
             await _accountRepository.AddAsync(account);
             await _accountRepository.SaveChangesAsync();
@@ -145,7 +180,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
                 try
                 {
-                    await SendAccountCreatedEmailAsync(account, dto.Password);
+                    await SendAccountCreatedEmailAsync(account, dto.Password, coursesToAssign);
                     result.EmailSent = true;
                 }
                 catch (Exception ex)
@@ -163,19 +198,16 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             return result;
         }
 
-        private async Task SendAccountCreatedEmailAsync(Account account, string temporaryPassword)
+        private async Task SendAccountCreatedEmailAsync(
+            Account account, string temporaryPassword, List<Course> assignedCourses)
         {
-            var courseName = "Not assigned";
-
-            if (account.CourseId.HasValue)
-            {
-                var course = await _courseRepository.GetByIdAsync(account.CourseId.Value);
-
-                if (course != null)
-                {
-                    courseName = $"{course.Code} - {course.Name}";
-                }
-            }
+            // The welcome template has one course slot; with 1-N assignment we
+            // show the full list, or the explicit "not assigned yet" message.
+            var courseName = assignedCourses.Count == 0
+                ? "Chưa được phân công môn học"
+                : string.Join(", ", assignedCourses
+                    .OrderBy(c => c.Code)
+                    .Select(c => $"{c.Code} - {c.Name}"));
 
             var model = new TeacherWelcomeEmailModel
             {
@@ -206,12 +238,25 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 throw new ArgumentException("Account not found.");
             }
 
-            await ValidateAccountAsync(dto.Email, dto.Role, dto.CourseId, dto.AccountId);
+            await ValidateAccountAsync(dto.Email, dto.Role, dto.AccountId);
+
+            // Demoting a teacher who still owns courses would leave those
+            // courses managed by a student — block it with a clear message.
+            if (dto.Role != 2 && account.Role == 2)
+            {
+                var stillAssigned = await _courseRepository.GetByTeacherAsync(account.AccountId);
+                if (stillAssigned.Count > 0)
+                {
+                    throw new ArgumentException(
+                        "Giảng viên này còn phụ trách "
+                        + string.Join(", ", stillAssigned.Select(c => c.Code))
+                        + ". Hãy bỏ gán hoặc chuyển các môn trước khi đổi vai trò.");
+                }
+            }
 
             account.Email = dto.Email.Trim();
             account.FullName = dto.FullName.Trim();
             account.Role = dto.Role;
-            account.CourseId = dto.Role == 2 ? dto.CourseId : null;
             account.Status = dto.Status;
             account.UpdatedAt = DateTime.UtcNow;
 
@@ -237,7 +282,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             await _accountRepository.SaveChangesAsync();
         }
 
-        private async Task ValidateAccountAsync(string email, int role, int? courseId, int? accountId)
+        private async Task ValidateAccountAsync(string email, int role, int? accountId)
         {
             if (role != 1 && role != 2)
             {
@@ -261,36 +306,20 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             {
                 throw new ArgumentException("Email is already used by another account.");
             }
+        }
 
-            if (role == 1 && courseId.HasValue)
-            {
-                throw new ArgumentException("Student accounts must not be assigned to a course.");
-            }
-
-            if (role == 2)
-            {
-                if (!courseId.HasValue)
+        private static List<CourseSummaryDto> MapAssignedCourses(Account account)
+        {
+            return account.TeachingCourses
+                .OrderBy(c => c.Code)
+                .Select(c => new CourseSummaryDto
                 {
-                    throw new ArgumentException("Teacher accounts must be assigned to a course.");
-                }
-
-                var course = await _courseRepository.GetByIdAsync(courseId.Value);
-
-                if (course == null)
-                {
-                    throw new ArgumentException("Assigned course was not found.");
-                }
-
-                var assignedTeacher = (await _accountRepository.GetAllAsync(null, 2, null))
-                    .FirstOrDefault(a =>
-                        a.CourseId == courseId.Value &&
-                        (!accountId.HasValue || a.AccountId != accountId.Value));
-
-                if (assignedTeacher != null)
-                {
-                    throw new ArgumentException("This course already has an assigned teacher.");
-                }
-            }
+                    CourseId = c.CourseId,
+                    Code = c.Code,
+                    Name = c.Name,
+                    Status = c.Status
+                })
+                .ToList();
         }
 
         private static string GetRoleName(int role)

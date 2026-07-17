@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace AcademicDocumentRagSystem.DataAccess.Models;
@@ -15,8 +15,6 @@ public partial class Account
 
     public int Role { get; set; }
 
-    public int? CourseId { get; set; }
-
     public bool Status { get; set; }
 
     public DateTime CreatedAt { get; set; }
@@ -27,7 +25,12 @@ public partial class Account
 
     public virtual ICollection<ChatSession> ChatSessions { get; set; } = new List<ChatSession>();
 
-    public virtual Course? Course { get; set; }
+    /// <summary>
+    /// Courses this account is responsible for as a teacher (Role = 2).
+    /// The assignment lives on Courses.TeacherAccountId, so one teacher can
+    /// own many courses while each course has at most one teacher.
+    /// </summary>
+    public virtual ICollection<Course> TeachingCourses { get; set; } = new List<Course>();
 
     public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
 

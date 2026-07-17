@@ -147,15 +147,16 @@
                         <tr>
                             <th>Người dùng</th>
                             <th>Vai trò</th>
-                            <th>Môn học</th>
+                            <th style="min-width:220px;">Môn phụ trách</th>
                             <th>Trạng thái</th>
-                            <th></th>
+                            <th style="min-width:230px;"></th>
                         </tr>
                     </thead>
                     <tbody>
                         @foreach (var account in Model.Accounts)
                         {
                             var badge = account.RoleName == "Student" ? "role-badge-student" : "role-badge-teacher";
+                            var isTeacher = account.RoleName == "Teacher";
                             <tr>
                                 <td>
                                     <div class="d-flex align-items-center gap-2">
@@ -167,16 +168,89 @@
                                     </div>
                                 </td>
                                 <td><span class="@badge">@account.RoleName</span></td>
-                                <td class="small">@(string.IsNullOrWhiteSpace(account.CourseCode) ? "—" : account.CourseCode)</td>
+                                <td class="small">
+                                    @if (!isTeacher)
+                                    {
+                                        <span class="text-muted-edurag">—</span>
+                                    }
+                                    else if (account.AssignedCourseCount == 0)
+                                    {
+                                        <span class="status-badge-pending">Chưa phân công</span>
+                                    }
+                                    else
+                                    {
+                                        <div class="fw-semibold mb-1">Số môn phụ trách: @account.AssignedCourseCount</div>
+                                        <div class="d-flex flex-wrap gap-1">
+                                            @foreach (var course in account.AssignedCourses)
+                                            {
+                                                <span class="badge rounded-pill bg-light text-dark border d-inline-flex align-items-center gap-1 px-2 py-1" title="@course.Name">
+                                                    @course.Code
+                                                    <form method="post" asp-page-handler="UnassignCourse"
+                                                          asp-route-courseId="@course.CourseId"
+                                                          asp-route-SearchTerm="@Model.SearchTerm"
+                                                          asp-route-Role="@Model.Role"
+                                                          asp-route-Status="@Model.Status"
+                                                          class="d-inline m-0"
+                                                          onsubmit="return confirm('Bạn có chắc muốn bỏ giảng viên khỏi môn @course.Code?\nTài liệu không bị xóa nhưng giảng viên sẽ mất quyền quản lý môn này.');">
+                                                        @Html.AntiForgeryToken()
+                                                        <button type="submit" class="btn btn-link p-0 border-0 text-danger" style="font-size:12px;line-height:1;text-decoration:none;" aria-label="Bỏ gán môn @course.Code" title="Bỏ gán môn @course.Code">×</button>
+                                                    </form>
+                                                </span>
+                                            }
+                                        </div>
+                                    }
+                                </td>
                                 <td>
                                     <span class="@(account.Status ? "status-badge-indexed" : "status-badge-failed")">
                                         @(account.Status ? "Hoạt động" : "Đã khoá")
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="d-inline-flex gap-1">
+                                    <span class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                        @if (isTeacher && account.Status)
+                                        {
+                                            <details class="assign-courses-dropdown d-inline-block">
+                                                <summary class="btn btn-sm btn-edurag-outline">Gán thêm môn học</summary>
+                                                <div class="assign-courses-panel edurag-card p-3 text-start">
+                                                    <div class="fw-semibold small mb-1">@account.FullName</div>
+                                                    @if (account.AssignedCourseCount > 0)
+                                                    {
+                                                        <div class="small text-muted-edurag mb-2">
+                                                            Đang phụ trách: @string.Join(", ", account.AssignedCourses.Select(c => c.Code))
+                                                        </div>
+                                                    }
+                                                    @if (!Model.UnassignedCourses.Any())
+                                                    {
+                                                        <div class="small text-muted-edurag">Không còn môn học nào chưa có giảng viên. Muốn chuyển môn từ giảng viên khác, dùng "Chuyển giảng viên" ở trang Môn học.</div>
+                                                    }
+                                                    else
+                                                    {
+                                                        <form method="post" asp-page-handler="AssignCourses"
+                                                              asp-route-teacherAccountId="@account.AccountId"
+                                                              asp-route-SearchTerm="@Model.SearchTerm"
+                                                              asp-route-Role="@Model.Role"
+                                                              asp-route-Status="@Model.Status"
+                                                              class="vstack gap-2">
+                                                            @Html.AntiForgeryToken()
+                                                            <div class="small text-muted-edurag">Chọn các môn chưa có giảng viên:</div>
+                                                            <div class="vstack gap-1" style="max-height:180px;overflow-y:auto;">
+                                                                @foreach (var course in Model.UnassignedCourses)
+                                                                {
+                                                                    <label class="form-check d-flex align-items-center gap-2 m-0">
+                                                                        <input type="checkbox" name="courseIds" value="@course.CourseId" class="form-check-input m-0" />
+                                                                        <span class="small">@course.Code — @course.Name</span>
+                                                                    </label>
+                                                                }
+                                                            </div>
+                                                            <button type="submit" class="btn btn-sm btn-edurag-warm">Gán các môn đã chọn</button>
+                                                        </form>
+                                                    }
+                                                </div>
+                                            </details>
+                                        }
                                         <a asp-page="/Accounts/Edit" asp-route-id="@account.AccountId" class="btn btn-sm btn-edurag-ghost">Sửa</a>
-                                        <form method="post" asp-page="/Accounts/Index" asp-page-handler="Delete" asp-route-id="@account.AccountId" class="d-inline">
+                                        <form method="post" asp-page="/Accounts/Index" asp-page-handler="Delete" asp-route-id="@account.AccountId" class="d-inline"
+                                              onsubmit="return confirm('Bạn có chắc muốn xóa tài khoản @account.Email?');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
                                         </form>
@@ -190,3 +264,42 @@
         }
     </div>
 </div>
+
+<style>
+    .assign-courses-dropdown { position: relative; }
+
+    .assign-courses-dropdown summary { list-style: none; cursor: pointer; }
+
+        .assign-courses-dropdown summary::-webkit-details-marker { display: none; }
+
+    .assign-courses-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        z-index: 30;
+        min-width: 320px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .14);
+    }
+</style>
+
+<script>
+    // Only one "Gán thêm môn" panel open at a time; close on outside click.
+    (function () {
+        document.addEventListener("click", function (event) {
+            document.querySelectorAll("details.assign-courses-dropdown[open]").forEach(function (details) {
+                if (!details.contains(event.target)) {
+                    details.removeAttribute("open");
+                }
+            });
+        });
+        document.addEventListener("toggle", function (event) {
+            var target = event.target;
+            if (!(target instanceof HTMLDetailsElement) || !target.classList.contains("assign-courses-dropdown") || !target.open) {
+                return;
+            }
+            document.querySelectorAll("details.assign-courses-dropdown[open]").forEach(function (details) {
+                if (details !== target) { details.removeAttribute("open"); }
+            });
+        }, true);
+    })();
+</script>

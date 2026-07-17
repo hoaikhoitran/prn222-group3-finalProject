@@ -1,4 +1,4 @@
-﻿using AcademicDocumentRagSystem.DataAccess.Models;
+using AcademicDocumentRagSystem.DataAccess.Models;
 using AcademicDocumentRagSystem.DataAccess.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -19,14 +19,14 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Implementations
         public async Task<Account?> GetByEmailAndPasswordAsync(string email, string password)
         {
             return await _context.Accounts
-                .Include(a => a.Course)
+                .Include(a => a.TeachingCourses)
                 .FirstOrDefaultAsync(a => a.Email == email && a.Password == password && a.Status);
         }
 
         public async Task<List<Account>> GetAllAsync(string? searchTerm, int? role, bool? status)
         {
             var query = _context.Accounts
-                .Include(a => a.Course)
+                .Include(a => a.TeachingCourses)
                 .AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
@@ -56,7 +56,7 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Implementations
         public async Task<Account?> GetByIdAsync(int id)
         {
             return await _context.Accounts
-                .Include(a => a.Course)
+                .Include(a => a.TeachingCourses)
                 .FirstOrDefaultAsync(a => a.AccountId == id);
         }
 

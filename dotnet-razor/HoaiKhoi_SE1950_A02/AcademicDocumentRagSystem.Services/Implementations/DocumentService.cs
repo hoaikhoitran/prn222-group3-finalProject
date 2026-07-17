@@ -125,46 +125,52 @@ namespace AcademicDocumentRagSystem.Services.Implementations
         {
             var account = await _accountRepository.GetByIdAsync(accountId);
 
-            if (account == null || account.Role != TeacherRole || account.CourseId == null)
+            if (account == null || account.Role != TeacherRole)
             {
                 return new List<CourseDto>();
             }
 
-            var course = await _courseRepository.GetByIdAsync(account.CourseId.Value);
+            // A teacher may be responsible for many courses; upload targets are
+            // every ACTIVE course currently assigned to them in the database.
+            var courses = await _courseRepository.GetByTeacherAsync(accountId);
 
-            if (course == null || !course.Status)
-            {
-                return new List<CourseDto>();
-            }
-
-            return new List<CourseDto>
-            {
-                new()
+            return courses
+                .Where(c => c.Status)
+                .OrderBy(c => c.Code)
+                .Select(c => new CourseDto
                 {
-                    CourseId = course.CourseId,
-                    Code = course.Code,
-                    Name = course.Name,
-                    Description = course.Description,
-                    Status = course.Status
-                }
-            };
+                    CourseId = c.CourseId,
+                    Code = c.Code,
+                    Name = c.Name,
+                    Description = c.Description,
+                    Status = c.Status,
+                    TeacherAccountId = c.TeacherAccountId
+                })
+                .ToList();
         }
 
         public async Task<int> UploadAndIndexAsync(DocumentUploadDto dto, int accountId, string email)
         {
             var account = await _accountRepository.GetByIdAsync(accountId);
 
-            // Permission: only a teacher, and only for their own assigned course.
-            // CourseId from the form is never trusted: it must match the teacher's course.
-            if (account == null || account.Role != TeacherRole || account.CourseId == null
-                || account.CourseId.Value != dto.CourseId)
+            // Permission: only a teacher, and only for a course that is assigned
+            // to them in the database. The CourseId coming from the form is never
+            // trusted — it must be verified against Courses.TeacherAccountId.
+            if (account == null || account.Role != TeacherRole)
+            {
+                throw new Exception(WrongCourseMessage);
+            }
+
+            var canUpload = await _courseRepository.IsAssignedToTeacherAsync(dto.CourseId, accountId);
+
+            if (!canUpload)
             {
                 throw new Exception(WrongCourseMessage);
             }
 
             var course = await _courseRepository.GetByIdAsync(dto.CourseId);
 
-            if (course == null)
+            if (course == null || !course.Status)
             {
                 throw new Exception(WrongCourseMessage);
             }
@@ -570,8 +576,9 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 return true;
             }
 
-            var account = await _accountRepository.GetByIdAsync(accountId.Value);
-            return account?.CourseId != null && account.CourseId.Value == document.CourseId;
+            // The document belongs to a course; the teacher can manage it only
+            // while that course is assigned to them in the database.
+            return await _courseRepository.IsAssignedToTeacherAsync(document.CourseId, accountId.Value);
         }
 
         private async Task<bool> StudentCanAccessAsync(Document document, int accountId)
@@ -582,12 +589,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 return false;
             }
 
-            if (account.CourseId.HasValue)
-            {
-                return account.CourseId.Value == document.CourseId;
-            }
-
-            // No course on account: same scope as Student Library when session has no course filter.
+            // Business rule: students are never assigned to courses and may ask
+            // questions on any indexed document.
             return document.IndexStatus == "Indexed";
         }
 

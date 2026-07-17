@@ -28,25 +28,24 @@ public class CreateAccountDto : IValidatableObject
     [Display(Name = "Vai trò")]
     public int Role { get; set; } = StudentRole;
 
-    public int? CourseId { get; set; }
+    /// <summary>
+    /// Courses to assign when creating a Teacher. Optional: a teacher may be
+    /// created without any course and assigned later. Must stay empty for
+    /// Students — students are never assigned to courses.
+    /// </summary>
+    [Display(Name = "Môn học phụ trách")]
+    public List<int> CourseIds { get; set; } = new();
 
     [Display(Name = "Tài khoản hoạt động")]
     public bool Status { get; set; } = true;
 
     public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
     {
-        if (Role == TeacherRole && !CourseId.HasValue)
-        {
-            yield return new ValidationResult(
-                "Giảng viên phải được gán một môn học.",
-                [nameof(CourseId)]);
-        }
-
-        if (Role == StudentRole && CourseId.HasValue)
+        if (Role == StudentRole && CourseIds.Count > 0)
         {
             yield return new ValidationResult(
                 "Sinh viên không được gán môn học.",
-                [nameof(CourseId)]);
+                [nameof(CourseIds)]);
         }
     }
 }

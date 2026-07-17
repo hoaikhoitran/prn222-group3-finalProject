@@ -18,7 +18,5 @@ public class UpdateAccountDto
     [Required]
     public int Role { get; set; } = 1;
 
-    public int? CourseId { get; set; }
-
     public bool Status { get; set; }
 }

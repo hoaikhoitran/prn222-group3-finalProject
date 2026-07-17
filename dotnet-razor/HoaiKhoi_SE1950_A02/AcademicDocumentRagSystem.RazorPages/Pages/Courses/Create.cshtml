@@ -1,4 +1,5 @@
-﻿@page
+@page
+@model AcademicDocumentRagSystem.RazorPages.Pages.Courses.CreateModel
 @{
     ViewData["Title"] = "Thêm môn học";
     Layout = "_LayoutDashboard";
@@ -8,33 +9,49 @@
     <div class="mb-4">
         <a asp-page="/Courses/Index" class="btn btn-sm btn-edurag-ghost mb-3">← Quay lại</a>
         <h1 class="font-display fs-2 fw-bold mb-1">Thêm môn học</h1>
-        <p class="text-muted-edurag mb-0">Thêm môn học mới để upload và index tài liệu.</p>
+        <p class="text-muted-edurag mb-0">Thêm môn học mới và (tuỳ chọn) phân công giảng viên phụ trách.</p>
     </div>
 
     <div class="edurag-card p-4 p-md-5" style="max-width:680px;">
-        <form asp-page="/Courses/Index" asp-page-handler="Create" method="post" class="vstack gap-3">
+        <form method="post" class="vstack gap-3">
+            <div asp-validation-summary="ModelOnly" class="text-danger small"></div>
+
             <div>
-                <label class="form-label fw-semibold" for="CreateInput_Code">Mã môn</label>
-                <input name="CreateInput.Code" id="CreateInput_Code" class="form-control" placeholder="VD: PRN222" />
+                <label asp-for="Input.Code" class="form-label fw-semibold">Mã môn</label>
+                <input asp-for="Input.Code" class="form-control" placeholder="VD: PRN222" />
+                <span asp-validation-for="Input.Code" class="text-danger small"></span>
             </div>
 
             <div>
-                <label class="form-label fw-semibold" for="CreateInput_Name">Tên môn</label>
-                <input name="CreateInput.Name" id="CreateInput_Name" class="form-control" placeholder="VD: Programming with .NET" />
+                <label asp-for="Input.Name" class="form-label fw-semibold">Tên môn</label>
+                <input asp-for="Input.Name" class="form-control" placeholder="VD: Programming with .NET" />
+                <span asp-validation-for="Input.Name" class="text-danger small"></span>
             </div>
 
             <div>
-                <label class="form-label fw-semibold" for="CreateInput_Description">Mô tả</label>
-                <textarea name="CreateInput.Description" id="CreateInput_Description" class="form-control" rows="3" placeholder="Mô tả ngắn về môn học"></textarea>
+                <label asp-for="Input.Description" class="form-label fw-semibold">Mô tả</label>
+                <textarea asp-for="Input.Description" class="form-control" rows="3" placeholder="Mô tả ngắn về môn học"></textarea>
+                <span asp-validation-for="Input.Description" class="text-danger small"></span>
+            </div>
+
+            <div>
+                <label asp-for="Input.TeacherAccountId" class="form-label fw-semibold">Giảng viên phụ trách</label>
+                <select asp-for="Input.TeacherAccountId" asp-items="Model.Teachers" class="form-select">
+                    <option value="">— Chưa gán —</option>
+                </select>
+                <div class="form-text text-muted-edurag">
+                    Một giảng viên có thể phụ trách nhiều môn; danh sách hiển thị mọi giảng viên đang hoạt động.
+                </div>
+                <span asp-validation-for="Input.TeacherAccountId" class="text-danger small"></span>
             </div>
 
             <div class="form-check">
-                <input name="CreateInput.Status" id="CreateInput_Status" type="checkbox" class="form-check-input" value="true" checked />
-                <label class="form-check-label" for="CreateInput_Status">Môn học đang hoạt động</label>
+                <input asp-for="Input.Status" class="form-check-input" />
+                <label asp-for="Input.Status" class="form-check-label">Môn học hoạt động</label>
             </div>
 
             <div class="d-flex gap-2 pt-2">
-                <button type="submit" class="btn btn-edurag-warm">Lưu</button>
+                <button type="submit" class="btn btn-edurag-warm">Tạo môn học</button>
                 <a asp-page="/Courses/Index" class="btn btn-edurag-outline">Huỷ</a>
             </div>
         </form>

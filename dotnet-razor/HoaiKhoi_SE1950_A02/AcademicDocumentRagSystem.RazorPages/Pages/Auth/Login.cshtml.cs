@@ -54,21 +54,9 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Auth
                 HttpContext.Session.SetInt32(SessionKeys.AccountId, result.AccountId.Value);
             }
 
-            if (result.CourseId.HasValue)
-            {
-                HttpContext.Session.SetInt32(SessionKeys.CourseId, result.CourseId.Value);
-            }
-
-            if (!string.IsNullOrWhiteSpace(result.CourseCode))
-            {
-                HttpContext.Session.SetString(SessionKeys.CourseCode, result.CourseCode);
-            }
-
-            if (!string.IsNullOrWhiteSpace(result.CourseName))
-            {
-                HttpContext.Session.SetString(SessionKeys.CourseName, result.CourseName);
-            }
-
+            // No course data goes into the session: a teacher can own many
+            // courses and assignments can change mid-session, so every page
+            // loads the current assignment list from the database instead.
             return RedirectToDashboard(result.RoleName);
         }
 

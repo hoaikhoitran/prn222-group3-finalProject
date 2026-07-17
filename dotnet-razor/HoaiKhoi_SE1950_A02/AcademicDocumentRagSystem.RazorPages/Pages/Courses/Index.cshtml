@@ -1,4 +1,4 @@
-﻿@page
+@page
 @model AcademicDocumentRagSystem.RazorPages.Pages.Courses.IndexModel
 @{
     ViewData["Title"] = "Môn học";
@@ -9,6 +9,7 @@
     var courses = Model.Courses ?? new List<AcademicDocumentRagSystem.Services.DTOs.Courses.CourseDto>();
     var totalCourses = courses.Count;
     var activeCourses = courses.Count(c => c.Status);
+    var unassignedActive = courses.Count(c => c.Status && !c.HasTeacher);
 }
 <div class="edurag-page">
     <div class="page-hero">
@@ -20,7 +21,7 @@
                     Admin · Môn học
                 </span>
                 <h1 class="font-display fs-2 fw-bold mb-1 mt-2">Quản lý môn học</h1>
-                <p class="text-muted-edurag mb-0">Tạo và quản lý các môn học trong hệ thống — thay đổi được phát realtime tới giảng viên</p>
+                <p class="text-muted-edurag mb-0">Tạo môn học và phân công giảng viên phụ trách — một giảng viên có thể phụ trách nhiều môn, mỗi môn chỉ có một giảng viên</p>
             </div>
             <a asp-page="/Courses/Create" class="btn btn-edurag-warm d-inline-flex align-items-center gap-1">
                 @{ ViewData["Icon"] = "plus"; ViewData["IconSize"] = "14"; }
@@ -33,6 +34,10 @@
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger mb-3">@TempData["Error"]</div>
+    }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success mb-3">@TempData["Success"]</div>
     }
 
     <div class="row g-3 mb-4">
@@ -62,19 +67,19 @@
         </div>
         <div class="col-6 col-lg-3">
             <div class="stat-card d-flex align-items-center gap-3">
-                <span class="stat-card__icon stat-card__icon--slate">
-                    @{ ViewData["Icon"] = "x"; ViewData["IconSize"] = "20"; }
+                <span class="stat-card__icon stat-card__icon--amber">
+                    @{ ViewData["Icon"] = "users"; ViewData["IconSize"] = "20"; }
                     @await Html.PartialAsync("_Icons")
                 </span>
                 <div>
-                    <div class="stat-card__value">@(totalCourses - activeCourses)</div>
-                    <div class="stat-card__label">Ngừng hoạt động</div>
+                    <div class="stat-card__value">@unassignedActive</div>
+                    <div class="stat-card__label">Môn active chưa có GV</div>
                 </div>
             </div>
         </div>
         <div class="col-6 col-lg-3">
             <div class="stat-card d-flex align-items-center gap-3">
-                <span class="stat-card__icon stat-card__icon--amber">
+                <span class="stat-card__icon stat-card__icon--slate">
                     @{ ViewData["Icon"] = "zap"; ViewData["IconSize"] = "20"; }
                     @await Html.PartialAsync("_Icons")
                 </span>
@@ -106,9 +111,9 @@
                         <tr>
                             <th>Mã</th>
                             <th>Tên môn</th>
-                            <th>Mô tả</th>
+                            <th>Giảng viên phụ trách</th>
                             <th>Trạng thái</th>
-                            <th></th>
+                            <th style="min-width:260px;"></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -116,17 +121,77 @@
                         {
                             <tr>
                                 <td class="fw-semibold">@course.Code</td>
-                                <td>@course.Name</td>
-                                <td class="small text-muted-edurag">@(string.IsNullOrWhiteSpace(course.Description) ? "—" : course.Description)</td>
+                                <td>
+                                    <div>@course.Name</div>
+                                    @if (!string.IsNullOrWhiteSpace(course.Description))
+                                    {
+                                        <div class="small text-muted-edurag text-truncate" style="max-width:16rem;" title="@course.Description">@course.Description</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (course.HasTeacher)
+                                    {
+                                        <div class="fw-semibold small">@course.TeacherName</div>
+                                        <div class="small text-muted-edurag">@course.TeacherEmail</div>
+                                    }
+                                    else
+                                    {
+                                        <span class="status-badge-pending">Chưa gán</span>
+                                        @if (course.Status)
+                                        {
+                                            <div class="small text-warning mt-1" title="Môn đang hoạt động nhưng chưa có giảng viên phụ trách">⚠ Môn active chưa có giảng viên</div>
+                                        }
+                                    }
+                                </td>
                                 <td>
                                     <span class="@(course.Status ? "status-badge-indexed" : "status-badge-failed")">
                                         @(course.Status ? "Hoạt động" : "Ngừng")
                                     </span>
                                 </td>
                                 <td class="text-end">
-                                    <span class="d-inline-flex gap-1">
+                                    <span class="d-inline-flex gap-1 flex-wrap justify-content-end">
+                                        <details class="assign-teacher-dropdown d-inline-block">
+                                            <summary class="btn btn-sm btn-edurag-outline">
+                                                @(course.HasTeacher ? "Chuyển giảng viên" : "Gán giảng viên")
+                                            </summary>
+                                            <div class="assign-teacher-panel edurag-card p-3 text-start">
+                                                <form method="post"
+                                                      asp-page-handler="@(course.HasTeacher ? "ReassignTeacher" : "AssignTeacher")"
+                                                      asp-route-courseId="@course.CourseId"
+                                                      asp-route-SearchTerm="@Model.SearchTerm"
+                                                      class="vstack gap-2">
+                                                    @Html.AntiForgeryToken()
+                                                    <label class="small fw-semibold" for="teacher-select-@course.CourseId">
+                                                        @(course.HasTeacher ? $"Chuyển môn {course.Code} sang:" : $"Gán môn {course.Code} cho:")
+                                                    </label>
+                                                    <select name="teacherAccountId" id="teacher-select-@course.CourseId" class="form-select form-select-sm" required>
+                                                        <option value="">— Chọn giảng viên —</option>
+                                                        @foreach (var teacher in Model.ActiveTeachers)
+                                                        {
+                                                            if (course.TeacherAccountId == teacher.AccountId) { continue; }
+                                                            <option value="@teacher.AccountId">@teacher.FullName (@teacher.Email) · @teacher.AssignedCourseCount môn</option>
+                                                        }
+                                                    </select>
+                                                    <button type="submit" class="btn btn-sm btn-edurag-warm">
+                                                        @(course.HasTeacher ? "Chuyển" : "Gán")
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </details>
+                                        @if (course.HasTeacher)
+                                        {
+                                            <form method="post" asp-page-handler="UnassignTeacher"
+                                                  asp-route-courseId="@course.CourseId"
+                                                  asp-route-SearchTerm="@Model.SearchTerm"
+                                                  class="d-inline"
+                                                  onsubmit="return confirm('Bạn có chắc muốn bỏ giảng viên khỏi môn @course.Code?\nTài liệu không bị xóa nhưng giảng viên sẽ mất quyền quản lý môn này.');">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="btn btn-sm btn-edurag-ghost">Bỏ gán</button>
+                                            </form>
+                                        }
                                         <a asp-page="/Courses/Edit" asp-route-id="@course.CourseId" class="btn btn-sm btn-edurag-ghost">Sửa</a>
-                                        <form method="post" asp-page-handler="Delete" asp-route-id="@course.CourseId" class="d-inline">
+                                        <form method="post" asp-page-handler="Delete" asp-route-id="@course.CourseId" class="d-inline"
+                                              onsubmit="return confirm('Bạn có chắc muốn xóa môn @course.Code?');">
                                             @Html.AntiForgeryToken()
                                             <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
                                         </form>
@@ -140,3 +205,42 @@
         }
     </div>
 </div>
+
+<style>
+    .assign-teacher-dropdown { position: relative; }
+
+    .assign-teacher-dropdown summary { list-style: none; cursor: pointer; }
+
+        .assign-teacher-dropdown summary::-webkit-details-marker { display: none; }
+
+    .assign-teacher-panel {
+        position: absolute;
+        right: 0;
+        top: calc(100% + 6px);
+        z-index: 30;
+        min-width: 310px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .14);
+    }
+</style>
+
+<script>
+    // Only one assign/transfer dropdown open at a time; close on outside click.
+    (function () {
+        document.addEventListener("click", function (event) {
+            document.querySelectorAll("details.assign-teacher-dropdown[open]").forEach(function (details) {
+                if (!details.contains(event.target)) {
+                    details.removeAttribute("open");
+                }
+            });
+        });
+        document.addEventListener("toggle", function (event) {
+            var target = event.target;
+            if (!(target instanceof HTMLDetailsElement) || !target.classList.contains("assign-teacher-dropdown") || !target.open) {
+                return;
+            }
+            document.querySelectorAll("details.assign-teacher-dropdown[open]").forEach(function (details) {
+                if (details !== target) { details.removeAttribute("open"); }
+            });
+        }, true);
+    })();
+</script>

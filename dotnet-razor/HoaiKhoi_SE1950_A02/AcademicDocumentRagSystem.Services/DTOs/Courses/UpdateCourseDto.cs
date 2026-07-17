@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -23,5 +23,8 @@ namespace AcademicDocumentRagSystem.Services.DTOs.Courses
         public string? Description { get; set; }
 
         public bool Status { get; set; }
+
+        /// <summary>Teacher responsible for this course; null = unassigned.</summary>
+        public int? TeacherAccountId { get; set; }
     }
 }
