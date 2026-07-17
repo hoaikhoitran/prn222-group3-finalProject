@@ -249,15 +249,17 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
             await AddLogAsync(document.DocumentId, "Upload", "Success", accountId, email, null, null);
 
-            // MVC-side chunk preview from the saved file (no embeddings / vector data).
+            // MVC-side chunks from the saved file (no embeddings / vector data).
+            // Store the full chunk set so the detail page can inspect the whole document.
             var chunkOptions = await GetChunkPreviewOptionsAsync();
-            await GeneratePreviewChunksAsync(document, fullPath, extension, accountId, email, chunkOptions);
+            var fullDocumentChunkOptions = CreateFullDocumentChunkOptions(chunkOptions);
+            await GeneratePreviewChunksAsync(document, fullPath, extension, accountId, email, fullDocumentChunkOptions);
 
             // Existing RAG indexing call (unchanged contract).
             try
             {
                 var ragResponse = await _ragClient.IndexDocumentAsync(
-                    CreateRagIndexRequest(document, chunkOptions));
+                    CreateRagIndexRequest(document, fullDocumentChunkOptions));
 
                 document.IndexStatus = "Indexed";
                 document.TotalChunks = ragResponse.TotalChunks;
@@ -387,12 +389,13 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             await _chunkRepository.SaveChangesAsync();
 
             var chunkOptions = await GetChunkPreviewOptionsAsync();
-            await GeneratePreviewChunksAsync(document, document.FilePath, document.FileType, accountId, email, chunkOptions);
+            var fullDocumentChunkOptions = CreateFullDocumentChunkOptions(chunkOptions);
+            await GeneratePreviewChunksAsync(document, document.FilePath, document.FileType, accountId, email, fullDocumentChunkOptions);
 
             try
             {
                 var ragResponse = await _ragClient.IndexDocumentAsync(
-                    CreateRagIndexRequest(document, chunkOptions));
+                    CreateRagIndexRequest(document, fullDocumentChunkOptions));
 
                 document.IndexStatus = "Indexed";
                 document.TotalChunks = ragResponse.TotalChunks;
@@ -523,9 +526,18 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 ChunkSize = chunkOptions.ChunkSize,
                 ChunkOverlap = chunkOptions.ChunkOverlap,
                 MinChunkLength = chunkOptions.MinChunkLength,
-                // MaxPreviewChunks limits how much SQL preview/admin UI stores.
-                // RAG indexing must cover the whole PDF so later pages remain
-                // searchable and citations can still point to the right page.
+                MaxPreviewChunks = RagIndexMaxChunks
+            };
+        }
+
+        private static ChunkPreviewOptions CreateFullDocumentChunkOptions(ChunkPreviewOptions source)
+        {
+            return new ChunkPreviewOptions
+            {
+                ChunkMode = source.ChunkMode,
+                ChunkSize = source.ChunkSize,
+                ChunkOverlap = source.ChunkOverlap,
+                MinChunkLength = source.MinChunkLength,
                 MaxPreviewChunks = RagIndexMaxChunks
             };
         }
@@ -556,7 +568,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 document.FilePath,
                 document.FileType,
                 accountId,
-                document.SubmittedByEmail ?? string.Empty);
+                document.SubmittedByEmail ?? string.Empty,
+                CreateFullDocumentChunkOptions(await GetChunkPreviewOptionsAsync()));
         }
 
         private async Task<bool> TeacherCanAccessAsync(Document document, int? accountId, string roleName)

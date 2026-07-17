@@ -14,7 +14,7 @@ namespace AcademicDocumentRagSystem.Services.DTOs.Documents
 
         public int MinChunkLength { get; set; } = 80;
 
-        public int MaxPreviewChunks { get; set; } = 200;
+        public int MaxPreviewChunks { get; set; } = 10000;
 
         public bool IsActive { get; set; }
 

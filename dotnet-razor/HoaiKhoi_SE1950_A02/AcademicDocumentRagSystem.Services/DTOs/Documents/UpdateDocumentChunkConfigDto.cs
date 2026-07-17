@@ -12,16 +12,16 @@ namespace AcademicDocumentRagSystem.Services.DTOs.Documents
         public string ChunkMode { get; set; } = "Characters";
 
         [Range(1, 10000)]
-        public int ChunkSize { get; set; } = 1500;
+        public int ChunkSize { get; set; } = 800;
 
         [Range(0, 5000)]
-        public int ChunkOverlap { get; set; } = 250;
+        public int ChunkOverlap { get; set; } = 100;
 
         [Range(0, 2000)]
-        public int MinChunkLength { get; set; } = 80;
+        public int MinChunkLength { get; set; } = 50;
 
-        [Range(1, 1000)]
-        public int MaxPreviewChunks { get; set; } = 200;
+        [Range(1, 10000)]
+        public int MaxPreviewChunks { get; set; } = 10000;
 
         [StringLength(1000)]
         public string? Notes { get; set; }

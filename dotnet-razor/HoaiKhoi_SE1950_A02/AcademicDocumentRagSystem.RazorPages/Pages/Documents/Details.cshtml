@@ -88,9 +88,9 @@
         </div>
         <div class="col-md-4">
             <div class="edurag-card p-3">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Preview chunks</div>
+                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Stored chunks</div>
                 <div class="font-display fs-4 fw-bold">@previewChunkCount</div>
-                <div class="small text-muted-edurag">Generated from admin config</div>
+                <div class="small text-muted-edurag">Full text chunks generated from admin config</div>
             </div>
         </div>
         <div class="col-md-4">
@@ -113,39 +113,55 @@
 
     <div class="row g-4 mt-2" id="chunk-preview">
         <div class="col-lg-8">
-            <div class="edurag-card p-4">
-                <h2 class="fs-6 fw-semibold mb-1">Chunk preview (@previewChunkCount)</h2>
-                <div class="small text-muted-edurag mb-3">These are the actual preview chunks generated from the active admin chunk config.</div>
+            <div class="edurag-card p-0 overflow-hidden">
+                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 border-bottom p-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <h2 class="fs-5 fw-bold mb-0">Document Chunks</h2>
+                        <span class="badge bg-primary rounded-pill">@previewChunkCount</span>
+                    </div>
+                    <div class="small text-muted-edurag">Nội dung tách để phục vụ AI/RAG</div>
+                </div>
                 @if (doc.Chunks.Any())
                 {
-                    @foreach (var c in doc.Chunks.Take(10))
-                    {
-                        <div class="border rounded p-3 mb-2 small">
-                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
-                                <div class="fw-semibold">Chunk #@c.ChunkIndex @(c.PageNumber.HasValue ? $"- page {c.PageNumber}" : "")</div>
-                                <div class="text-muted-edurag">@c.CharCount chars @(c.TokenEstimate.HasValue ? $"- ~{c.TokenEstimate} tokens" : "")</div>
+                    <div class="d-flex flex-column gap-3 p-3" style="max-height:72vh;overflow:auto;">
+                        @foreach (var c in doc.Chunks)
+                        {
+                            <div class="border rounded-3 small overflow-hidden">
+                                <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 bg-light border-bottom px-3 py-2">
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <span class="badge bg-primary rounded-pill">#@(c.ChunkIndex + 1)</span>
+                                        @if (c.PageNumber.HasValue)
+                                        {
+                                            <span class="text-muted-edurag">Trang @c.PageNumber</span>
+                                        }
+                                    </div>
+                                    <div class="d-flex flex-wrap align-items-center gap-2">
+                                        <span class="status-badge-indexed">@(doc.IndexStatus == "Indexed" ? "Embedded" : "Preview")</span>
+                                        <span class="pill-filter">@c.CharCount ký tự</span>
+                                        @if (c.TokenEstimate.HasValue)
+                                        {
+                                            <span class="pill-filter">~@c.TokenEstimate tokens</span>
+                                        }
+                                    </div>
+                                </div>
+                                <div class="p-3" style="white-space:pre-wrap;">@c.ChunkText</div>
                             </div>
-                            <div style="white-space:pre-wrap;max-height:280px;overflow:auto;">@c.ChunkText</div>
-                        </div>
-                    }
-                    @if (doc.Chunks.Count > 10)
-                    {
-                        <p class="small text-muted-edurag mb-0">Showing first 10 of @doc.Chunks.Count preview chunks.</p>
-                    }
+                        }
+                    </div>
                 }
                 else if (!string.IsNullOrEmpty(doc.PreviewMessage))
                 {
-                    <p class="small text-muted-edurag mb-0">@doc.PreviewMessage</p>
+                    <p class="small text-muted-edurag m-3">@doc.PreviewMessage</p>
                 }
                 else if (doc.TotalChunks > 0)
                 {
-                    <p class="small text-muted-edurag mb-0">
+                    <p class="small text-muted-edurag m-3">
                         The indexing service returned @doc.TotalChunks chunks, but no readable preview text was extracted from the original file.
                     </p>
                 }
                 else
                 {
-                    <p class="small text-muted-edurag mb-0">No preview chunks yet.</p>
+                    <p class="small text-muted-edurag m-3">No preview chunks yet.</p>
                 }
             </div>
         </div>

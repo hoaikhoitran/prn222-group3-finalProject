@@ -29,12 +29,12 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             return new DocumentChunkConfigDto
             {
                 ChunkMode = "Characters",
-                ChunkSize = 1500,
-                ChunkOverlap = 250,
-                MinChunkLength = 80,
-                MaxPreviewChunks = 200,
+                ChunkSize = 800,
+                ChunkOverlap = 100,
+                MinChunkLength = 50,
+                MaxPreviewChunks = 10000,
                 IsActive = true,
-                Notes = "Default preview chunking configuration."
+                Notes = "Default recursive character chunking for fast page-aware previews."
             };
         }
 

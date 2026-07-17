@@ -26,8 +26,8 @@ from typing import Any
 
 
 SUPPORTED_CHUNK_MODES = {"Characters", "Words", "Paragraph"}
-DEFAULT_CHUNK_SIZE = 1500
-DEFAULT_CHUNK_OVERLAP = 250
+DEFAULT_CHUNK_SIZE = 800
+DEFAULT_CHUNK_OVERLAP = 100
 
 
 def _normalize_mode(mode: str | None) -> str:

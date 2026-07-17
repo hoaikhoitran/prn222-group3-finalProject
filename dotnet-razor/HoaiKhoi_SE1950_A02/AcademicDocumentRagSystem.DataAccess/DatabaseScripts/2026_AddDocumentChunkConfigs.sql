@@ -25,7 +25,7 @@ BEGIN
         CONSTRAINT CK_DocumentChunkConfigs_MinChunkLength
             CHECK (MinChunkLength >= 0),
         CONSTRAINT CK_DocumentChunkConfigs_MaxPreviewChunks
-            CHECK (MaxPreviewChunks BETWEEN 1 AND 1000),
+            CHECK (MaxPreviewChunks BETWEEN 1 AND 10000),
         CONSTRAINT FK_DocumentChunkConfigs_Accounts
             FOREIGN KEY (UpdatedByAccountId) REFERENCES dbo.Accounts(AccountId)
             ON DELETE SET NULL
@@ -43,8 +43,35 @@ BEGIN
     INSERT INTO dbo.DocumentChunkConfigs
         (ChunkMode, ChunkSize, ChunkOverlap, MinChunkLength, MaxPreviewChunks, IsActive, Notes)
     VALUES
-        (N'Characters', 1500, 250, 80, 200, 1,
-         N'Default configuration matching the original preview chunking behavior.');
+        (N'Characters', 800, 100, 50, 10000, 1,
+         N'Default recursive character chunking for fast page-aware previews.');
+END;
+
+IF OBJECT_ID(N'dbo.DocumentChunkConfigs', N'U') IS NOT NULL
+    AND EXISTS
+    (
+        SELECT 1
+        FROM sys.check_constraints
+        WHERE name = N'CK_DocumentChunkConfigs_MaxPreviewChunks'
+            AND parent_object_id = OBJECT_ID(N'dbo.DocumentChunkConfigs')
+    )
+BEGIN
+    ALTER TABLE dbo.DocumentChunkConfigs
+        DROP CONSTRAINT CK_DocumentChunkConfigs_MaxPreviewChunks;
+END;
+
+IF OBJECT_ID(N'dbo.DocumentChunkConfigs', N'U') IS NOT NULL
+    AND NOT EXISTS
+    (
+        SELECT 1
+        FROM sys.check_constraints
+        WHERE name = N'CK_DocumentChunkConfigs_MaxPreviewChunks'
+            AND parent_object_id = OBJECT_ID(N'dbo.DocumentChunkConfigs')
+    )
+BEGIN
+    ALTER TABLE dbo.DocumentChunkConfigs
+        ADD CONSTRAINT CK_DocumentChunkConfigs_MaxPreviewChunks
+        CHECK (MaxPreviewChunks BETWEEN 1 AND 10000);
 END;
 
 ;WITH RankedActiveConfigs AS
