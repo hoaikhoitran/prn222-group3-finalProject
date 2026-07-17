@@ -20,6 +20,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
     public class DocumentService : IDocumentService
     {
         private const int TeacherRole = 2;
+        private const int RagIndexMaxChunks = 10000;
 
         private const string WrongCourseMessage =
             "Bạn không có quyền upload tài liệu cho môn học này.";
@@ -248,26 +249,17 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
             await AddLogAsync(document.DocumentId, "Upload", "Success", accountId, email, null, null);
 
-            // MVC-side chunk preview from the saved file (no embeddings / vector data).
+            // MVC-side chunks from the saved file (no embeddings / vector data).
+            // Store the full chunk set so the detail page can inspect the whole document.
             var chunkOptions = await GetChunkPreviewOptionsAsync();
-            await GeneratePreviewChunksAsync(document, fullPath, extension, accountId, email, chunkOptions);
+            var fullDocumentChunkOptions = CreateFullDocumentChunkOptions(chunkOptions);
+            await GeneratePreviewChunksAsync(document, fullPath, extension, accountId, email, fullDocumentChunkOptions);
 
             // Existing RAG indexing call (unchanged contract).
             try
             {
-                var ragResponse = await _ragClient.IndexDocumentAsync(new RagIndexRequest
-                {
-                    DocumentId = document.DocumentId.ToString(),
-                    CourseCode = document.CourseCode,
-                    Chapter = document.Chapter,
-                    FilePath = document.FilePath,
-                    FileName = document.OriginalFileName,
-                    ChunkMode = chunkOptions.ChunkMode,
-                    ChunkSize = chunkOptions.ChunkSize,
-                    ChunkOverlap = chunkOptions.ChunkOverlap,
-                    MinChunkLength = chunkOptions.MinChunkLength,
-                    MaxPreviewChunks = chunkOptions.MaxPreviewChunks
-                });
+                var ragResponse = await _ragClient.IndexDocumentAsync(
+                    CreateRagIndexRequest(document, fullDocumentChunkOptions));
 
                 document.IndexStatus = "Indexed";
                 document.TotalChunks = ragResponse.TotalChunks;
@@ -397,23 +389,13 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             await _chunkRepository.SaveChangesAsync();
 
             var chunkOptions = await GetChunkPreviewOptionsAsync();
-            await GeneratePreviewChunksAsync(document, document.FilePath, document.FileType, accountId, email, chunkOptions);
+            var fullDocumentChunkOptions = CreateFullDocumentChunkOptions(chunkOptions);
+            await GeneratePreviewChunksAsync(document, document.FilePath, document.FileType, accountId, email, fullDocumentChunkOptions);
 
             try
             {
-                var ragResponse = await _ragClient.IndexDocumentAsync(new RagIndexRequest
-                {
-                    DocumentId = document.DocumentId.ToString(),
-                    CourseCode = document.CourseCode,
-                    Chapter = document.Chapter,
-                    FilePath = document.FilePath,
-                    FileName = document.OriginalFileName,
-                    ChunkMode = chunkOptions.ChunkMode,
-                    ChunkSize = chunkOptions.ChunkSize,
-                    ChunkOverlap = chunkOptions.ChunkOverlap,
-                    MinChunkLength = chunkOptions.MinChunkLength,
-                    MaxPreviewChunks = chunkOptions.MaxPreviewChunks
-                });
+                var ragResponse = await _ragClient.IndexDocumentAsync(
+                    CreateRagIndexRequest(document, fullDocumentChunkOptions));
 
                 document.IndexStatus = "Indexed";
                 document.TotalChunks = ragResponse.TotalChunks;
@@ -529,6 +511,37 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             };
         }
 
+        private static RagIndexRequest CreateRagIndexRequest(
+            Document document,
+            ChunkPreviewOptions chunkOptions)
+        {
+            return new RagIndexRequest
+            {
+                DocumentId = document.DocumentId.ToString(),
+                CourseCode = document.CourseCode,
+                Chapter = document.Chapter,
+                FilePath = document.FilePath,
+                FileName = document.OriginalFileName,
+                ChunkMode = chunkOptions.ChunkMode,
+                ChunkSize = chunkOptions.ChunkSize,
+                ChunkOverlap = chunkOptions.ChunkOverlap,
+                MinChunkLength = chunkOptions.MinChunkLength,
+                MaxPreviewChunks = RagIndexMaxChunks
+            };
+        }
+
+        private static ChunkPreviewOptions CreateFullDocumentChunkOptions(ChunkPreviewOptions source)
+        {
+            return new ChunkPreviewOptions
+            {
+                ChunkMode = source.ChunkMode,
+                ChunkSize = source.ChunkSize,
+                ChunkOverlap = source.ChunkOverlap,
+                MinChunkLength = source.MinChunkLength,
+                MaxPreviewChunks = RagIndexMaxChunks
+            };
+        }
+
         /// <summary>
         /// Backfill SQL preview chunks when RAG indexing succeeded but preview rows
         /// were never stored (legacy uploads or failed preview at upload time).
@@ -555,7 +568,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 document.FilePath,
                 document.FileType,
                 accountId,
-                document.SubmittedByEmail ?? string.Empty);
+                document.SubmittedByEmail ?? string.Empty,
+                CreateFullDocumentChunkOptions(await GetChunkPreviewOptionsAsync()));
         }
 
         private async Task<bool> TeacherCanAccessAsync(Document document, int? accountId, string roleName)

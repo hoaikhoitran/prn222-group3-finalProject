@@ -39,13 +39,13 @@ namespace AcademicDocumentRagSystem.RazorPages.Pages.Documents
 
         public List<ChunkPresetViewModel> Presets { get; } = new()
         {
-            new("Balanced", "Characters", 1500, 250, 80, 200,
-                "Good default for mixed PDF, DOCX, PPTX, and TXT uploads."),
-            new("Precise Q&A", "Words", 280, 40, 60, 250,
+            new("Fast PDF / Reference", "Characters", 800, 100, 50, 10000,
+                "Fast page-aware recursive chunks for PDFs and source citation review."),
+            new("Precise Q&A", "Words", 280, 40, 60, 10000,
                 "Smaller semantic windows for focused retrieval and short answers."),
-            new("Lecture Notes", "Paragraph", 2, 0, 40, 200,
+            new("Lecture Notes", "Paragraph", 2, 0, 40, 10000,
                 "Keeps structured paragraphs together for notes and outlines."),
-            new("Dense Material", "Characters", 2200, 300, 120, 180,
+            new("Dense Material", "Characters", 2200, 300, 120, 10000,
                 "Larger chunks for long technical material with more surrounding context.")
         };
 

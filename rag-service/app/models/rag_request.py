@@ -68,11 +68,15 @@ class IndexDocumentRequest(BaseModel):
         examples=[80],
     )
     maxPreviewChunks: int = Field(
-        default=200,
+        default=10000,
         ge=1,
-        le=1000,
-        description="Maximum number of chunks to index for this document.",
-        examples=[200],
+        le=10000,
+        description=(
+            "Maximum number of chunks to index for this document. The field "
+            "keeps the legacy name used by the .NET app, but it controls the "
+            "RAG index cap, not only UI preview."
+        ),
+        examples=[10000],
     )
 
 

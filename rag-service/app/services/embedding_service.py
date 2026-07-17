@@ -25,8 +25,12 @@ We MUST load it once at startup and reuse it for every request.
 
 from __future__ import annotations
 
+import hashlib
 import logging
+import math
+import re
 import threading
+import unicodedata
 from typing import Any
 
 from app.core.config import settings
@@ -52,6 +56,90 @@ class EmbeddingService:
         self._model: Any = None
         self._backend: str = ""  # "flag" or "sentence-transformers"
         self._load_lock = threading.Lock()
+
+    # ------------------------------------------------------------------
+    # Fast local feature-hashing backend
+    # ------------------------------------------------------------------
+    @staticmethod
+    def _uses_hashing_backend() -> bool:
+        return settings.EMBEDDING_BACKEND.strip().lower() in {
+            "hash",
+            "hashing",
+            "feature-hashing",
+            "local",
+        }
+
+    @staticmethod
+    def _remove_diacritics(text: str) -> str:
+        normalized = unicodedata.normalize("NFD", text or "")
+        return "".join(
+            char
+            for char in normalized
+            if unicodedata.category(char) != "Mn"
+        ).replace("đ", "d").replace("Đ", "D")
+
+    @classmethod
+    def _tokenize_for_hashing(cls, text: str) -> list[str]:
+        lower = (text or "").lower()
+        no_accent = cls._remove_diacritics(lower)
+
+        raw_words = re.findall(r"[\w]+", lower, flags=re.UNICODE)
+        no_accent_words = re.findall(r"[\w]+", no_accent, flags=re.UNICODE)
+
+        stop_words = {
+            "và", "va", "của", "cua", "là", "la", "có", "co", "trong",
+            "cho", "với", "voi", "các", "cac", "được", "duoc", "không",
+            "khong", "này", "nay", "đó", "do", "một", "mot", "những",
+            "nhung", "để", "de", "thì", "thi", "mà", "ma", "khi", "về",
+            "ve", "the", "is", "in", "of", "and", "to", "a", "an", "for",
+            "on", "at", "by", "with", "as",
+        }
+
+        tokens: list[str] = []
+        paired_words: list[tuple[str, str]] = []
+
+        for index, word in enumerate(raw_words):
+            if len(word) < 2:
+                continue
+
+            plain = no_accent_words[index] if index < len(no_accent_words) else word
+            if word in stop_words or plain in stop_words:
+                continue
+
+            paired_words.append((word, plain))
+            tokens.append(word)
+            if plain != word:
+                tokens.append(plain)
+
+        for index in range(len(paired_words) - 1):
+            left = paired_words[index]
+            right = paired_words[index + 1]
+            tokens.append(f"{left[0]}_{right[0]}")
+            tokens.append(f"{left[1]}_{right[1]}")
+
+        return list(dict.fromkeys(tokens))
+
+    @classmethod
+    def _embed_text_hashing(cls, text: str) -> list[float]:
+        dimension = max(128, int(settings.EMBEDDING_HASH_DIMENSION))
+        vector = [0.0] * dimension
+        tokens = cls._tokenize_for_hashing(text)
+
+        if not tokens:
+            return vector
+
+        for token in tokens:
+            digest = hashlib.blake2b(token.encode("utf-8"), digest_size=8).digest()
+            value = int.from_bytes(digest, byteorder="big", signed=False)
+            index = value % dimension
+            sign = 1.0 if (value & 1) == 0 else -1.0
+            vector[index] += sign
+
+        magnitude = math.sqrt(sum(value * value for value in vector))
+        if magnitude <= 1e-12:
+            return vector
+
+        return [value / magnitude for value in vector]
 
     # ------------------------------------------------------------------
     # Singleton accessor
@@ -127,6 +215,10 @@ class EmbeddingService:
         """
         if not texts:
             return []
+
+        if self._uses_hashing_backend():
+            logger.debug("Embedding %d texts with local feature hashing.", len(texts))
+            return [self._embed_text_hashing(text) for text in texts]
 
         self._ensure_loaded()
 

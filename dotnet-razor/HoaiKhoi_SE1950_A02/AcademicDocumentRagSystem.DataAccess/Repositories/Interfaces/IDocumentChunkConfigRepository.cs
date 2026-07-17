@@ -14,6 +14,8 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Interfaces
 
         Task AddAsync(DocumentChunkConfig config);
 
+        Task AddAsOnlyActiveAsync(DocumentChunkConfig config);
+
         void Update(DocumentChunkConfig config);
 
         Task DeactivateAllAsync();

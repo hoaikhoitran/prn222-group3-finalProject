@@ -81,16 +81,28 @@ class Settings(BaseSettings):
     )
 
     # --- Embedding model ----------------------------------------------
+    EMBEDDING_BACKEND: str = Field(
+        default="hashing",
+        description=(
+            "Embedding backend: hashing for fast local/demo indexing, "
+            "or model for BAAI/sentence-transformers embeddings."
+        ),
+    )
     EMBEDDING_MODEL_NAME: str = Field(
         default="BAAI/bge-m3",
         description="HuggingFace ID of the embedding model.",
     )
+    EMBEDDING_HASH_DIMENSION: int = Field(
+        default=1024,
+        ge=128,
+        description="Vector dimension used by the local feature-hashing backend.",
+    )
 
     # --- Chunking configuration ---------------------------------------
-    # The defaults match the requirements: 1500 / 250 / 5.
-    CHUNK_SIZE: int = Field(default=1500, description="Characters per chunk.")
+    # Defaults follow the fast page-aware flow used for local demos.
+    CHUNK_SIZE: int = Field(default=800, description="Characters per chunk.")
     CHUNK_OVERLAP: int = Field(
-        default=250,
+        default=100,
         description="Characters shared between two neighboring chunks.",
     )
     DEFAULT_TOP_K: int = Field(
@@ -105,7 +117,7 @@ class Settings(BaseSettings):
     #   smaller distance => more similar
     #   keep only chunks with distance <= RAG_MAX_DISTANCE.
     RAG_MAX_DISTANCE: float = Field(
-        default=0.45,
+        default=0.65,
         ge=0.0,
         description=(
             "Maximum cosine distance for a chunk to be considered relevant. "
