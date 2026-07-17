@@ -31,7 +31,13 @@
         @foreach (var cit in sources)
         {
             var fileLabel = string.IsNullOrWhiteSpace(cit.FileName) ? "Tài liệu" : cit.FileName;
-            var locLabel = $"Chunk {cit.ChunkIndex + 1}";
+            // PPTX "pages" are slides — never call a slide a PDF page.
+            var isSlide = (cit.FileName ?? string.Empty).TrimEnd().EndsWith(".pptx", StringComparison.OrdinalIgnoreCase);
+            var pageWord = isSlide ? "Slide" : "Trang";
+            var pageLabel = cit.PageNumber.HasValue ? $"{pageWord} {cit.PageNumber}" : null;
+            var locLabel = pageLabel != null
+                ? $"{pageLabel} · Chunk {cit.ChunkIndex + 1}"
+                : $"Chunk {cit.ChunkIndex + 1}";
             var metaLabel = $"{fileLabel} · {locLabel}";
             var preview = string.IsNullOrWhiteSpace(cit.Text)
                 ? "Không có nội dung trích dẫn cho nguồn này."
@@ -66,7 +72,7 @@
                         }
                         @if (cit.PageNumber.HasValue)
                         {
-                            <div><span class="fw-semibold">Trang:</span> @cit.PageNumber</div>
+                            <div><span class="fw-semibold">@(pageWord):</span> @cit.PageNumber</div>
                         }
                         <div><span class="fw-semibold">Chunk số:</span> @(cit.ChunkIndex + 1)</div>
                         @if (hasUploaderName && hasUploaderEmail)

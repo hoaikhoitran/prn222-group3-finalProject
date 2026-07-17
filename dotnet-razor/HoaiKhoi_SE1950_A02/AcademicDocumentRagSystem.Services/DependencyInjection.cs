@@ -28,7 +28,7 @@ namespace AcademicDocumentRagSystem.Services
                 var baseUrl = configuration["RagService:BaseUrl"];
 
                 client.BaseAddress = new Uri(baseUrl!);
-                client.Timeout = TimeSpan.FromSeconds(180);
+                client.Timeout = TimeSpan.FromMinutes(15);
             });
 
             services.AddScoped<ICourseRepository, CourseRepository>();

@@ -147,15 +147,6 @@
                 </div>
             </div>
 
-            <div class="edurag-card p-4">
-                <h3 class="font-display fs-5 fw-bold mb-1">Tổng token hệ thống</h3>
-                <p class="text-muted-edurag small mb-3">Tổng token Gemini và token nội dung chunk ước lượng.</p>
-                <div class="p-3 rounded-3" style="background-color: #eef9f5;">
-                    <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalSystemTokens.ToString("N0") <span class="fs-6 text-secondary fw-normal">tokens</span></div>
-                    <div class="small text-muted-edurag mt-1">= @Model.Statistics.TotalLlmTokens.ToString("N0") Gemini + @Model.Statistics.ChunkTokenEstimate.ToString("N0") chunk ước lượng</div>
-                </div>
-            </div>
-
         </div>
 
         <div class="col-12 col-lg-8 d-flex flex-column gap-4">
@@ -264,10 +255,61 @@
                 </div>
             </div>
         </div>
+
+        <div class="col-12">
+            <div class="edurag-card token-timeline-card">
+                <h3 class="font-display fs-5 fw-bold mb-1">Tổng token hệ thống theo thời gian</h3>
+                <p class="text-muted-edurag small mb-3">Tổng token Gemini và token nội dung chunk ước lượng.</p>
+                <div class="p-3 rounded-3 mb-3" style="background-color: #eef9f5;">
+                    <div class="fs-3 fw-bold text-dark">@Model.Statistics.TotalSystemTokens.ToString("N0") <span class="fs-6 text-secondary fw-normal">tokens</span></div>
+                    <div class="small text-muted-edurag mt-1">= @Model.Statistics.TotalLlmTokens.ToString("N0") Gemini + @Model.Statistics.ChunkTokenEstimate.ToString("N0") chunk ước lượng</div>
+                </div>
+                <div class="token-timeline-chart-container">
+                    <canvas id="token-timeline-chart" aria-label="Biểu đồ tổng token hệ thống theo thời gian" role="img"></canvas>
+                    <div id="token-timeline-empty" class="text-center text-muted-edurag small py-4" hidden>
+                        Chưa có dữ liệu token trong phạm vi đang xem.
+                    </div>
+                </div>
+                <script type="application/json" id="token-timeline-data">@Json.Serialize(Model.Statistics.TokenTimeline)</script>
+            </div>
+        </div>
     </div>
 </div>
 
 <style>
+    .token-timeline-card {
+        width: 100%;
+        min-height: 620px;
+        padding: 30px;
+    }
+
+    .token-timeline-chart-container {
+        position: relative;
+        width: 100%;
+        height: 430px;
+        margin-top: 28px;
+    }
+
+    @@media (max-width: 991.98px) {
+        .token-timeline-card {
+            min-height: 540px;
+        }
+
+        .token-timeline-chart-container {
+            height: 360px;
+        }
+    }
+
+    @@media (max-width: 575.98px) {
+        .token-timeline-card {
+            min-height: auto;
+        }
+
+        .token-timeline-chart-container {
+            height: 300px;
+        }
+    }
+
     .style-card-stat {
         transition: transform 0.2s ease;
     }
@@ -356,6 +398,85 @@
                                 var value = ctx.parsed;
                                 var pct = Math.round((value / total) * 100);
                                 return " " + value + " tài liệu (" + pct + "%)";
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    })();
+</script>
+
+<script>
+    // System-token timeline. Data is server-rendered into a JSON island by
+    // @@Json.Serialize (safe escaping) — no hand-built JSON strings here.
+    (function () {
+        var canvas = document.getElementById("token-timeline-chart");
+        var emptyNote = document.getElementById("token-timeline-empty");
+        var dataNode = document.getElementById("token-timeline-data");
+        if (!canvas || !dataNode || typeof Chart === "undefined") { return; }
+
+        var points = [];
+        try {
+            points = JSON.parse(dataNode.textContent) || [];
+        } catch (err) {
+            points = [];
+        }
+
+        var hasData = points.some(function (p) { return (p.totalSystemTokens || 0) > 0; });
+        if (points.length === 0 || !hasData) {
+            canvas.hidden = true;
+            if (emptyNote) { emptyNote.hidden = false; }
+            return;
+        }
+
+        function formatTokens(value) {
+            return Number(value || 0).toLocaleString("vi-VN");
+        }
+
+        new Chart(canvas, {
+            type: "line",
+            data: {
+                labels: points.map(function (p) { return p.label; }),
+                datasets: [{
+                    label: "Tổng token hệ thống",
+                    data: points.map(function (p) { return p.totalSystemTokens; }),
+                    borderColor: "#0ea5e9",
+                    backgroundColor: "rgba(14, 165, 233, 0.12)",
+                    fill: true,
+                    tension: 0.25,
+                    pointRadius: 3,
+                    pointHoverRadius: 6,
+                    borderWidth: 2
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { mode: "index", intersect: false },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            font: { size: 12 },
+                            callback: function (value) { return formatTokens(value); }
+                        }
+                    },
+                    x: {
+                        ticks: { maxTicksLimit: 16, autoSkip: true, font: { size: 12 } }
+                    }
+                },
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: function (ctx) {
+                                var p = points[ctx.dataIndex] || {};
+                                return [
+                                    " Tổng token hệ thống: " + formatTokens(p.totalSystemTokens),
+                                    " Token Gemini: " + formatTokens(p.llmTokens),
+                                    " Token chunk ước lượng: " + formatTokens(p.chunkTokenEstimate)
+                                ];
                             }
                         }
                     }
