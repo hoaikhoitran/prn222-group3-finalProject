@@ -69,9 +69,121 @@ public class DashboardService : IDashboardService
 
         stats.CourseReports = await BuildCourseReportsAsync(start, end);
         stats.UserTokenReports = await BuildUserTokenReportsAsync(start, end);
+        stats.TokenTimeline = await BuildTokenTimelineAsync(filter);
         stats.AvailableYears = await BuildAvailableYearsAsync();
 
         return stats;
+    }
+
+    /// <summary>
+    /// System-token series for the selected filter. Gemini tokens are grouped
+    /// by ChatMessage.CreatedAt and chunk estimates by DocumentChunk.CreatedAt
+    /// in two separate queries (never a join, so nothing can double count),
+    /// then merged per bucket with zero-fill for empty periods.
+    /// Buckets: days of the month when a month is selected, the 12 months of
+    /// the year when only a year is selected, otherwise every month from the
+    /// first data point to the current UTC month.
+    /// </summary>
+    private async Task<List<TokenTimelinePointDto>> BuildTokenTimelineAsync(DashboardFilterDto filter)
+    {
+        var start = filter.UtcStart;
+        var end = filter.UtcEnd;
+
+        var messages = ApplyPeriod(_context.ChatMessages.AsQueryable(), m => m.CreatedAt, start, end);
+        var chunks = ApplyPeriod(_context.DocumentChunks.AsQueryable(), c => c.CreatedAt, start, end);
+
+        if (filter.Year.HasValue && filter.Month.HasValue)
+        {
+            // Daily buckets inside one month. The period filter already
+            // bounds both queries to [month start, next month start).
+            var llmByDay = await messages
+                .GroupBy(m => m.CreatedAt.Day)
+                .Select(g => new { g.Key, Tokens = g.Sum(m => (long)(m.TotalTokens ?? 0)) })
+                .ToDictionaryAsync(x => x.Key, x => x.Tokens);
+
+            var chunkByDay = await chunks
+                .GroupBy(c => c.CreatedAt.Day)
+                .Select(g => new { g.Key, Tokens = g.Sum(c => (long)(c.TokenEstimate ?? 0)) })
+                .ToDictionaryAsync(x => x.Key, x => x.Tokens);
+
+            var year = filter.Year.Value;
+            var month = filter.Month.Value;
+            var daysInMonth = DateTime.DaysInMonth(year, month);
+            var points = new List<TokenTimelinePointDto>(daysInMonth);
+
+            for (var day = 1; day <= daysInMonth; day++)
+            {
+                var llm = llmByDay.TryGetValue(day, out var l) ? l : 0L;
+                var chunk = chunkByDay.TryGetValue(day, out var c) ? c : 0L;
+                points.Add(new TokenTimelinePointDto
+                {
+                    Label = $"{day:00}/{month:00}",
+                    PeriodStart = new DateTime(year, month, day, 0, 0, 0, DateTimeKind.Utc),
+                    LlmTokens = llm,
+                    ChunkTokenEstimate = chunk,
+                    TotalSystemTokens = llm + chunk
+                });
+            }
+
+            return points;
+        }
+
+        // Monthly buckets (a whole year, or all time).
+        var llmByMonth = await messages
+            .GroupBy(m => new { m.CreatedAt.Year, m.CreatedAt.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Tokens = g.Sum(m => (long)(m.TotalTokens ?? 0)) })
+            .ToListAsync();
+
+        var chunkByMonth = await chunks
+            .GroupBy(c => new { c.CreatedAt.Year, c.CreatedAt.Month })
+            .Select(g => new { g.Key.Year, g.Key.Month, Tokens = g.Sum(c => (long)(c.TokenEstimate ?? 0)) })
+            .ToListAsync();
+
+        var llmLookup = llmByMonth.ToDictionary(x => (x.Year, x.Month), x => x.Tokens);
+        var chunkLookup = chunkByMonth.ToDictionary(x => (x.Year, x.Month), x => x.Tokens);
+
+        DateTime firstBucket;
+        DateTime lastBucket;
+
+        if (filter.Year.HasValue)
+        {
+            firstBucket = new DateTime(filter.Year.Value, 1, 1, 0, 0, 0, DateTimeKind.Utc);
+            lastBucket = new DateTime(filter.Year.Value, 12, 1, 0, 0, 0, DateTimeKind.Utc);
+        }
+        else
+        {
+            // All time: from the first month that has data up to the current
+            // UTC month. No data at all -> empty series (UI shows its empty state).
+            if (llmLookup.Count == 0 && chunkLookup.Count == 0)
+            {
+                return new List<TokenTimelinePointDto>();
+            }
+
+            var earliest = llmLookup.Keys.Concat(chunkLookup.Keys)
+                .OrderBy(k => k.Item1).ThenBy(k => k.Item2)
+                .First();
+            firstBucket = new DateTime(earliest.Item1, earliest.Item2, 1, 0, 0, 0, DateTimeKind.Utc);
+            var now = DateTime.UtcNow;
+            lastBucket = new DateTime(now.Year, now.Month, 1, 0, 0, 0, DateTimeKind.Utc);
+        }
+
+        var timeline = new List<TokenTimelinePointDto>();
+        for (var bucket = firstBucket; bucket <= lastBucket; bucket = bucket.AddMonths(1))
+        {
+            var key = (bucket.Year, bucket.Month);
+            var llm = llmLookup.TryGetValue(key, out var l2) ? l2 : 0L;
+            var chunk = chunkLookup.TryGetValue(key, out var c2) ? c2 : 0L;
+            timeline.Add(new TokenTimelinePointDto
+            {
+                Label = $"{bucket.Month:00}/{bucket.Year}",
+                PeriodStart = bucket,
+                LlmTokens = llm,
+                ChunkTokenEstimate = chunk,
+                TotalSystemTokens = llm + chunk
+            });
+        }
+
+        return timeline;
     }
 
     private static IQueryable<T> ApplyPeriod<T>(

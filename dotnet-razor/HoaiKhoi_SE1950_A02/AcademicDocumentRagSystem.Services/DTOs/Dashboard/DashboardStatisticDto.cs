@@ -43,6 +43,13 @@ public class DashboardStatisticDto
     public long TotalSystemTokens =>
         TotalLlmTokens + ChunkTokenEstimate;
 
+    /// <summary>
+    /// System-token series over time for the selected filter (daily buckets
+    /// for a month, monthly buckets otherwise). Purely additive — computed
+    /// from the same period filter and never alters the totals above.
+    /// </summary>
+    public List<TokenTimelinePointDto> TokenTimeline { get; set; } = new();
+
     public List<CourseActivityReportDto> CourseReports { get; set; } = new();
 
     /// <summary>Real token usage per account, sorted by TotalTokens descending.</summary>

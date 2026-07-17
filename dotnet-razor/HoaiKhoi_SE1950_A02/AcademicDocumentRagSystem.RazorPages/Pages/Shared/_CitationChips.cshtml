@@ -69,7 +69,7 @@
                         }
                         @if (cit.PageNumber.HasValue)
                         {
-                            <div><span class="fw-semibold">Trang:</span> @cit.PageNumber</div>
+                            <div><span class="fw-semibold">@(pageWord):</span> @cit.PageNumber</div>
                         }
                         <div><span class="fw-semibold">Chunk số:</span> @(cit.ChunkIndex + 1)</div>
                         @if (hasUploaderName && hasUploaderEmail)
