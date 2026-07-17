@@ -46,3 +46,31 @@ BEGIN
         (N'Characters', 1500, 250, 80, 200, 1,
          N'Default configuration matching the original preview chunking behavior.');
 END;
+
+;WITH RankedActiveConfigs AS
+(
+    SELECT
+        DocumentChunkConfigId,
+        ROW_NUMBER() OVER (ORDER BY UpdatedAt DESC, DocumentChunkConfigId DESC) AS RowNumber
+    FROM dbo.DocumentChunkConfigs
+    WHERE IsActive = 1
+)
+UPDATE config
+SET IsActive = 0
+FROM dbo.DocumentChunkConfigs config
+INNER JOIN RankedActiveConfigs ranked
+    ON ranked.DocumentChunkConfigId = config.DocumentChunkConfigId
+WHERE ranked.RowNumber > 1;
+
+IF NOT EXISTS
+(
+    SELECT 1
+    FROM sys.indexes
+    WHERE name = N'UX_DocumentChunkConfigs_OnlyOneActive'
+        AND object_id = OBJECT_ID(N'dbo.DocumentChunkConfigs')
+)
+BEGIN
+    CREATE UNIQUE INDEX UX_DocumentChunkConfigs_OnlyOneActive
+        ON dbo.DocumentChunkConfigs(IsActive)
+        WHERE IsActive = 1;
+END;

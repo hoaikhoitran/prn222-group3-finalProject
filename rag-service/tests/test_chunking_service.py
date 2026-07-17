@@ -138,3 +138,25 @@ def test_max_chunks_caps_output() -> None:
 
     assert len(chunks) == 3
     assert [c["chunkIndex"] for c in chunks] == [0, 1, 2]
+
+
+def test_max_chunks_allows_large_pdf_indexes() -> None:
+    """Large PDFs must not be silently truncated at the old 1000 chunk cap."""
+    pages = [
+        {
+            "text": " ".join(str(i) for i in range(6000)),
+            "pageNumber": 1,
+            "source": "large.pdf",
+        }
+    ]
+
+    chunks = chunk_pages(
+        pages,
+        chunk_mode="Words",
+        chunk_size=5,
+        chunk_overlap=0,
+        max_chunks=1200,
+    )
+
+    assert len(chunks) == 1200
+    assert chunks[-1]["chunkIndex"] == 1199

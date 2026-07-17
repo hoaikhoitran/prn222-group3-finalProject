@@ -20,6 +20,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
     public class DocumentService : IDocumentService
     {
         private const int TeacherRole = 2;
+        private const int RagIndexMaxChunks = 10000;
 
         private const string WrongCourseMessage =
             "Bạn không có quyền upload tài liệu cho môn học này.";
@@ -255,19 +256,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             // Existing RAG indexing call (unchanged contract).
             try
             {
-                var ragResponse = await _ragClient.IndexDocumentAsync(new RagIndexRequest
-                {
-                    DocumentId = document.DocumentId.ToString(),
-                    CourseCode = document.CourseCode,
-                    Chapter = document.Chapter,
-                    FilePath = document.FilePath,
-                    FileName = document.OriginalFileName,
-                    ChunkMode = chunkOptions.ChunkMode,
-                    ChunkSize = chunkOptions.ChunkSize,
-                    ChunkOverlap = chunkOptions.ChunkOverlap,
-                    MinChunkLength = chunkOptions.MinChunkLength,
-                    MaxPreviewChunks = chunkOptions.MaxPreviewChunks
-                });
+                var ragResponse = await _ragClient.IndexDocumentAsync(
+                    CreateRagIndexRequest(document, chunkOptions));
 
                 document.IndexStatus = "Indexed";
                 document.TotalChunks = ragResponse.TotalChunks;
@@ -401,19 +391,8 @@ namespace AcademicDocumentRagSystem.Services.Implementations
 
             try
             {
-                var ragResponse = await _ragClient.IndexDocumentAsync(new RagIndexRequest
-                {
-                    DocumentId = document.DocumentId.ToString(),
-                    CourseCode = document.CourseCode,
-                    Chapter = document.Chapter,
-                    FilePath = document.FilePath,
-                    FileName = document.OriginalFileName,
-                    ChunkMode = chunkOptions.ChunkMode,
-                    ChunkSize = chunkOptions.ChunkSize,
-                    ChunkOverlap = chunkOptions.ChunkOverlap,
-                    MinChunkLength = chunkOptions.MinChunkLength,
-                    MaxPreviewChunks = chunkOptions.MaxPreviewChunks
-                });
+                var ragResponse = await _ragClient.IndexDocumentAsync(
+                    CreateRagIndexRequest(document, chunkOptions));
 
                 document.IndexStatus = "Indexed";
                 document.TotalChunks = ragResponse.TotalChunks;
@@ -526,6 +505,28 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 ChunkOverlap = config.ChunkOverlap,
                 MinChunkLength = config.MinChunkLength,
                 MaxPreviewChunks = config.MaxPreviewChunks
+            };
+        }
+
+        private static RagIndexRequest CreateRagIndexRequest(
+            Document document,
+            ChunkPreviewOptions chunkOptions)
+        {
+            return new RagIndexRequest
+            {
+                DocumentId = document.DocumentId.ToString(),
+                CourseCode = document.CourseCode,
+                Chapter = document.Chapter,
+                FilePath = document.FilePath,
+                FileName = document.OriginalFileName,
+                ChunkMode = chunkOptions.ChunkMode,
+                ChunkSize = chunkOptions.ChunkSize,
+                ChunkOverlap = chunkOptions.ChunkOverlap,
+                MinChunkLength = chunkOptions.MinChunkLength,
+                // MaxPreviewChunks limits how much SQL preview/admin UI stores.
+                // RAG indexing must cover the whole PDF so later pages remain
+                // searchable and citations can still point to the right page.
+                MaxPreviewChunks = RagIndexMaxChunks
             };
         }
 

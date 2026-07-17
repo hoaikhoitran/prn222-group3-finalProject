@@ -72,7 +72,7 @@ def _normalize_options(
         "size": size,
         "overlap": overlap,
         "min_length": max(0, int(min_chunk_length or 0)),
-        "max_chunks": max(1, min(int(max_chunks or 1000), 1000)),
+        "max_chunks": max(1, min(int(max_chunks or 10000), 10000)),
     }
 
 

@@ -48,8 +48,6 @@ namespace AcademicDocumentRagSystem.Services.Implementations
             UpdateDocumentChunkConfigDto dto,
             int? updatedByAccountId)
         {
-            await _configRepository.DeactivateAllAsync();
-
             var now = DateTime.UtcNow;
             var config = new DocumentChunkConfig
             {
@@ -65,8 +63,7 @@ namespace AcademicDocumentRagSystem.Services.Implementations
                 UpdatedByAccountId = updatedByAccountId
             };
 
-            await _configRepository.AddAsync(config);
-            await _configRepository.SaveChangesAsync();
+            await _configRepository.AddAsOnlyActiveAsync(config);
 
             return MapToDto(config);
         }

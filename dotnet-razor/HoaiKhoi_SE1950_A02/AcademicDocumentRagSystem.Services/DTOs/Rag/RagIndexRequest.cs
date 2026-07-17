@@ -32,5 +32,5 @@ public class RagIndexRequest
     public int MinChunkLength { get; set; } = 80;
 
     [JsonPropertyName("maxPreviewChunks")]
-    public int MaxPreviewChunks { get; set; } = 200;
+    public int MaxPreviewChunks { get; set; } = 10000;
 }
