@@ -283,7 +283,7 @@ namespace AcademicDocumentRagSystem.Services.Chunking
                 ChunkSize = size,
                 ChunkOverlap = overlap,
                 MinChunkLength = Math.Max(0, source.MinChunkLength),
-                MaxPreviewChunks = Math.Clamp(source.MaxPreviewChunks, 1, 1000)
+                MaxPreviewChunks = Math.Clamp(source.MaxPreviewChunks, 1, 10000)
             };
         }
 

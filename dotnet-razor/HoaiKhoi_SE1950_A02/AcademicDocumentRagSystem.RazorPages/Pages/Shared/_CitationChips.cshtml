@@ -31,7 +31,10 @@
         @foreach (var cit in sources)
         {
             var fileLabel = string.IsNullOrWhiteSpace(cit.FileName) ? "Tài liệu" : cit.FileName;
-            var locLabel = $"Chunk {cit.ChunkIndex + 1}";
+            var chunkLabel = $"chunk {cit.ChunkIndex + 1}";
+            var locLabel = cit.PageNumber.HasValue
+                ? $"trang {cit.PageNumber} · {chunkLabel}"
+                : chunkLabel;
             var metaLabel = $"{fileLabel} · {locLabel}";
             var preview = string.IsNullOrWhiteSpace(cit.Text)
                 ? "Không có nội dung trích dẫn cho nguồn này."

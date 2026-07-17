@@ -1,6 +1,7 @@
 using AcademicDocumentRagSystem.DataAccess.Models;
 using AcademicDocumentRagSystem.DataAccess.Repositories.Interfaces;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -44,6 +45,21 @@ namespace AcademicDocumentRagSystem.DataAccess.Repositories.Implementations
         public async Task AddAsync(DocumentChunkConfig config)
         {
             await _context.DocumentChunkConfigs.AddAsync(config);
+        }
+
+        public async Task AddAsOnlyActiveAsync(DocumentChunkConfig config)
+        {
+            await using var transaction =
+                await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
+
+            await _context.Database.ExecuteSqlRawAsync(
+                "UPDATE dbo.DocumentChunkConfigs WITH (TABLOCKX, HOLDLOCK) SET IsActive = 0 WHERE IsActive = 1");
+
+            config.IsActive = true;
+            await _context.DocumentChunkConfigs.AddAsync(config);
+            await _context.SaveChangesAsync();
+
+            await transaction.CommitAsync();
         }
 
         public void Update(DocumentChunkConfig config)

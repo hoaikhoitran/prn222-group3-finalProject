@@ -4,12 +4,17 @@
     ViewData["Title"] = Model.Details.Title;
     Layout = "_LayoutDashboard";
     var doc = Model.Details;
-    var roleName = Model.RoleName;
     var previewChunkCount = doc.Chunks.Count;
     var indexResult = Request.Query["indexResult"].ToString();
+    var fileType = (doc.FileType ?? string.Empty).TrimStart('.').ToUpperInvariant();
+    var statusText = doc.IndexStatus == "Indexed" ? "&#272;&#227; Index" : doc.IndexStatus;
+    var fileSizeDisplay = doc.FileSize >= 1024 * 1024
+        ? $"{doc.FileSize / 1024d / 1024d:0.##} MB"
+        : $"{Math.Max(1, Math.Ceiling(doc.FileSize / 1024d)):0} KB";
 }
+
 <div class="edurag-page">
-    <div class="d-flex flex-wrap gap-2 mb-4">
+    <div class="d-flex flex-wrap gap-2 mb-3">
         <a asp-page="@Model.BackPage" class="btn btn-sm btn-edurag-ghost">@Model.BackLabel</a>
         @if (doc.CanReIndex)
         {
@@ -17,10 +22,6 @@
                 @Html.AntiForgeryToken()
                 <button type="submit" class="btn btn-sm btn-edurag-outline">Re-index / Re-chunk</button>
             </form>
-        }
-        @if (roleName == "Teacher" && doc.IndexStatus == "Indexed")
-        {
-            <a asp-page="/Teacher/Chat" asp-route-documentId="@doc.DocumentId" class="btn btn-sm btn-edurag-warm">Try chatbot</a>
         }
     </div>
 
@@ -33,145 +34,82 @@
         <div class="alert alert-danger mb-3">@TempData["Error"]</div>
     }
 
-    @if (indexResult == "success")
-    {
-        <div class="index-result index-result--success mb-4" role="status">
-            <span class="index-result__icon" aria-hidden="true">
-                @{ ViewData["Icon"] = "check-circle"; ViewData["IconSize"] = "22"; }
-                @await Html.PartialAsync("_Icons")
-            </span>
-            <div class="index-result__content">
-                <p class="page-pretitle mb-1">Index hoàn tất</p>
-                <h2 class="font-display fs-5 fw-bold mb-1">Tài liệu đã sẵn sàng</h2>
-                <p class="small mb-0">RAG service đã tạo @doc.TotalChunks chunks. Bên dưới là nội dung chunk preview và lịch sử pipeline.</p>
-            </div>
-        </div>
-    }
-    else if (indexResult == "failed")
-    {
-        <div class="index-result index-result--failed mb-4" role="alert">
-            <span class="index-result__icon" aria-hidden="true">
-                @{ ViewData["Icon"] = "shield-alert"; ViewData["IconSize"] = "22"; }
-                @await Html.PartialAsync("_Icons")
-            </span>
-            <div class="index-result__content">
-                <p class="page-pretitle mb-1">Index không hoàn tất</p>
-                <h2 class="font-display fs-5 fw-bold mb-1">Cần kiểm tra lại tài liệu</h2>
-                <p class="small mb-0">@(string.IsNullOrWhiteSpace(doc.IndexError) ? "Không thể tạo chỉ mục cho tài liệu này." : doc.IndexError) Xem lịch sử pipeline bên dưới hoặc thử re-index.</p>
-            </div>
-        </div>
-    }
-
-    <h1 class="font-display fs-3 fw-bold mb-2">@doc.Title</h1>
-    <p class="text-muted-edurag mb-0">
-        <span class="role-badge-teacher">@doc.CourseCode</span>
+    <h1 class="font-display fs-4 fw-bold mb-1">@doc.Title</h1>
+    <p class="text-muted-edurag small mb-3">
+        @doc.CourseCode
         @if (!string.IsNullOrWhiteSpace(doc.Chapter))
         {
-            <span class="ms-1">- @doc.Chapter</span>
+            <span> - @doc.Chapter</span>
         }
-        - @doc.OriginalFileName - @doc.FileType.ToUpperInvariant()
-        - <span class="@(doc.IndexStatus == "Indexed" ? "status-badge-indexed" : doc.IndexStatus == "Failed" ? "status-badge-failed" : "pill-filter")">@doc.IndexStatus</span>
+        <span> - @doc.OriginalFileName - @fileType - </span>
+        <span class="@(doc.IndexStatus == "Indexed" ? "status-badge-indexed" : doc.IndexStatus == "Failed" ? "status-badge-failed" : "pill-filter")">@Html.Raw(statusText)</span>
     </p>
 
     @if (!string.IsNullOrWhiteSpace(doc.Description))
     {
-        <div class="edurag-card p-3 mt-3 small">@doc.Description</div>
+        <div class="edurag-card p-3 mb-3 small">@doc.Description</div>
     }
 
-    <div class="row g-3 mt-3">
-        <div class="col-md-4">
-            <div class="edurag-card p-3">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">RAG chunks</div>
-                <div class="font-display fs-4 fw-bold">@doc.TotalChunks</div>
-                <div class="small text-muted-edurag">Returned by the indexing service</div>
+    <div class="document-detail-grid">
+        <aside class="document-info-panel">
+            <div class="document-panel-heading">
+                <h2 class="document-panel-title">&#128196; Th&#244;ng tin t&#224;i li&#7879;u</h2>
             </div>
-        </div>
-        <div class="col-md-4">
-            <div class="edurag-card p-3">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Preview chunks</div>
-                <div class="font-display fs-4 fw-bold">@previewChunkCount</div>
-                <div class="small text-muted-edurag">Generated from admin config</div>
-            </div>
-        </div>
-        <div class="col-md-4">
-            <div class="edurag-card p-3">
-                <div class="small text-muted-edurag text-uppercase fw-semibold mb-1">Index</div>
-                <div class="small fw-semibold">@(doc.IndexedAt.HasValue ? doc.IndexedAt.Value.ToLocalTime().ToString("g") : "Not indexed")</div>
-                <div class="small text-muted-edurag">@doc.SubmittedByDisplay</div>
-                @if (!string.IsNullOrEmpty(doc.IndexError))
-                {
-                    <div class="small text-danger mt-1">@doc.IndexError</div>
-                }
-            </div>
-        </div>
-    </div>
+            <div class="document-file-mark">@(string.IsNullOrWhiteSpace(fileType) ? "FILE" : fileType)</div>
+            <dl class="document-meta">
+                <div><dt>Ti&#234;u &#273;&#7873;</dt><dd>@doc.Title</dd></div>
+                <div><dt>M&#244;n h&#7885;c</dt><dd>[@doc.CourseCode] @doc.CourseName</dd></div>
+                <div><dt>Ch&#432;&#417;ng</dt><dd>@(string.IsNullOrWhiteSpace(doc.Chapter) ? "-" : doc.Chapter)</dd></div>
+                <div><dt>K&#237;ch th&#432;&#7899;c</dt><dd>@fileSizeDisplay</dd></div>
+                <div><dt>Upload b&#7903;i</dt><dd>@doc.SubmittedByDisplay</dd></div>
+                <div><dt>Ng&#224;y upload</dt><dd>@doc.CreatedAt.ToLocalTime().ToString("g")</dd></div>
+                <div><dt>Th&#7901;i gian index</dt><dd>@(doc.IndexedAt.HasValue ? doc.IndexedAt.Value.ToLocalTime().ToString("g") : "-")</dd></div>
+                <div><dt>Tr&#7841;ng th&#225;i</dt><dd><span class="@(doc.IndexStatus == "Indexed" ? "status-badge-indexed" : doc.IndexStatus == "Failed" ? "status-badge-failed" : "pill-filter")">@Html.Raw(statusText)</span></dd></div>
+            </dl>
+        </aside>
 
-    @if (!string.IsNullOrEmpty(doc.PreviewMessage) && !doc.Chunks.Any())
-    {
-        <div class="alert alert-warning mt-4 mb-0">@doc.PreviewMessage</div>
-    }
+        <section class="document-chunk-panel" id="chunk-preview">
+            <div class="document-panel-heading">
+                <div class="document-panel-title">
+                    <span aria-hidden="true">&#9638;</span>
+                    <span>Document Chunks</span>
+                    <span class="document-chunk-count">@previewChunkCount</span>
+                </div>
+                <span class="small text-muted-edurag">N&#7897;i dung t&#225;ch &#273;&#7875; ph&#7909;c v&#7909; AI/RAG</span>
+            </div>
 
-    <div class="row g-4 mt-2" id="chunk-preview">
-        <div class="col-lg-8">
-            <div class="edurag-card p-4">
-                <h2 class="fs-6 fw-semibold mb-1">Chunk preview (@previewChunkCount)</h2>
-                <div class="small text-muted-edurag mb-3">These are the actual preview chunks generated from the active admin chunk config.</div>
-                @if (doc.Chunks.Any())
-                {
-                    @foreach (var c in doc.Chunks.Take(10))
+            @if (doc.Chunks.Any())
+            {
+                <div class="document-chunk-list">
+                    @foreach (var chunk in doc.Chunks)
                     {
-                        <div class="border rounded p-3 mb-2 small">
-                            <div class="d-flex flex-wrap justify-content-between gap-2 mb-1">
-                                <div class="fw-semibold">Chunk #@c.ChunkIndex @(c.PageNumber.HasValue ? $"- page {c.PageNumber}" : "")</div>
-                                <div class="text-muted-edurag">@c.CharCount chars @(c.TokenEstimate.HasValue ? $"- ~{c.TokenEstimate} tokens" : "")</div>
-                            </div>
-                            <div style="white-space:pre-wrap;max-height:280px;overflow:auto;">@c.ChunkText</div>
-                        </div>
+                        <article class="document-chunk-item">
+                            <header class="document-chunk-header">
+                                <div class="document-chunk-header-group">
+                                    <span class="document-chunk-number">#@(chunk.ChunkIndex + 1)</span>
+                                    @if (chunk.PageNumber.HasValue)
+                                    {
+                                        <span class="document-chunk-page">&#128196; Trang @chunk.PageNumber</span>
+                                    }
+                                </div>
+                                <div class="document-chunk-header-group">
+                                    <span class="document-chunk-state">&#9679; @(doc.IndexStatus == "Indexed" ? "Embedded" : "Preview")</span>
+                                    <span class="document-chunk-size">@chunk.CharCount k&#253; t&#7921;</span>
+                                </div>
+                            </header>
+                            <div class="document-chunk-text">@chunk.ChunkText</div>
+                        </article>
                     }
-                    @if (doc.Chunks.Count > 10)
-                    {
-                        <p class="small text-muted-edurag mb-0">Showing first 10 of @doc.Chunks.Count preview chunks.</p>
-                    }
-                }
-                else if (!string.IsNullOrEmpty(doc.PreviewMessage))
-                {
-                    <p class="small text-muted-edurag mb-0">@doc.PreviewMessage</p>
-                }
-                else if (doc.TotalChunks > 0)
-                {
-                    <p class="small text-muted-edurag mb-0">
-                        The indexing service returned @doc.TotalChunks chunks, but no readable preview text was extracted from the original file.
-                    </p>
-                }
-                else
-                {
-                    <p class="small text-muted-edurag mb-0">No preview chunks yet.</p>
-                }
-            </div>
-        </div>
-        <div class="col-lg-4">
-            <div class="edurag-card p-4">
-                <h2 class="fs-6 fw-semibold mb-3">Index history</h2>
-                @if (doc.IndexLogs.Any())
-                {
-                    @foreach (var log in doc.IndexLogs.Take(8))
-                    {
-                        <div class="small mb-2 pb-2 border-bottom">
-                            <span class="fw-semibold">@log.Action</span>
-                            <span class="text-muted-edurag"> - @log.Status</span>
-                            <div class="text-muted-edurag">@log.PerformedByEmail - @log.PerformedAt.ToLocalTime().ToString("g")</div>
-                            @if (!string.IsNullOrEmpty(log.ErrorMessage))
-                            {
-                                <div class="text-danger">@log.ErrorMessage</div>
-                            }
-                        </div>
-                    }
-                }
-                else
-                {
-                    <p class="small text-muted-edurag mb-0">No index logs yet.</p>
-                }
-            </div>
-        </div>
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(doc.PreviewMessage))
+            {
+                <p class="m-3 text-muted-edurag">@doc.PreviewMessage</p>
+            }
+            else
+            {
+                <p class="m-3 text-muted-edurag">Ch&#432;a c&#243; chunk n&#7897;i dung.</p>
+            }
+        </section>
     </div>
 </div>
