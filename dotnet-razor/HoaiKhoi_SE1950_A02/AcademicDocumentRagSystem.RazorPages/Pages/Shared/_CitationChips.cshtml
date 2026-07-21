@@ -30,6 +30,12 @@
     <div class="citation-row d-flex flex-wrap gap-1 mt-1">
         @foreach (var cit in sources)
         {
+            var extension = System.IO.Path.GetExtension(cit.FileName ?? string.Empty);
+
+var pageWord = extension.Equals(".ppt", StringComparison.OrdinalIgnoreCase)
+    || extension.Equals(".pptx", StringComparison.OrdinalIgnoreCase)
+        ? "Slide"
+        : "Trang";
             var fileLabel = string.IsNullOrWhiteSpace(cit.FileName) ? "Tài liệu" : cit.FileName;
             var chunkLabel = $"chunk {cit.ChunkIndex + 1}";
             var locLabel = cit.PageNumber.HasValue
